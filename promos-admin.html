@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Promos & Sales Admin</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.promo-card-admin{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;margin-bottom:10px;transition:box-shadow .2s;position:relative}
+.promo-card-admin:hover{box-shadow:0 4px 16px rgba(0,0,0,.07)}
+.promo-card-admin.active-promo{border-left:4px solid var(--g4)}
+.promo-card-admin.inactive-promo{border-left:4px solid var(--line)}
+.promo-type-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.type-percent{background:#E8F5E9;color:#2E7D32}
+.type-fixed{background:#E3F2FD;color:#1565C0}
+.type-bundle{background:#FFF3E0;color:#E65100}
+.promo-toggle{position:absolute;top:1rem;right:1rem;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.toggle-sw{width:34px;height:18px;background:var(--line);border-radius:9px;cursor:pointer;position:relative;transition:background .2s;border:none;flex-shrink:0}
+.toggle-sw.on{background:var(--g4)}
+.toggle-sw::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:white;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-sw.on::after{left:18px}
+.disc-preview{background:var(--g9);border-radius:var(--r);padding:10px;font-size:12px;color:var(--g2);margin-top:8px;border:1px solid var(--g7)}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <div><div class="page-title">Promos & Sales</div><div class="page-sub" style="margin-bottom:0">Create and manage discounts, seasonal offers, and bundle deals</div></div>
+    <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Add Promo</button>
+  </div>
+
+  <!-- Active promos -->
+  <div style="margin-bottom:1.5rem">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.8rem">🟢 Active Promotions</div>
+    <div id="active-promos"></div>
+  </div>
+
+  <!-- Inactive / upcoming -->
+  <div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.8rem">⚪ Inactive / Upcoming</div>
+    <div id="inactive-promos"></div>
+  </div>
+
+  <!-- Sale items table -->
+  <div class="table-wrap" style="margin-top:1.5rem">
+    <div class="table-head"><h3>🔖 On-Sale Products</h3><span style="font-size:12px;color:var(--muted)">Products with old/sale price set</span></div>
+    <table class="data-table" id="sale-table"><thead><tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Savings</th><th>Badge</th><th>Actions</th></tr></thead><tbody id="sale-tbody"></tbody></table>
+  </div>
+</div>
+</div>
+
+<!-- ADD/EDIT PROMO MODAL -->
+<div class="modal-overlay" id="promo-modal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head"><h3 id="pm-title">Add Promotion</h3><button class="modal-close" onclick="closeModal('promo-modal')">✕</button></div>
+    <div id="pm-body"></div>
+  </div>
+</div>
+
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('promos-admin');
+buildAdminSidebar('promos-admin.html');
+
+let editingPromoId = null;
+
+function renderPromos() {
+  const promos = FC.getPromos();
+  const active = promos.filter(p => p.status === 'active');
+  const inactive = promos.filter(p => p.status !== 'active');
+
+  const renderCard = (p) => {
+    const typeCls = {percent:'type-percent', fixed:'type-fixed', bundle:'type-bundle'}[p.type] || '';
+    const typeLabel = {percent:'% Discount', fixed:'Fixed Discount', bundle:'Bundle Deal'}[p.type] || p.type;
+    const discLabel = p.type === 'percent' ? `-${p.value}%` : p.type === 'fixed' ? `-₱${p.value}` : `Get ${p.value} free`;
+    return `
+    <div class="promo-card-admin ${p.status === 'active' ? 'active-promo' : 'inactive-promo'}">
+      <div class="promo-toggle">
+        <span>${p.status === 'active' ? 'Active' : 'Inactive'}</span>
+        <button class="toggle-sw ${p.status === 'active' ? 'on' : ''}" onclick="togglePromo('${p.id}')"></button>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:.8rem;padding-right:80px">
+        <span class="promo-type-badge ${typeCls}">${typeLabel}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--p3)">${discLabel}</span>
+      </div>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--g1);margin-bottom:.3rem">${p.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:.5rem">${p.desc||'—'}</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+        <span>📅 ${p.startDate} → ${p.endDate}</span>
+        <span>🏷️ Applies to: ${p.category === 'all' ? 'All products' : p.category}</span>
+        ${p.products?.length ? `<span>📦 ${p.products.length} specific product(s)</span>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:.8rem">
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.id}')">Delete</button>
+      </div>
+    </div>`;
+  };
+
+  const activeEl = document.getElementById('active-promos');
+  const inactiveEl = document.getElementById('inactive-promos');
+  activeEl.innerHTML = active.length ? active.map(renderCard).join('') :
+    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No active promotions. Add one above!</div>';
+  inactiveEl.innerHTML = inactive.length ? inactive.map(renderCard).join('') :
+    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No inactive promotions.</div>';
+
+  renderSaleProducts();
+}
+
+function renderSaleProducts() {
+  const prods = FC.getProducts().filter(p => p.oldPrice);
+  document.getElementById('sale-tbody').innerHTML = prods.length ? prods.map(p => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">${p.icon}</span><span style="font-size:13px;font-weight:600">${p.name}</span></div></td>
+      <td><span style="text-decoration:line-through;color:var(--muted)">${fmtP(p.oldPrice)}</span></td>
+      <td style="font-weight:700;color:var(--p3)">${fmtP(p.price)}</td>
+      <td style="color:var(--g3);font-weight:600">Save ${fmtP(p.oldPrice - p.price)} (${Math.round((1 - p.price/p.oldPrice)*100)}%)</td>
+      <td><span class="tag tag-p">${p.badge||'Sale'}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="removeSale('${p.id}')">Remove Sale</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted)">No products on sale</td></tr>';
+}
+
+function togglePromo(id) {
+  const promos = FC.getPromos();
+  const p = promos.find(x => x.id === id);
+  if (p) { p.status = p.status === 'active' ? 'inactive' : 'active'; }
+  FC.savePromos(promos);
+  toast(p.status === 'active' ? '✓ Promo activated!' : 'Promo deactivated.');
+  renderPromos();
+}
+
+function deletePromo(id) {
+  if (!confirm('Delete this promotion?')) return;
+  const promos = FC.getPromos().filter(p => p.id !== id);
+  FC.savePromos(promos);
+  toast('Promotion deleted.', 'err');
+  renderPromos();
+}
+
+function removeSale(pid) {
+  const prods = FC.getProducts();
+  const p = prods.find(x => x.id === pid);
+  if (p) { p.price = p.oldPrice; delete p.oldPrice; p.badge = ''; }
+  FC.saveProducts(prods);
+  toast('Sale removed from product.');
+  renderSaleProducts();
+}
+
+function getModalBody(promo) {
+  const p = promo || {};
+  const allProds = FC.getProducts();
+  return `
+    <div class="ff"><label>Promo name *</label><input id="pm-name" value="${p.name||''}" placeholder="e.g. Valentine's Special 20% Off"/></div>
+    <div class="ff"><label>Description</label><textarea id="pm-desc" style="border:1.5px solid var(--line);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;width:100%;resize:none;height:60px;outline:none;background:var(--soft)">${p.desc||''}</textarea></div>
+    <div class="fg2">
+      <div class="ff"><label>Discount type *</label>
+        <select id="pm-type" onchange="previewDisc()">
+          <option value="percent" ${p.type==='percent'?'selected':''}>% Percentage discount</option>
+          <option value="fixed" ${p.type==='fixed'?'selected':''}>₱ Fixed amount off</option>
+          <option value="bundle" ${p.type==='bundle'?'selected':''}>🎁 Bundle (Get X Free)</option>
+        </select>
+      </div>
+      <div class="ff"><label>Discount value *</label><input id="pm-val" type="number" value="${p.value||''}" placeholder="e.g. 20 (for 20% or ₱20)" oninput="previewDisc()"/></div>
+    </div>
+    <div id="pm-disc-preview" class="disc-preview" style="display:none"></div>
+    <div class="fg2">
+      <div class="ff"><label>Start date *</label><input id="pm-start" type="date" value="${p.startDate||''}"/></div>
+      <div class="ff"><label>End date *</label><input id="pm-end" type="date" value="${p.endDate||''}"/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Minimum order amount (₱)</label><input id="pm-minorder" type="number" value="${p.minOrder||0}" placeholder="0 = no minimum" min="0"/></div>
+      <div class="ff"><label>Applies to category</label>
+      <select id="pm-cat">
+        <option value="all" ${p.category==='all'||!p.category?'selected':''}>All products</option>
+        <option value="ready-made" ${p.category==='ready-made'?'selected':''}>Ready-Made bouquets</option>
+        <option value="seasonal" ${p.category==='seasonal'?'selected':''}>Seasonal picks</option>
+        <option value="gift-set" ${p.category==='gift-set'?'selected':''}>Gift sets</option>
+        <option value="individual" ${p.category==='individual'?'selected':''}>Individual stems</option>
+        <option value="promo" ${p.category==='promo'?'selected':''}>Promo items</option>
+      </select>
+    </div>
+    <div class="ff"><label>Status</label>
+      <select id="pm-status">
+        <option value="active" ${p.status==='active'||!p.status?'selected':''}>Active</option>
+        <option value="inactive" ${p.status==='inactive'?'selected':''}>Inactive</option>
+        <option value="upcoming" ${p.status==='upcoming'?'selected':''}>Upcoming</option>
+      </select>
+    </div>
+    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="savePromo()">
+      ${promo ? '✓ Save Changes' : '+ Add Promotion'}
+    </button>`;
+}
+
+function previewDisc() {
+  const type = document.getElementById('pm-type')?.value;
+  const val = parseFloat(document.getElementById('pm-val')?.value) || 0;
+  const el = document.getElementById('pm-disc-preview');
+  if (!type || !val || !el) return;
+  let msg = '';
+  if (type === 'percent') msg = `Example: On a ₱500 order → you save ₱${Math.round(500 * val / 100)} (${val}% off). Customer pays ₱${500 - Math.round(500 * val / 100)}.`;
+  else if (type === 'fixed') msg = `Example: On a ₱500 order → you save ₱${val}. Customer pays ₱${500 - val}.`;
+  else msg = `Bundle deal: Buy items, get ${val} item(s) free.`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function openAddModal() {
+  editingPromoId = null;
+  document.getElementById('pm-title').textContent = 'Add New Promotion';
+  document.getElementById('pm-body').innerHTML = getModalBody(null);
+  openModal('promo-modal');
+}
+
+function openEditModal(id) {
+  const p = FC.getPromos().find(x => x.id === id);
+  if (!p) return;
+  editingPromoId = id;
+  document.getElementById('pm-title').textContent = 'Edit: ' + p.name;
+  document.getElementById('pm-body').innerHTML = getModalBody(p);
+  openModal('promo-modal');
+  previewDisc();
+}
+
+function savePromo() {
+  const name = document.getElementById('pm-name').value.trim();
+  const type = document.getElementById('pm-type').value;
+  const value = parseFloat(document.getElementById('pm-val').value);
+  const startDate = document.getElementById('pm-start').value;
+  const endDate = document.getElementById('pm-end').value;
+  const category = document.getElementById('pm-cat').value;
+  const status = document.getElementById('pm-status').value;
+  const desc = document.getElementById('pm-desc').value.trim();
+  if (!name || isNaN(value) || !startDate || !endDate) { toast('Please fill in all required fields.', 'err'); return; }
+
+  const promos = FC.getPromos();
+  const data = { name, type, value, startDate, endDate, category, status, desc, products: [],
+    minOrder: parseFloat(document.getElementById('pm-minorder').value) || 0 };
+
+  if (editingPromoId) {
+    const idx = promos.findIndex(p => p.id === editingPromoId);
+    if (idx !== -1) promos[idx] = { ...promos[idx], ...data };
+    toast('✓ Promo updated!');
+  } else {
+    promos.push({ id: 'pr' + Date.now(), ...data });
+    toast('✓ Promotion added!');
+  }
+  FC.savePromos(promos);
+  closeModal('promo-modal');
+  renderPromos();
+}
+
+renderPromos();
+</script>
+</body>
+</html>

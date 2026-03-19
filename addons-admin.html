@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Add-ons Admin</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.addon-thumb{width:42px;height:42px;border-radius:var(--r);background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.cf-btn{padding:5px 13px;border-radius:18px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:12px;cursor:pointer;color:var(--muted);transition:all .2s}
+.cf-btn:hover{border-color:var(--g5);color:var(--g2)}.cf-btn.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.metric-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.2rem}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.5rem}
+.metric-val{font-size:26px;font-weight:700;color:var(--ink);font-family:var(--font-d)}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <div><div class="page-title">Add-ons</div><div class="page-sub" style="margin-bottom:0">Manage extras: chocolates, teddy bears, cards, balloons</div></div>
+    <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Add Item</button>
+  </div>
+
+  <div class="metrics-grid" id="addon-metrics"></div>
+
+  <div class="cat-filter" id="cat-filter">
+    <button class="cf-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="cf-btn" onclick="setFilter('chocolates',this)">🍫 Chocolates</button>
+    <button class="cf-btn" onclick="setFilter('toys',this)">🧸 Toys</button>
+    <button class="cf-btn" onclick="setFilter('cards',this)">💌 Cards</button>
+    <button class="cf-btn" onclick="setFilter('balloons',this)">🎈 Balloons</button>
+    <button class="cf-btn" onclick="setFilter('extras',this)">✨ Extras</button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head"><h3>All Add-ons (<span id="addon-count">0</span>)</h3>
+      <input id="addon-search" placeholder="Search..." style="border:1.5px solid var(--line);border-radius:var(--r);padding:7px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:var(--soft);width:180px" oninput="renderTable()"/>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="addon-tbody"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="addon-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-head"><h3 id="am-title">Add Add-on</h3><button class="modal-close" onclick="closeModal('addon-modal')">✕</button></div>
+    <div id="am-body"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="del-modal">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-head"><h3>Delete Add-on?</h3><button class="modal-close" onclick="closeModal('del-modal')">✕</button></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">Delete <strong id="del-name"></strong>? This cannot be undone.</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" style="flex:1;justify-content:center" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('del-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('addons-admin');
+buildAdminSidebar('addons-admin.html');
+
+let activeFilter = 'all', editingId = null, deletingId = null;
+const CAT_LABELS = { chocolates:'🍫 Chocolates', toys:'🧸 Toys', cards:'💌 Cards', balloons:'🎈 Balloons', extras:'✨ Extras' };
+const CAT_CLS = { chocolates:'tag-p', toys:'tag-gold', cards:'tag-g', balloons:'tag-b', extras:'tag-w' };
+
+function renderMetrics() {
+  const ads = FC.getAddons();
+  const total = ads.reduce((s,a) => s+a.stock, 0);
+  const cats = [...new Set(ads.map(a => a.category))].length;
+  const lowStock = ads.filter(a => a.stock < 10).length;
+  const avgP = Math.round(ads.reduce((s,a) => s+a.price, 0) / (ads.length||1));
+  document.getElementById('addon-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Total Add-ons</div><div class="metric-val">${ads.length}</div><div style="font-size:11px;color:var(--muted);margin-top:4px">${cats} categories</div></div>
+    <div class="metric-card"><div class="metric-label">Total In Stock</div><div class="metric-val">${total}</div><div style="font-size:11px;color:var(--g3);margin-top:4px">units available</div></div>
+    <div class="metric-card"><div class="metric-label">Low Stock</div><div class="metric-val" style="color:var(--p3)">${lowStock}</div><div style="font-size:11px;color:var(--muted);margin-top:4px">< 10 units</div></div>
+    <div class="metric-card"><div class="metric-label">Avg. Price</div><div class="metric-val">₱${avgP}</div><div style="font-size:11px;color:var(--muted);margin-top:4px">per item</div></div>
+  `;
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.cf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const q = document.getElementById('addon-search')?.value.toLowerCase() || '';
+  let ads = FC.getAddons();
+  if (activeFilter !== 'all') ads = ads.filter(a => a.category === activeFilter);
+  if (q) ads = ads.filter(a => a.name.toLowerCase().includes(q));
+  document.getElementById('addon-count').textContent = ads.length;
+  document.getElementById('addon-tbody').innerHTML = ads.length ? ads.map(a => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="addon-thumb">${a.icon}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink)">${a.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${a.desc?.slice(0,55)||''}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="tag ${CAT_CLS[a.category]||'tag-w'}">${CAT_LABELS[a.category]||a.category}</span></td>
+      <td style="font-weight:600;color:var(--g3)">${fmtP(a.price)}</td>
+      <td style="font-weight:700;color:${a.stock<10?'var(--p3)':a.stock<20?'#E65100':'var(--ink)'}">${a.stock}${a.stock<10?' ⚠':''}</td>
+      <td><span class="tag ${a.stock>0?'tag-g':'tag-p'}">${a.stock>0?'In Stock':'Out of Stock'}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${a.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${a.id}','${a.name.replace(/'/g,"\\'")}')">Del</button>
+        </div>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">No add-ons found</td></tr>';
+  renderMetrics();
+}
+
+function getModalBody(addon) {
+  const a = addon || {};
+  return `
+    <div class="ff"><label>Item name *</label><input id="am-name" value="${a.name||''}" placeholder="e.g. Ferrero Rocher Box"/></div>
+    <div class="ff"><label>Description</label><input id="am-desc" value="${a.desc||''}" placeholder="Short description..."/></div>
+    <div class="fg2">
+      <div class="ff"><label>Category *</label>
+        <select id="am-cat">
+          <option value="chocolates" ${a.category==='chocolates'?'selected':''}>🍫 Chocolates</option>
+          <option value="toys" ${a.category==='toys'?'selected':''}>🧸 Toys</option>
+          <option value="cards" ${a.category==='cards'?'selected':''}>💌 Cards</option>
+          <option value="balloons" ${a.category==='balloons'?'selected':''}>🎈 Balloons</option>
+          <option value="extras" ${a.category==='extras'?'selected':''}>✨ Extras</option>
+        </select>
+      </div>
+      <div class="ff"><label>Emoji icon *</label><input id="am-icon" value="${a.icon||''}" placeholder="🍫"/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Price (₱) *</label><input id="am-price" type="number" value="${a.price||''}" placeholder="180" min="1"/></div>
+      <div class="ff"><label>Stock *</label><input id="am-stock" type="number" value="${a.stock||''}" placeholder="50" min="0"/></div>
+    </div>
+    <div style="background:var(--g9);border-radius:var(--r);padding:10px;font-size:12px;color:var(--g2);margin-bottom:1rem;border:1px solid var(--g7)">
+      ℹ Stock is only deducted after admin validates customer payment.
+    </div>
+    <button class="btn btn-green" style="width:100%;justify-content:center" onclick="saveAddon()">
+      ${addon ? '✓ Save Changes' : '+ Add Add-on'}
+    </button>`;
+}
+
+function openAddModal() { editingId = null; document.getElementById('am-title').textContent = 'Add New Add-on'; document.getElementById('am-body').innerHTML = getModalBody(null); openModal('addon-modal'); }
+function openEditModal(id) {
+  const a = FC.getAddons().find(x => x.id === id); if (!a) return;
+  editingId = id;
+  document.getElementById('am-title').textContent = 'Edit: ' + a.name;
+  document.getElementById('am-body').innerHTML = getModalBody(a);
+  openModal('addon-modal');
+}
+
+function saveAddon() {
+  const name = document.getElementById('am-name').value.trim();
+  const cat = document.getElementById('am-cat').value;
+  const icon = document.getElementById('am-icon').value.trim();
+  const price = parseFloat(document.getElementById('am-price').value);
+  const stock = parseInt(document.getElementById('am-stock').value);
+  const desc = document.getElementById('am-desc').value.trim();
+  if (!name || !icon || isNaN(price) || isNaN(stock)) { toast('Please fill all required fields.','err'); return; }
+  const ads = FC.getAddons();
+  const data = { name, category: cat, icon, price, stock, desc };
+  if (editingId) {
+    const idx = ads.findIndex(a => a.id === editingId);
+    if (idx !== -1) ads[idx] = { ...ads[idx], ...data };
+    toast('✓ Add-on updated!');
+  } else {
+    ads.push({ id: 'a' + Date.now(), ...data });
+    toast('✓ Add-on added!');
+  }
+  FC.saveAddons(ads);
+  closeModal('addon-modal');
+  renderTable();
+}
+
+function openDeleteModal(id, name) { deletingId = id; document.getElementById('del-name').textContent = name; openModal('del-modal'); }
+function confirmDelete() {
+  FC.saveAddons(FC.getAddons().filter(a => a.id !== deletingId));
+  closeModal('del-modal');
+  toast('Add-on deleted.','err');
+  renderTable();
+}
+
+renderTable();
+</script>
+</body>
+</html>

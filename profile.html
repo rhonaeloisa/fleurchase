@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — My Profile</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.prof-hero{background:linear-gradient(135deg,var(--g9) 0%,white 50%,var(--p9) 100%);border-radius:var(--rl);border:1px solid var(--line);padding:2rem;display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.prof-hero::after{content:'🌸';position:absolute;font-size:110px;opacity:.05;right:1rem;bottom:-.5rem;pointer-events:none}
+.prof-av-wrap{position:relative;flex-shrink:0}
+.prof-av{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--g4),var(--g2));border:3px solid var(--g6);display:flex;align-items:center;justify-content:center;font-size:30px;color:white;font-weight:700;font-family:var(--font-d)}
+.cam-btn{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--p3);border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;color:white}
+.prof-name{font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--g1)}
+.prof-email{font-size:13px;color:var(--muted);margin:.2rem 0 .5rem}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+.stat-box{background:white;border-radius:var(--r);border:1px solid var(--line);padding:12px;text-align:center}
+.stat-val{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--g1)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem}
+.prof-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem}
+.prof-card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:1.1rem;display:flex;align-items:center;gap:8px}
+.prof-card h3::after{content:'';flex:1;height:1px;background:var(--line)}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row span:first-child{color:var(--muted)}
+.info-row span:last-child{font-weight:500;color:var(--ink);text-align:right}
+.addr-item{background:var(--soft);border-radius:var(--r);padding:11px 13px;border:1.5px solid transparent;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.addr-item:hover{border-color:var(--g5)}
+.addr-item.default{border-color:var(--g4);background:var(--g9)}
+.addr-item-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.addr-item-detail{font-size:12px;color:var(--muted);line-height:1.5}
+.order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.order-row:last-child{border-bottom:none}
+.or-icon{width:40px;height:40px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.or-info{flex:1}
+.or-name{font-size:12px;font-weight:600;color:var(--ink)}
+.or-meta{font-size:11px;color:var(--muted);margin-top:1px}
+.or-total{font-size:13px;font-weight:700;color:var(--g3)}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+
+<div class="main-area no-sidebar">
+<div class="p-page">
+  <div class="page-title">My <span style="color:var(--p3);font-style:italic">Profile</span></div>
+  <div class="page-sub">Manage your account information and delivery addresses</div>
+
+  <!-- HERO -->
+  <div class="prof-hero">
+    <div class="prof-av-wrap">
+      <div class="prof-av" id="prof-av-initial">M</div>
+      <div class="cam-btn" onclick="toast('Photo upload coming soon!')">📷</div>
+    </div>
+    <div style="flex:1">
+      <div class="prof-name" id="prof-disp-name">Loading...</div>
+      <div class="prof-email" id="prof-disp-email">—</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="tag tag-g" id="prof-badge-orders">0 Orders</span>
+        <span class="tag tag-b" id="prof-badge-tier">Regular</span>
+        <span class="tag tag-gold">✓ Verified</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="edit-btn" onclick="toggleEdit()">✎ Edit</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" id="stat-total-orders">0</div><div class="stat-lbl">Total Orders</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-total-spent">₱0</div><div class="stat-lbl">Total Spent</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-fav-item">—</div><div class="stat-lbl">Fav. Item</div></div>
+  </div>
+
+  <div class="profile-grid">
+    <!-- PERSONAL INFO -->
+    <div class="prof-card">
+      <h3>Personal Information</h3>
+      <!-- VIEW -->
+      <div id="view-info">
+        <div class="info-row"><span>Full Name</span><span id="v-name">—</span></div>
+        <div class="info-row"><span>Email</span><span id="v-email">—</span></div>
+        <div class="info-row"><span>Phone</span><span id="v-phone">—</span></div>
+        <div class="info-row"><span>Member Since</span><span>March 2024</span></div>
+        <div class="info-row"><span>Role</span><span><span class="tag tag-g">Customer</span></span></div>
+      </div>
+      <!-- EDIT (hidden by default) -->
+      <div id="edit-info" style="display:none">
+        <div class="fg2">
+          <div class="ff"><label>First name</label><input id="ef-fn" placeholder="Maria"/></div>
+          <div class="ff"><label>Last name</label><input id="ef-ln" placeholder="Santos"/></div>
+        </div>
+        <div class="ff"><label>Email address</label><input id="ef-email" type="email"/></div>
+        <div class="ff"><label>Phone number</label><input id="ef-phone" placeholder="09XX XXX XXXX" maxlength="11"/></div>
+        <div class="ff"><label>New password <small style="font-weight:400;color:var(--muted)">(leave blank to keep)</small></label><input id="ef-pw" type="password" placeholder="••••••••"/></div>
+        <div style="display:flex;gap:8px;margin-top:.5rem">
+          <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveProfile()">✓ Save</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="toggleEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADDRESSES -->
+    <div class="prof-card">
+      <h3>Delivery Addresses</h3>
+      <div class="addr-item default">
+        <div class="addr-item-title">🏠 Home <span class="tag tag-g" style="font-size:9px;padding:1px 6px">Default</span></div>
+        <div class="addr-item-detail" id="addr-home">Brgy. Rizal, Daraga, Albay 4501</div>
+      </div>
+      <div class="addr-item">
+        <div class="addr-item-title">🏢 Office</div>
+        <div class="addr-item-detail">Legazpi City CBD, Albay 4500</div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:6px" onclick="toast('Address management coming soon! 📍')">+ Add Address</button>
+    </div>
+  </div>
+
+  <!-- RECENT ORDERS -->
+  <div class="prof-card" style="margin-bottom:1.2rem">
+    <h3>Recent Orders</h3>
+    <div id="recent-orders"></div>
+    <div style="text-align:right;margin-top:10px">
+      <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders →</a>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="prof-card">
+    <h3>Account Actions</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">📍 My Orders</a>
+      <a class="btn btn-ghost btn-sm" href="cart.html"   style="text-decoration:none">🛒 My Cart</a>
+      <button class="btn btn-ghost btn-sm" onclick="toast('Password reset email sent! Check your inbox.')">🔒 Change Password</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('Notification preferences saved! 🔔')">🔔 Notifications</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--p3);border-color:var(--p5)" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+<div id="footer-container"></div>
+</div>
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script>
+<script src="nav.js"></script>
+<script>
+const user = requireAuth('customer');
+buildTopNav('profile');
+renderFooter('footer-container', false);
+let editMode = false;
+
+function init() {
+  if (!user) return;
+  const parts = (user.name || '').split(' ');
+  document.getElementById('prof-av-initial').textContent = (user.name||'U')[0].toUpperCase();
+  document.getElementById('prof-disp-name').textContent  = user.name || '—';
+  document.getElementById('prof-disp-email').textContent = user.email || '—';
+  document.getElementById('v-name').textContent  = user.name || '—';
+  document.getElementById('v-email').textContent = user.email || '—';
+  document.getElementById('v-phone').textContent = user.phone || '—';
+  document.getElementById('ef-fn').value    = parts[0] || '';
+  document.getElementById('ef-ln').value    = parts.slice(1).join(' ') || '';
+  document.getElementById('ef-email').value = user.email || '';
+  document.getElementById('ef-phone').value = user.phone || '';
+
+  const orders = FC.getOrders();
+  const spent   = orders.reduce((s,o) => s + (o.total||0), 0);
+  const count   = orders.length;
+  document.getElementById('stat-total-orders').textContent = count;
+  document.getElementById('stat-total-spent').textContent  = spent >= 1000 ? '₱' + (spent/1000).toFixed(1) + 'k' : '₱' + spent;
+  document.getElementById('prof-badge-orders').textContent = count + ' Order' + (count!==1?'s':'');
+
+  const tier = spent > 5000 ? '⭐ Gold' : spent > 2000 ? '🥈 Silver' : 'Regular';
+  document.getElementById('prof-badge-tier').textContent = tier;
+
+  // Favourite item
+  const freq = {};
+  orders.forEach(o => (o.itemDetails||[]).forEach(it => { freq[it.name] = (freq[it.name]||0)+(it.qty||1); }));
+  const fav = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stat-fav-item').textContent = fav ? fav[0].split(' ')[0] : '—';
+
+  // Recent orders
+  const sc = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w'};
+  const recentEl = document.getElementById('recent-orders');
+  if (!orders.length) {
+    recentEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 0"><div class="ei">📭</div><h3>No orders yet</h3><p>Head to the shop to place your first pre-order!</p><a class="btn btn-green btn-sm" href="shop.html" style="text-decoration:none;margin-top:.8rem;display:inline-flex">Shop Now →</a></div>`;
+  } else {
+    recentEl.innerHTML = orders.slice(0,4).map(o => `
+      <div class="order-row">
+        <div class="or-icon">${(o.itemDetails&&o.itemDetails[0]?.icon)||'💐'}</div>
+        <div class="or-info">
+          <div class="or-name">${(o.items||'Order').slice(0,48)}${(o.items||'').length>48?'...':''}</div>
+          <div class="or-meta">${o.delivDate||'—'} · <span class="tag ${sc[o.status]||'tag-w'}" style="font-size:9px;padding:1px 6px">${o.status}</span></div>
+        </div>
+        <div class="or-total">${fmtP(o.total)}</div>
+      </div>`).join('');
+  }
+}
+
+function toggleEdit() {
+  editMode = !editMode;
+  document.getElementById('view-info').style.display = editMode ? 'none' : 'block';
+  document.getElementById('edit-info').style.display = editMode ? 'block' : 'none';
+  document.getElementById('edit-btn').textContent = editMode ? '← Cancel' : '✎ Edit';
+}
+
+function saveProfile() {
+  const fn    = document.getElementById('ef-fn').value.trim();
+  const ln    = document.getElementById('ef-ln').value.trim();
+  const email = document.getElementById('ef-email').value.trim();
+  const phone = document.getElementById('ef-phone').value.trim();
+  if (!fn || !email) { toast('Name and email are required.','err'); return; }
+  if (phone && !/^09\d{9}$/.test(phone)) { toast('Please enter a valid PH mobile number (09XXXXXXXXX).','err'); return; }
+  const updated = { ...user, name: fn + (ln?' '+ln:''), email, phone };
+  FC.setUser(updated);
+  // Refresh display values
+  document.getElementById('prof-disp-name').textContent  = updated.name;
+  document.getElementById('prof-disp-email').textContent = updated.email;
+  document.getElementById('prof-av-initial').textContent = updated.name[0].toUpperCase();
+  document.getElementById('v-name').textContent  = updated.name;
+  document.getElementById('v-email').textContent = updated.email;
+  document.getElementById('v-phone').textContent = updated.phone || '—';
+  toggleEdit();
+  toast('✓ Profile saved!');
+}
+
+init();
+</script>
+</body>
+</html>

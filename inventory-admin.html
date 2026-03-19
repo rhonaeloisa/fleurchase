@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Inventory</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.fresh-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-right:6px}
+.fresh-fill{height:100%;border-radius:3px}.fresh-ok{background:var(--g4)}.fresh-mid{background:#FFA000}.fresh-low{background:var(--p4)}
+.alert{border-radius:var(--r);padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:6px;border-left:3px solid}
+.alert-r{background:var(--p9);border-color:var(--p3)}.alert-a{background:#FFF8E1;border-color:#FFA000}.alert-g{background:var(--g9);border-color:var(--g4)}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.metric-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.2rem}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.5rem}
+.metric-val{font-size:26px;font-weight:700;color:var(--ink);font-family:var(--font-d)}
+.metric-sub{font-size:11px;margin-top:4px}
+.metric-up{color:var(--g3)}.metric-dn{color:var(--p3)}.metric-n{color:var(--muted)}
+.inv-two{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
+.restock-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.restock-item:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <div><div class="page-title">Inventory</div><div class="page-sub" style="margin-bottom:0">Track flower stock, freshness, and base price per stem</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="refreshFreshness()">↻ Refresh</button>
+      <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Add Stock</button>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid" id="inv-metrics"></div>
+
+  <!-- MAIN TABLE -->
+  <div class="table-wrap">
+    <div class="table-head">
+      <h3>Flower Inventory</h3>
+      <span style="font-size:12px;color:var(--muted)">Freshness auto-calculated from arrival date</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="inv-table">
+        <thead>
+          <tr>
+            <th>Flower</th>
+            <th>Stock</th>
+            <th>Base Price / Stem</th>
+            <th>Arrived</th>
+            <th>Shelf Life</th>
+            <th>Best Before</th>
+            <th>Freshness</th>
+            <th>%</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOTTOM CARDS -->
+  <div class="inv-two">
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>⚠ Freshness Alerts</h3></div>
+      <div style="padding:1rem" id="freshness-alerts"></div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>Restock Recommendations</h3></div>
+      <div style="padding:1rem" id="restock-list"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ADD STOCK MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-head"><h3 id="add-modal-title">Add Stock Entry</h3><button class="modal-close" onclick="closeModal('add-modal')">✕</button></div>
+    <div id="add-modal-body"></div>
+  </div>
+</div>
+
+<!-- MARK SALE MODAL -->
+<div class="modal-overlay" id="sale-modal">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-head"><h3>Mark as On Sale</h3><button class="modal-close" onclick="closeModal('sale-modal')">✕</button></div>
+    <div id="sale-modal-body"></div>
+  </div>
+</div>
+
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('inventory-admin');
+buildAdminSidebar('inventory-admin.html');
+
+let editingInvId = null;
+
+function getInventory() { return FC.getInventory(); }
+
+function calcFreshness(item) {
+  // Recalculate freshness based on arrival date and life days
+  const arrived = new Date(item.arrived + ' 2024');
+  const now = new Date('2024-03-19');
+  const daysPassed = Math.floor((now - arrived) / 86400000);
+  const remaining = Math.max(0, item.lifeDays - daysPassed);
+  return Math.round((remaining / item.lifeDays) * 100);
+}
+
+function bestBefore(item) {
+  const arrived = new Date(item.arrived + ' 2024');
+  arrived.setDate(arrived.getDate() + item.lifeDays);
+  return arrived.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+}
+
+function freshTag(pct) {
+  if (pct > 60) return '<span class="tag tag-g">Fresh</span>';
+  if (pct > 25) return '<span class="tag tag-a">Use Soon</span>';
+  if (pct > 10) return '<span class="tag tag-p">On Sale</span>';
+  return '<span class="tag tag-p">⚠ Expiring</span>';
+}
+
+function renderMetrics() {
+  const inv = getInventory();
+  const total = inv.reduce((s,i) => s+i.stock, 0);
+  const fresh = inv.filter(i => i.freshness > 60).length;
+  const critical = inv.filter(i => i.freshness <= 25).length;
+  const lowStock = inv.filter(i => i.stock < 30).length;
+  document.getElementById('inv-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Total Stems</div><div class="metric-val">${total.toLocaleString()}</div><div class="metric-sub metric-n">${inv.length} flower types</div></div>
+    <div class="metric-card"><div class="metric-label">Fresh Items</div><div class="metric-val" style="color:var(--g3)">${fresh}</div><div class="metric-sub metric-up">↑ Good quality</div></div>
+    <div class="metric-card"><div class="metric-label">Critical Freshness</div><div class="metric-val" style="color:var(--p3)">${critical}</div><div class="metric-sub metric-dn">Need attention</div></div>
+    <div class="metric-card"><div class="metric-label">Low Stock</div><div class="metric-val" style="color:#E65100">${lowStock}</div><div class="metric-sub metric-n"><30 stems</div></div>
+  `;
+}
+
+function renderTable() {
+  const inv = getInventory();
+  document.getElementById('inv-tbody').innerHTML = inv.map(item => {
+    const pct = item.freshness;
+    const fillCls = pct > 60 ? 'fresh-ok' : pct > 25 ? 'fresh-mid' : 'fresh-low';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px">${item.icon}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink)">${item.name}</div>
+            <div style="font-size:11px;color:var(--muted)">ID: ${item.id}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-weight:700;font-size:15px;color:${item.stock < 30 ? 'var(--p3)' : 'var(--ink)'}">
+        ${item.stock}
+        ${item.stock < 30 ? '<span style="font-size:10px;color:var(--p3);display:block;font-weight:500">⚠ Low</span>' : ''}
+      </td>
+      <td style="font-weight:600;color:var(--g3)">${fmtP(item.pricePerStem || 0)}</td>
+      <td style="font-size:13px">${item.arrived}</td>
+      <td style="font-size:13px">${item.lifeDays} days</td>
+      <td style="font-size:13px">${bestBefore(item)}</td>
+      <td>
+        <div class="fresh-bar"><div class="fresh-fill ${fillCls}" style="width:${pct}%"></div></div>
+      </td>
+      <td style="font-weight:700;color:${pct > 60 ? 'var(--g3)' : pct > 25 ? '#FFA000' : 'var(--p3)'}">${pct}%</td>
+      <td>${freshTag(pct)}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
+          <button class="btn ${item.onSale ? 'btn-green' : 'btn-danger'} btn-sm" onclick="openSaleModal('${item.id}')">${item.onSale ? `🏷️ ${fmtP(item.salePrice)}` : 'Mark Sale'}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderAlerts(inv);
+  renderRestock(inv);
+  renderMetrics();
+}
+
+function renderAlerts(inv) {
+  const el = document.getElementById('freshness-alerts');
+  const alerts = inv.filter(i => i.freshness <= 40).sort((a,b) => a.freshness - b.freshness);
+  if (!alerts.length) {
+    el.innerHTML = '<div class="alert alert-g">✅ All inventory is in good condition!</div>';
+    return;
+  }
+  el.innerHTML = alerts.map(i => `
+    <div class="alert ${i.freshness <= 15 ? 'alert-r' : 'alert-a'}">
+      ${i.icon} <strong>${i.name}</strong> — ${i.freshness}% freshness · ${i.stock} stems remaining
+      ${i.freshness <= 15 ? '<br><small>Consider immediate markdown or disposal</small>' : ''}
+    </div>`).join('');
+}
+
+function renderRestock(inv) {
+  const el = document.getElementById('restock-list');
+  const low = inv.filter(i => i.stock < 50 || i.freshness < 30);
+  if (!low.length) {
+    el.innerHTML = '<p style="font-size:13px;color:var(--muted)">All items are well-stocked!</p>';
+    return;
+  }
+  el.innerHTML = low.map(i => `
+    <div class="restock-item">
+      <div>${i.icon} <strong>${i.name}</strong><div style="font-size:11px;color:var(--muted)">${i.stock} stems · ${i.freshness}% fresh</div></div>
+      <span class="tag ${i.stock < 30 ? 'tag-p' : 'tag-a'}">${i.stock < 30 ? 'Urgent' : 'Soon'}</span>
+    </div>`).join('');
+}
+
+function getModalBody(item) {
+  const p = item || {};
+  return `
+    <div class="fg2">
+      <div class="ff"><label>Flower name *</label><input id="inv-name" value="${p.name||''}" placeholder="e.g. Red Roses"/></div>
+      <div class="ff"><label>Emoji icon *</label><input id="inv-icon" value="${p.icon||''}" placeholder="🌹"/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Stock (stems) *</label><input id="inv-stock" type="number" value="${p.stock||''}" placeholder="100" min="0"/></div>
+      <div class="ff"><label>Base price per stem (₱) *</label><input id="inv-price" type="number" value="${p.pricePerStem||''}" placeholder="45" min="1"/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Date arrived *</label><input id="inv-arrived" value="${p.arrived||'Mar 19'}" placeholder="Mar 19"/></div>
+      <div class="ff"><label>Shelf life (days) *</label><input id="inv-life" type="number" value="${p.lifeDays||7}" placeholder="7" min="1"/></div>
+    </div>
+    <div class="ff"><label>Linked flower product ID (optional)</label><input id="inv-flower-id" value="${p.flowerId||''}" placeholder="e.g. f1 (links to product)"/></div>
+    <div style="background:var(--g9);border-radius:var(--r);padding:10px;font-size:12px;color:var(--g2);margin-bottom:1rem;border:1px solid var(--g7)">
+      ℹ Freshness is auto-calculated from arrival date and shelf life. Stock is only deducted after admin validates payment.
+    </div>
+    <button class="btn btn-green" style="width:100%;justify-content:center" onclick="saveInventory()">
+      ${item ? '✓ Save Changes' : '+ Add to Inventory'}
+    </button>`;
+}
+
+function openAddModal() {
+  editingInvId = null;
+  document.getElementById('add-modal-title').textContent = 'Add Stock Entry';
+  document.getElementById('add-modal-body').innerHTML = getModalBody(null);
+  openModal('add-modal');
+}
+
+function openEditModal(id) {
+  const item = getInventory().find(i => i.id === id);
+  if (!item) return;
+  editingInvId = id;
+  document.getElementById('add-modal-title').textContent = 'Edit: ' + item.name;
+  document.getElementById('add-modal-body').innerHTML = getModalBody(item);
+  openModal('add-modal');
+}
+
+function saveInventory() {
+  const name = document.getElementById('inv-name').value.trim();
+  const icon = document.getElementById('inv-icon').value.trim();
+  const stock = parseInt(document.getElementById('inv-stock').value);
+  const pricePerStem = parseFloat(document.getElementById('inv-price').value);
+  const arrived = document.getElementById('inv-arrived').value.trim();
+  const lifeDays = parseInt(document.getElementById('inv-life').value);
+  const flowerId = document.getElementById('inv-flower-id').value.trim();
+  if (!name || !icon || isNaN(stock) || isNaN(pricePerStem) || !arrived || isNaN(lifeDays)) {
+    toast('Please fill in all required fields.', 'err'); return;
+  }
+  const inv = getInventory();
+  const daysPassed = 0; // new arrivals are 100% fresh
+  const freshness = 100;
+  if (editingInvId) {
+    const idx = inv.findIndex(i => i.id === editingInvId);
+    if (idx !== -1) {
+      inv[idx] = { ...inv[idx], name, icon, stock, pricePerStem, arrived, lifeDays, flowerId: flowerId||inv[idx].flowerId, freshness: inv[idx].freshness };
+    }
+    toast('✓ Inventory updated: ' + name);
+  } else {
+    inv.push({ id: 'i' + Date.now(), flowerId: flowerId || '', name, icon, stock, pricePerStem, arrived, lifeDays, freshness });
+    toast('✓ ' + name + ' added to inventory!');
+    // Also update product stock if linked
+    if (flowerId) {
+      const prods = FC.getProducts();
+      const p = prods.find(x => x.id === flowerId);
+      if (p) { p.stock = stock; FC.saveProducts(prods); }
+    }
+  }
+  FC.saveInventory(inv);
+  closeModal('add-modal');
+  renderTable();
+}
+
+function openSaleModal(id) {
+  const item = getInventory().find(i => i.id === id);
+  if (!item) return;
+  // Suggest a sale price based on freshness
+  const suggested = Math.max(10, Math.round(item.pricePerStem * (item.freshness / 100)));
+  const isOnSale = item.onSale;
+  document.getElementById('sale-modal-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)">
+      <div style="width:48px;height:48px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:26px">${item.icon}</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--g1)">${item.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Current price: <strong style="color:var(--g3)">${fmtP(item.pricePerStem)}/stem</strong> · Freshness: <strong style="color:${item.freshness>60?'var(--g3)':item.freshness>25?'#FFA000':'var(--p3)'}">${item.freshness}%</strong></div>
+      </div>
+    </div>
+    ${isOnSale ? `<div class="alert alert-g" style="margin-bottom:1rem">✅ This flower is currently on sale at <strong>${fmtP(item.salePrice)}/stem</strong>.</div>` : ''}
+    <div class="fg2">
+      <div class="ff"><label>Original price (₱/stem)</label>
+        <input type="number" id="sale-orig" value="${item.pricePerStem}" min="1" style="background:var(--soft)" readonly/>
+      </div>
+      <div class="ff"><label>Sale price (₱/stem) *</label>
+        <input type="number" id="sale-price" value="${isOnSale ? item.salePrice : suggested}" min="1" oninput="updateSalePreview(${item.pricePerStem})"/>
+      </div>
+    </div>
+    <div id="sale-preview" style="background:var(--p9);border:1px solid var(--p6);border-radius:var(--r);padding:10px;font-size:12px;color:var(--p2);margin-bottom:1rem"></div>
+    <div class="ff"><label>Reason / Label</label>
+      <select id="sale-reason">
+        <option value="Low freshness — markdown">Low freshness — markdown</option>
+        <option value="Near expiry — clearance">Near expiry — clearance</option>
+        <option value="Seasonal special">Seasonal special</option>
+        <option value="Overstock reduction">Overstock reduction</option>
+        <option value="Admin discount">Admin discount</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-pink" style="flex:1;justify-content:center" onclick="confirmSale('${id}')">🏷️ Apply Sale Price</button>
+      ${isOnSale ? `<button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="removeSale('${id}')">✕ Remove Sale</button>` : ''}
+      <button class="btn btn-ghost" style="justify-content:center;min-width:80px" onclick="closeModal('sale-modal')">Cancel</button>
+    </div>`;
+  openModal('sale-modal');
+  updateSalePreview(item.pricePerStem);
+}
+
+function updateSalePreview(original) {
+  const salePrice = parseFloat(document.getElementById('sale-price')?.value) || 0;
+  const el = document.getElementById('sale-preview');
+  if (!el) return;
+  if (!salePrice || salePrice >= original) {
+    el.textContent = 'Sale price must be less than the original price.';
+    el.style.background = '#FFF8E1'; el.style.borderColor = '#FFD54F'; el.style.color = '#E65100';
+    return;
+  }
+  const savings = original - salePrice;
+  const pct = Math.round((savings / original) * 100);
+  el.innerHTML = `🏷️ <strong>${pct}% off</strong> — customers save ${fmtP(savings)} per stem. New price: <strong>${fmtP(salePrice)}/stem</strong>`;
+  el.style.background = 'var(--p9)'; el.style.borderColor = 'var(--p6)'; el.style.color = 'var(--p2)';
+}
+
+function confirmSale(id) {
+  const inv = getInventory();
+  const item = inv.find(i => i.id === id);
+  if (!item) return;
+  const salePrice = parseFloat(document.getElementById('sale-price').value);
+  const reason = document.getElementById('sale-reason').value;
+  if (!salePrice || salePrice <= 0) { toast('Please enter a valid sale price.', 'err'); return; }
+  if (salePrice >= item.pricePerStem) { toast('Sale price must be lower than the original price.', 'err'); return; }
+
+  // Mark inventory item as on sale
+  item.onSale = true;
+  item.salePrice = salePrice;
+  item.saleReason = reason;
+  FC.saveInventory(inv);
+
+  // Update the linked product in the shop
+  if (item.flowerId) {
+    const prods = FC.getProducts();
+    const p = prods.find(x => x.id === item.flowerId);
+    if (p) {
+      p.oldPrice = p.price;
+      p.price = salePrice;
+      p.badge = 'Sale';
+      p.category = 'sale';
+      FC.saveProducts(prods);
+    }
+  }
+  closeModal('sale-modal');
+  toast(`${item.icon} ${item.name} is now on sale at ${fmtP(salePrice)}/stem!`);
+  renderTable();
+}
+
+function removeSale(id) {
+  const inv = getInventory();
+  const item = inv.find(i => i.id === id);
+  if (!item) return;
+  const originalPrice = item.pricePerStem;
+  item.onSale = false;
+  delete item.salePrice;
+  delete item.saleReason;
+  FC.saveInventory(inv);
+
+  // Restore linked product price
+  if (item.flowerId) {
+    const prods = FC.getProducts();
+    const p = prods.find(x => x.id === item.flowerId);
+    if (p && p.oldPrice) {
+      p.price = p.oldPrice;
+      delete p.oldPrice;
+      p.badge = '';
+      p.category = 'individual';
+      FC.saveProducts(prods);
+    }
+  }
+  closeModal('sale-modal');
+  toast(`Sale removed from ${item.name}.`);
+  renderTable();
+}
+
+function refreshFreshness() {
+  // Simulate freshness tick
+  const inv = getInventory();
+  inv.forEach(i => { i.freshness = Math.max(0, i.freshness - Math.floor(Math.random() * 3)); });
+  FC.saveInventory(inv);
+  renderTable();
+  toast('Freshness refreshed!');
+}
+
+renderTable();
+</script>
+</body>
+</html>

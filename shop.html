@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Shop</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:1.2rem}
+.prod-card{background:white;border-radius:var(--rl);border:1px solid var(--line);overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
+.prod-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.09)}
+.pc-img{height:155px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
+.pc-bdg{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.4px}
+.pc-wl{position:absolute;top:8px;right:8px;background:white;border:none;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.12);transition:all .2s;display:flex;align-items:center;justify-content:center}
+.pc-wl:hover,.pc-wl.on{color:var(--p3);transform:scale(1.15)}
+.pc-body{padding:10px 12px;background:white}
+.pc-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.pc-sub{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:5px}
+.pc-stars{font-size:11px;color:#D4891A}
+.pc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.pc-price{font-size:14px;font-weight:700;color:var(--g3)}
+.pc-old{font-size:11px;color:var(--muted);text-decoration:line-through;margin-left:3px}
+.add-btn{background:linear-gradient(135deg,var(--g5),var(--g3));border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(46,150,82,.3)}
+.add-btn:hover{transform:scale(1.12)}
+.stem-badge{font-size:9px;background:var(--g9);color:var(--g3);padding:2px 6px;border-radius:6px;font-weight:700;margin-left:4px}
+.cat-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1rem}
+.cat-pill{background:white;border:1.5px solid var(--line);padding:6px 14px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .2s}
+.cat-pill:hover{border-color:var(--g5);color:var(--g2)}
+.cat-pill.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
+/* stem modal */
+.stem-modal-product{display:flex;gap:1rem;align-items:center;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)}
+.stem-modal-icon{font-size:44px;width:70px;height:70px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<nav class="app-nav" id="top-nav"></nav>
+
+<div class="main-area no-sidebar">
+  <div id="promo-banner-wrap"></div>
+  <!-- Mini hero -->
+  <div style="background:linear-gradient(135deg,var(--g9) 0%,white 40%,var(--p9) 100%);padding:2rem 2.5rem;display:flex;gap:2rem;align-items:center;border-bottom:1px solid var(--line);overflow:hidden;position:relative">
+    <div style="flex:1;max-width:520px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--p4);margin-bottom:.5rem">FleurChase Collection</div>
+      <h2 style="font-family:var(--font-d);font-size:40px;font-weight:700;color:var(--g1);line-height:1.05;margin-bottom:.7rem">Every bloom <em style="color:var(--p3);font-style:italic">tells</em> a story</h2>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;max-width:380px">Pre-order handcrafted arrangements or mix your own stems. Delivered fresh across Albay.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="customize.html" class="btn btn-pink">🎨 Build Custom Bouquet</a>
+        <a href="promos.html" class="btn btn-outline">🏷️ See Promos</a>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05)"><div style="font-size:22px;margin-bottom:.3rem">📅</div><strong style="font-size:10px;display:block;color:var(--ink)">Pre-order</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">48hr advance</p></div>
+      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05);margin-top:16px"><div style="font-size:22px;margin-bottom:.3rem">💳</div><strong style="font-size:10px;display:block;color:var(--ink)">Multi-Pay</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">GCash, COD, Maya</p></div>
+    </div>
+  </div>
+
+  <div class="p-page">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+      <div><div class="page-title">Our <span style="color:var(--p3);font-style:italic">Collection</span></div><div class="page-sub" id="count-lbl" style="margin-bottom:0"></div></div>
+      <button class="btn btn-ghost btn-sm" onclick="resetFilter()">Reset</button>
+    </div>
+    <div class="cat-row" id="cat-row">
+      <div class="cat-pill active" onclick="filterCat('all',this)">🌺 All</div>
+      <div class="cat-pill" onclick="filterCat('ready-made',this)">💐 Ready-Made</div>
+      <div class="cat-pill" onclick="filterCat('individual',this)">🌹 Individual Stems</div>
+      <div class="cat-pill" onclick="filterCat('customized',this)">🎨 Customized</div>
+      <div class="cat-pill" onclick="filterCat('seasonal',this)">🌸 Seasonal</div>
+      <div class="cat-pill" onclick="filterCat('gift-set',this)">🎁 Gift Sets</div>
+      <div class="cat-pill" onclick="filterCat('promo',this)">🏷️ Promos</div>
+      <div class="cat-pill" onclick="filterCat('sale',this)">🔖 On Sale</div>
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+
+  <div id="footer-wrap"></div>
+</div>
+
+<!-- Stem qty modal -->
+<div class="modal-overlay" id="stem-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head"><h3 id="sm-title">Add Stems</h3><button class="modal-close" onclick="closeModal('stem-modal')">✕</button></div>
+    <div class="stem-modal-product">
+      <div class="stem-modal-icon" id="sm-icon"></div>
+      <div><div style="font-size:15px;font-weight:600;color:var(--ink)" id="sm-name"></div>
+        <div style="font-size:13px;color:var(--g3);font-weight:600;margin-top:3px" id="sm-price-unit"></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="sm-stock"></div>
+      </div>
+    </div>
+    <div class="ff"><label>Number of stems</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+        <div id="stem-qty-ctrl"></div>
+        <div style="font-size:13px;color:var(--muted)">stems</div>
+        <div style="font-size:15px;font-weight:700;color:var(--g3);margin-left:auto" id="sm-total-price">₱0</div>
+      </div>
+    </div>
+    <button class="btn btn-green" style="width:100%;margin-top:1rem" id="sm-confirm">🛒 Add to Cart</button>
+  </div>
+</div>
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+let _cat='all', _stemProd=null, _stemQty=1;
+const BADGE_CLS={'Sale':'tag-p','On Sale':'tag-p','Promo':'tag-g','Popular':'tag-g','New':'tag-gold','Seasonal':'tag-b','Premium':'tag-gold'};
+
+window.onload=()=>{
+  const user=requireAuth('customer'); if(!user) return;
+  buildTopNav('shop');
+  renderPromoBanner('promo-banner-wrap');
+  renderFooter('footer-wrap',false);
+  renderProducts('all');
+};
+
+function renderProducts(cat){
+  const prods=FC.getProducts();
+  const list=cat==='all'?prods:prods.filter(p=>p.category===cat);
+  document.getElementById('count-lbl').textContent=list.length+' product'+(list.length!==1?'s':'');
+  const g=document.getElementById('shop-grid');
+  if(!list.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No products found</h3><p>Check back soon!</p></div>`;return;}
+  g.innerHTML=list.map(p=>{
+    const isFlower=p.type==='flower';
+    const bdgCls=BADGE_CLS[p.badge]||'tag-w';
+    // Show uploaded photo if available, else clean placeholder
+    const imgContent = p.img
+      ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${imgPlaceholder(72)}</div>`;
+    return `<div class="prod-card">
+      <div class="pc-img" style="background:${p.bg||'var(--soft)'}">
+        ${imgContent}
+        ${p.badge?`<span class="pc-bdg ${bdgCls}">${p.badge}</span>`:''}
+        <button class="pc-wl" onclick="event.stopPropagation();this.classList.toggle('on');toast(this.classList.contains('on')?'Added to wishlist 💖':'Removed from wishlist')">♡</button>
+      </div>
+      <div class="pc-body">
+        <div class="pc-name">${p.name}${isFlower?`<span class="stem-badge">per stem</span>`:''}</div>
+        <div class="pc-sub">${p.desc}</div>
+        <div class="pc-stars">${'★'.repeat(Math.floor(p.rating))}${p.rating%1>=.5?'⭐':''} <span style="color:var(--muted);font-size:10px">(${p.reviews})</span></div>
+        <div class="pc-foot">
+          <div><span class="pc-price">${fmtP(p.price)}</span>${p.oldPrice?`<span class="pc-old">${fmtP(p.oldPrice)}</span>`:''}</div>
+          <button class="add-btn" onclick="${isFlower?`openStemModal('${p.id}')`:`addToCart('${p.id}',1)`}" title="${isFlower?'Select stems':'Add to cart'}">+</button>
+        </div>
+        ${isFlower?`<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem · Select quantity →</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCat(cat,btn){
+  _cat=cat;
+  document.querySelectorAll('.cat-pill').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderProducts(cat);
+}
+function resetFilter(){
+  _cat='all';
+  document.querySelectorAll('.cat-pill').forEach((c,i)=>{c.classList.toggle('active',i===0);});
+  renderProducts('all');
+}
+
+function addToCart(productId, qty, stems=0){
+  const p=FC.getProducts().find(x=>x.id===productId); if(!p) return;
+  if(p.stock<qty){toast('Not enough stock!','err');return;}
+  const cart=FC.getCart();
+  const cartId=stems>0?productId+'_stem':productId;
+  const ex=cart.find(i=>i.cartId===cartId);
+  if(ex){ex.qty+=qty; if(stems>0)ex.stems+=stems;}
+  else cart.push({cartId,productId:p.id,name:stems>0?p.name+' (stems)':p.name,img:p.img||null,type:p.type,price:p.price,qty,stems,checked:true});
+  FC.saveCart(cart);
+  updateCartBadge();
+  toast(`"${p.name}" added to cart!`);
+}
+
+// ── STEM MODAL ──
+function openStemModal(productId){
+  const p=FC.getProducts().find(x=>x.id===productId); if(!p) return;
+  _stemProd=p; _stemQty=1;
+  document.getElementById('sm-title').textContent='Add '+p.name;
+  // Show image if available, else clean placeholder
+  const iconEl=document.getElementById('sm-icon');
+  if(p.img){iconEl.innerHTML=`<img src="${p.img}" style="width:60px;height:60px;object-fit:cover;border-radius:var(--r)"/>`;}
+  else{iconEl.innerHTML=imgPlaceholder(60);}
+  document.getElementById('sm-name').textContent=p.name;
+  document.getElementById('sm-price-unit').textContent=fmtP(p.price)+' per stem';
+  document.getElementById('sm-stock').textContent='';
+  const ctrlId='stem-qty-main';
+  document.getElementById('stem-qty-ctrl').innerHTML=makeQtyCtrl(1,1,Math.min(p.stock,50),ctrlId);
+  bindQtyCtrl(ctrlId,1,Math.min(p.stock,50),(v)=>{_stemQty=v;updateStemTotal();});
+  updateStemTotal();
+  document.getElementById('sm-confirm').onclick=()=>confirmStem();
+  openModal('stem-modal');
+}
+function updateStemTotal(){
+  if(!_stemProd)return;
+  document.getElementById('sm-total-price').textContent=fmtP(_stemProd.price*_stemQty);
+}
+function confirmStem(){
+  if(!_stemProd)return;
+  const cart=FC.getCart();
+  const cartId='stem_'+_stemProd.id;
+  const ex=cart.find(i=>i.cartId===cartId);
+  if(ex){ex.qty+=_stemQty;ex.stems+=_stemQty;}
+  else cart.push({cartId,productId:_stemProd.id,name:_stemProd.name,img:_stemProd.img||null,type:'flower',price:_stemProd.price,qty:_stemQty,stems:_stemQty,checked:true,perStem:true});
+  FC.saveCart(cart);
+  updateCartBadge();
+  closeModal('stem-modal');
+  toast(`${_stemQty} stem(s) of ${_stemProd.name} added!`);
+}
+</script>
+</body>
+</html>

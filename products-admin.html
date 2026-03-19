@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Products & Add-ons</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.page-tabs{display:flex;background:var(--soft);border-radius:var(--r);padding:3px;gap:3px;width:fit-content;margin-bottom:1.5rem}
+.ptab{padding:8px 22px;border-radius:8px;border:none;font-family:var(--font-b);font-size:13px;font-weight:500;cursor:pointer;background:none;color:var(--muted);transition:all .2s}
+.ptab.active{background:white;color:var(--g2);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.filter-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1rem}
+.filt-btn{padding:5px 13px;border-radius:18px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .2s}
+.filt-btn:hover{border-color:var(--g5);color:var(--g2)}.filt-btn.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
+.star-rating{color:#D4891A;font-size:12px}
+/* Upload zone — the hidden file input lives OUTSIDE this zone so innerHTML rewrites never destroy it */
+.img-upload-zone{border:2px dashed var(--line);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--soft);position:relative}
+.img-upload-zone:hover{border-color:var(--g5);background:var(--g9)}
+.img-upload-zone.has-img{border-color:var(--g4);background:var(--g9);padding:.5rem}
+.img-preview{max-width:100%;max-height:140px;border-radius:var(--r);object-fit:cover;display:block;margin:0 auto}
+.prod-img{width:42px;height:42px;border-radius:var(--r);object-fit:cover;flex-shrink:0;display:block}
+.prod-thumb-wrap{width:42px;height:42px;border-radius:var(--r);background:var(--soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.cf-btn{padding:5px 12px;border-radius:16px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:11px;cursor:pointer;color:var(--muted);transition:all .2s}
+.cf-btn:hover{border-color:var(--g5);color:var(--g2)}.cf-btn.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
+    <div><div class="page-title">Products &amp; Add-ons</div><div class="page-sub" style="margin-bottom:0">Manage bouquets, flower stems, and add-on items</div></div>
+    <button class="btn btn-green btn-sm" id="add-btn" onclick="openAddModal()">+ Add Product</button>
+  </div>
+
+  <div class="page-tabs">
+    <button class="ptab active" id="ptab-products" onclick="switchTab('products',this)">Products</button>
+    <button class="ptab" id="ptab-addons" onclick="switchTab('addons',this)">Add-ons</button>
+  </div>
+
+  <!-- PRODUCTS TAB -->
+  <div id="tab-products">
+    <div class="filter-bar" id="prod-filter-bar">
+      <button class="filt-btn active" onclick="setProdFilter('all',this)">All</button>
+      <button class="filt-btn" onclick="setProdFilter('bouquet',this)">Bouquets</button>
+      <button class="filt-btn" onclick="setProdFilter('flower',this)">Stems</button>
+      <button class="filt-btn" onclick="setProdFilter('ready-made',this)">Ready-Made</button>
+      <button class="filt-btn" onclick="setProdFilter('seasonal',this)">Seasonal</button>
+      <button class="filt-btn" onclick="setProdFilter('gift-set',this)">Gift Sets</button>
+      <button class="filt-btn" onclick="setProdFilter('promo',this)">Promos</button>
+      <button class="filt-btn" onclick="setProdFilter('sale',this)">On Sale</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <h3>Products (<span id="prod-count">0</span>)</h3>
+        <input id="prod-search" placeholder="Search..." style="border:1.5px solid var(--line);border-radius:var(--r);padding:7px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:var(--soft);width:180px" oninput="renderProducts()"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Product</th><th>Type</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="prod-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD-ONS TAB -->
+  <div id="tab-addons" style="display:none">
+    <div class="filter-bar" id="addon-filter-bar">
+      <button class="cf-btn active" onclick="setAddonFilter('all',this)">All</button>
+      <button class="cf-btn" onclick="setAddonFilter('chocolates',this)">Chocolates</button>
+      <button class="cf-btn" onclick="setAddonFilter('toys',this)">Teddies</button>
+      <button class="cf-btn" onclick="setAddonFilter('cards',this)">Cards</button>
+      <button class="cf-btn" onclick="setAddonFilter('balloons',this)">Balloons</button>
+      <button class="cf-btn" onclick="setAddonFilter('extras',this)">Extras</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <h3>Add-ons (<span id="addon-count">0</span>)</h3>
+        <input id="addon-search" placeholder="Search..." style="border:1.5px solid var(--line);border-radius:var(--r);padding:7px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:var(--soft);width:180px" oninput="renderAddons()"/>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="addon-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="prod-modal">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-head"><h3 id="prod-modal-title">Add Product</h3><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
+    <div id="prod-modal-body"></div>
+  </div>
+</div>
+
+<!-- ADDON MODAL -->
+<div class="modal-overlay" id="addon-modal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-head"><h3 id="addon-modal-title">Add Add-on</h3><button class="modal-close" onclick="closeModal('addon-modal')">✕</button></div>
+    <div id="addon-modal-body"></div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="del-modal">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-head"><h3>Confirm Delete</h3><button class="modal-close" onclick="closeModal('del-modal')">✕</button></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">Delete <strong id="del-name"></strong>? This cannot be undone.</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" style="flex:1;justify-content:center" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeModal('del-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('products-admin');
+buildAdminSidebar('products-admin.html');
+
+let activeTab='products';
+let prodFilter='all', addonFilter='all';
+let editingProdId=null, editingAddonId=null, deletingId=null, deleteType='prod';
+// pendingImg holds base64 of the currently-staged image for both product AND addon modals
+let pendingImg=null;
+let pendingAddonImg=null;
+
+const TYPE_BADGE={bouquet:'<span class="tag tag-g">Bouquet</span>',flower:'<span class="tag tag-p">Stem</span>'};
+const CAT_BADGE={'ready-made':'tag-g','seasonal':'tag-b','gift-set':'tag-gold','promo':'tag-p','sale':'tag-p','customized':'tag-a','individual':'tag-p'};
+const ADDON_CAT_BADGE={chocolates:'tag-p',toys:'tag-gold',cards:'tag-b',balloons:'tag-g',extras:'tag-a'};
+
+// ── TAB SWITCH ──────────────────────────────────────────────
+function switchTab(tab,btn){
+  activeTab=tab;
+  document.getElementById('tab-products').style.display=tab==='products'?'block':'none';
+  document.getElementById('tab-addons').style.display=tab==='addons'?'block':'none';
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('add-btn').textContent=tab==='products'?'+ Add Product':'+ Add Add-on';
+  document.getElementById('add-btn').onclick=()=>openAddModal();
+}
+
+// ── PRODUCT THUMBNAIL (table row) ───────────────────────────
+function prodThumb(p){
+  if(p.img) return `<img src="${p.img}" class="prod-img"/>`;
+  return `<div class="prod-thumb-wrap">${imgPlaceholder(42)}</div>`;
+}
+
+// ── RENDER PRODUCTS ─────────────────────────────────────────
+function setProdFilter(f,btn){
+  prodFilter=f;
+  document.querySelectorAll('#prod-filter-bar .filt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderProducts();
+}
+function renderProducts(){
+  const q=document.getElementById('prod-search').value.toLowerCase();
+  let list=FC.getProducts();
+  if(prodFilter!=='all') list=list.filter(p=>p.type===prodFilter||p.category===prodFilter);
+  if(q) list=list.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));
+  document.getElementById('prod-count').textContent=list.length;
+  document.getElementById('prod-tbody').innerHTML=list.length?list.map(p=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px">${prodThumb(p)}<div>
+        <div style="font-size:13px;font-weight:600">${p.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${(p.desc||'').slice(0,45)}${(p.desc||'').length>45?'...':''}</div>
+      </div></div></td>
+      <td>${TYPE_BADGE[p.type]||p.type}</td>
+      <td><span class="tag ${CAT_BADGE[p.category]||'tag-w'}">${p.category}</span></td>
+      <td style="font-weight:600;color:var(--g3)">${fmtP(p.price)}${p.maxPrice?`<span style="font-size:11px;color:var(--muted)">–${fmtP(p.maxPrice)}</span>`:''}</td>
+      <td>${p.stock>0?p.stock:'<span style="color:var(--p3);font-weight:600">Out</span>'}</td>
+      <td class="star-rating">★${p.rating||4.5} <span style="color:var(--muted);font-size:10px">(${p.reviews||0})</span></td>
+      <td><span class="tag ${p.stock>0?'tag-g':'tag-p'}">${p.stock>0?'Active':'Out of Stock'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditProd('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="openDel('${p.id}','${(p.name||'').replace(/'/g,"\\'")}','prod')">Del</button>
+      </div></td>
+    </tr>`).join(''):`<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No products found</td></tr>`;
+}
+
+// ── PRODUCT MODAL ────────────────────────────────────────────
+// KEY: the hidden <input type="file"> is injected into the modal body OUTSIDE img-zone,
+// so rewriting img-zone.innerHTML never destroys it, making repeat uploads work.
+function getProdModalBody(p){
+  const pv=p||{};
+  pendingImg=pv.img||null;
+  const zoneContent=pendingImg
+    ?`<img src="${pendingImg}" class="img-preview"/><div style="font-size:11px;color:var(--g3);margin-top:5px">Photo ready — click to change</div>`
+    :`<div style="margin-bottom:.4rem">${imgPlaceholder(36)}</div><div style="font-size:12px;font-weight:600;color:var(--ink)">Upload Photo</div><div style="font-size:11px;color:var(--muted)">JPG, PNG — max 2MB · Click or drag</div>`;
+  return `
+    <div class="fg2">
+      <div class="ff"><label>Type *</label>
+        <select id="p-type" onchange="onTypeChange()">
+          <option value="bouquet" ${pv.type==='bouquet'?'selected':''}>Bouquet</option>
+          <option value="flower" ${pv.type==='flower'?'selected':''}>Individual Stem</option>
+        </select>
+      </div>
+      <div class="ff"><label>Category *</label>
+        <select id="p-cat">
+          <optgroup label="Bouquet">
+            <option value="ready-made" ${pv.category==='ready-made'?'selected':''}>Ready-Made</option>
+            <option value="seasonal" ${pv.category==='seasonal'?'selected':''}>Seasonal</option>
+            <option value="customized" ${pv.category==='customized'?'selected':''}>Customized</option>
+            <option value="gift-set" ${pv.category==='gift-set'?'selected':''}>Gift Set</option>
+            <option value="promo" ${pv.category==='promo'?'selected':''}>Promo</option>
+            <option value="sale" ${pv.category==='sale'?'selected':''}>Sale</option>
+          </optgroup>
+          <optgroup label="Stems">
+            <option value="individual" ${pv.category==='individual'?'selected':''}>Individual</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <div class="ff"><label>Name *</label><input id="p-name" value="${pv.name||''}" placeholder="e.g. Red Rose Bouquet"/></div>
+    <div class="ff"><label>Description</label><textarea id="p-desc" style="border:1.5px solid var(--line);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;width:100%;resize:none;height:55px;outline:none;background:var(--soft)">${pv.desc||''}</textarea></div>
+    <div class="ff"><label>Product Photo</label>
+      <!-- File input is a sibling of img-zone, NOT inside it.
+           This means rewriting img-zone.innerHTML is always safe and
+           document.getElementById('prod-img') always finds this input. -->
+      <input type="file" id="prod-img" accept="image/*" style="display:none" onchange="handleProdImg(this)"/>
+      <div class="img-upload-zone ${pendingImg?'has-img':''}" id="img-zone"
+        onclick="document.getElementById('prod-img').click()"
+        ondragover="this.classList.add('drag');event.preventDefault()"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="dropProdImg(event)">
+        ${zoneContent}
+      </div>
+      <button type="button" id="remove-img-btn"
+        onclick="removeProdImg()"
+        style="margin-top:4px;font-size:11px;color:var(--p3);background:none;border:none;cursor:pointer;padding:0;display:${pendingImg?'inline':'none'}">
+        Remove photo
+      </button>
+    </div>
+    <div class="fg3">
+      <div class="ff"><label>Base price (₱) *</label><input id="p-price" type="number" value="${pv.price||''}" min="1"/></div>
+      <div class="ff" id="p-maxprice-row"><label>Max price (₱)</label><input id="p-maxprice" type="number" value="${pv.maxPrice||''}" placeholder="optional"/></div>
+      <div class="ff"><label>Stock *</label><input id="p-stock" type="number" value="${pv.stock||''}" min="0"/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Old price (₱)</label><input id="p-oldprice" type="number" value="${pv.oldPrice||''}" placeholder="Sale items"/></div>
+      <div class="ff"><label>Badge label</label><input id="p-badge" value="${pv.badge||''}" placeholder="New / Sale..."/></div>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Rating</label><input id="p-rating" type="number" value="${pv.rating||4.5}" min="0" max="5" step="0.1"/></div>
+      <div class="ff"><label>Reviews</label><input id="p-reviews" type="number" value="${pv.reviews||0}" min="0"/></div>
+    </div>
+    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="saveProd()">${p?'Save Changes':'Add Product'}</button>`;
+}
+
+function onTypeChange(){
+  const t=document.getElementById('p-type').value;
+  const mp=document.getElementById('p-maxprice-row');if(mp)mp.style.display=t==='flower'?'none':'';
+  if(t==='flower'){const c=document.getElementById('p-cat');if(c)c.value='individual';}
+}
+
+// ── PRODUCT IMAGE UPLOAD ─────────────────────────────────────
+// handleProdImg: reads the file, sets pendingImg, then rewrites only img-zone's
+// innerHTML (safe because the <input> lives outside the zone as a sibling).
+function handleProdImg(inp){
+  if(!inp||!inp.files||!inp.files.length) return;
+  const file=inp.files[0];
+  if(!file.type.startsWith('image/')){toast('Please upload an image file.','err');return;}
+  if(file.size>2*1024*1024){toast('Image must be under 2MB.','err');return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    pendingImg=e.target.result;
+    // Rewrite zone visual — safe because #prod-img is a sibling, not inside this div
+    const z=document.getElementById('img-zone');
+    if(z){
+      z.classList.add('has-img');
+      z.innerHTML=`<img src="${pendingImg}" class="img-preview"/>
+        <div style="font-size:11px;color:var(--g3);margin-top:5px">${file.name} — click to change</div>`;
+    }
+    // Show remove button
+    const rb=document.getElementById('remove-img-btn');
+    if(rb) rb.style.display='inline';
+    toast('Photo uploaded!');
+  };
+  r.readAsDataURL(file);
+}
+function dropProdImg(ev){
+  ev.preventDefault();
+  document.getElementById('img-zone')?.classList.remove('drag');
+  const f=ev.dataTransfer?.files?.[0];
+  if(!f) return;
+  // Re-use the existing hidden input via DataTransfer
+  const inp=document.getElementById('prod-img');
+  if(inp){const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;handleProdImg(inp);}
+}
+function removeProdImg(){
+  pendingImg=null;
+  const z=document.getElementById('img-zone');
+  if(z){
+    z.classList.remove('has-img');
+    z.innerHTML=`<div style="margin-bottom:.4rem">${imgPlaceholder(36)}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--ink)">Upload Photo</div>
+      <div style="font-size:11px;color:var(--muted)">JPG, PNG — max 2MB · Click or drag</div>`;
+  }
+  // Reset the file input value so the same file can be re-selected
+  const inp=document.getElementById('prod-img');
+  if(inp) inp.value='';
+  const rb=document.getElementById('remove-img-btn');
+  if(rb) rb.style.display='none';
+}
+
+// ── OPEN / SAVE PRODUCT ──────────────────────────────────────
+function openAddModal(){
+  if(activeTab==='addons'){openAddAddon();return;}
+  editingProdId=null;pendingImg=null;
+  document.getElementById('prod-modal-title').textContent='Add Product';
+  document.getElementById('prod-modal-body').innerHTML=getProdModalBody(null);
+  openModal('prod-modal');onTypeChange();
+}
+function openEditProd(id){
+  const p=FC.getProducts().find(x=>x.id===id);if(!p)return;
+  editingProdId=id;
+  // pendingImg is set inside getProdModalBody but we also pre-set it here
+  // so it's available if saveProd is called before any upload
+  pendingImg=p.img||null;
+  document.getElementById('prod-modal-title').textContent='Edit: '+p.name;
+  document.getElementById('prod-modal-body').innerHTML=getProdModalBody(p);
+  openModal('prod-modal');onTypeChange();
+}
+function saveProd(){
+  const name=document.getElementById('p-name').value.trim();
+  const type=document.getElementById('p-type').value;
+  const category=document.getElementById('p-cat').value;
+  const price=parseFloat(document.getElementById('p-price').value);
+  const stock=parseInt(document.getElementById('p-stock').value);
+  if(!name||!price||isNaN(stock)){toast('Fill in name, price and stock.','err');return;}
+  const products=FC.getProducts();
+  const data={
+    name,type,category,price,stock,
+    img:pendingImg||null,    // base64 photo or null
+    icon:null,               // no emoji icons — always null
+    bg:'var(--soft)',
+    maxPrice:parseFloat(document.getElementById('p-maxprice')?.value)||null,
+    oldPrice:parseFloat(document.getElementById('p-oldprice').value)||null,
+    badge:document.getElementById('p-badge').value.trim(),
+    desc:document.getElementById('p-desc').value.trim(),
+    rating:parseFloat(document.getElementById('p-rating').value)||4.5,
+    reviews:parseInt(document.getElementById('p-reviews').value)||0,
+  };
+  if(editingProdId){
+    const idx=products.findIndex(p=>p.id===editingProdId);
+    if(idx!==-1) products[idx]={...products[idx],...data};
+    toast('Product updated!');
+  } else {
+    data.id=(type==='flower'?'f':'p')+Date.now();
+    products.push(data);
+    toast('Product added!');
+  }
+  FC.saveProducts(products);
+  closeModal('prod-modal');
+  renderProducts();
+}
+
+// ── ADD-ONS ───────────────────────────────────────────────────
+function setAddonFilter(f,btn){
+  addonFilter=f;
+  document.querySelectorAll('#addon-filter-bar .cf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderAddons();
+}
+function renderAddons(){
+  const q=document.getElementById('addon-search').value.toLowerCase();
+  let list=FC.getAddons();
+  if(addonFilter!=='all') list=list.filter(a=>a.category===addonFilter);
+  if(q) list=list.filter(a=>(a.name||'').toLowerCase().includes(q));
+  document.getElementById('addon-count').textContent=list.length;
+  document.getElementById('addon-tbody').innerHTML=list.length?list.map(a=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div class="prod-thumb-wrap">
+          ${a.img?`<img src="${a.img}" style="width:42px;height:42px;object-fit:cover;border-radius:var(--r);display:block"/>`:imgPlaceholder(42)}
+        </div>
+        <div><div style="font-size:13px;font-weight:600">${a.name}</div><div style="font-size:11px;color:var(--muted)">${a.desc||''}</div></div>
+      </div></td>
+      <td><span class="tag ${ADDON_CAT_BADGE[a.category]||'tag-w'}">${a.category}</span></td>
+      <td style="font-weight:600;color:var(--g3)">${fmtP(a.price)}</td>
+      <td>${a.stock>0?a.stock:'<span style="color:var(--p3);font-weight:600">Out</span>'}</td>
+      <td><span class="tag ${a.stock>0?'tag-g':'tag-p'}">${a.stock>0?'Available':'Out of Stock'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditAddon('${a.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="openDel('${a.id}','${(a.name||'').replace(/'/g,"\\'")}','addon')">Del</button>
+      </div></td>
+    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">No add-ons found</td></tr>`;
+}
+
+// Addon modal — same upload pattern as product modal
+function getAddonModalBody(a){
+  const av=a||{};
+  pendingAddonImg=av.img||null;
+  const zoneContent=pendingAddonImg
+    ?`<img src="${pendingAddonImg}" class="img-preview"/><div style="font-size:11px;color:var(--g3);margin-top:5px">Photo ready — click to change</div>`
+    :`<div style="margin-bottom:.4rem">${imgPlaceholder(36)}</div><div style="font-size:12px;font-weight:600;color:var(--ink)">Upload Photo</div><div style="font-size:11px;color:var(--muted)">JPG, PNG — max 2MB</div>`;
+  return `
+    <div class="ff"><label>Name *</label><input id="am-name" value="${av.name||''}" placeholder="e.g. Ferrero Rocher Box"/></div>
+    <div class="ff"><label>Photo</label>
+      <input type="file" id="addon-img" accept="image/*" style="display:none" onchange="handleAddonImg(this)"/>
+      <div class="img-upload-zone ${pendingAddonImg?'has-img':''}" id="addon-img-zone"
+        onclick="document.getElementById('addon-img').click()"
+        ondragover="this.classList.add('drag');event.preventDefault()"
+        ondragleave="this.classList.remove('drag')">
+        ${zoneContent}
+      </div>
+      <button type="button" id="remove-addon-img-btn" onclick="removeAddonImg()"
+        style="margin-top:4px;font-size:11px;color:var(--p3);background:none;border:none;cursor:pointer;padding:0;display:${pendingAddonImg?'inline':'none'}">
+        Remove photo
+      </button>
+    </div>
+    <div class="fg2">
+      <div class="ff"><label>Category *</label>
+        <select id="am-cat">
+          <option value="chocolates" ${av.category==='chocolates'?'selected':''}>Chocolates</option>
+          <option value="toys" ${av.category==='toys'?'selected':''}>Teddies</option>
+          <option value="cards" ${av.category==='cards'?'selected':''}>Cards</option>
+          <option value="balloons" ${av.category==='balloons'?'selected':''}>Balloons</option>
+          <option value="extras" ${av.category==='extras'?'selected':''}>Extras</option>
+        </select>
+      </div>
+      <div class="ff"><label>Price (₱) *</label><input id="am-price" type="number" value="${av.price||''}" min="1"/></div>
+    </div>
+    <div class="ff"><label>Stock *</label><input id="am-stock" type="number" value="${av.stock||''}" min="0"/></div>
+    <div class="ff"><label>Description</label><textarea id="am-desc" style="border:1.5px solid var(--line);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;width:100%;resize:none;height:55px;outline:none;background:var(--soft)">${av.desc||''}</textarea></div>
+    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="saveAddon()">${a?'Save Changes':'Add Add-on'}</button>`;
+}
+function handleAddonImg(inp){
+  if(!inp||!inp.files||!inp.files.length) return;
+  const file=inp.files[0];
+  if(!file.type.startsWith('image/')){toast('Please upload an image file.','err');return;}
+  if(file.size>2*1024*1024){toast('Image must be under 2MB.','err');return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    pendingAddonImg=e.target.result;
+    const z=document.getElementById('addon-img-zone');
+    if(z){
+      z.classList.add('has-img');
+      z.innerHTML=`<img src="${pendingAddonImg}" class="img-preview"/>
+        <div style="font-size:11px;color:var(--g3);margin-top:5px">${file.name} — click to change</div>`;
+    }
+    const rb=document.getElementById('remove-addon-img-btn');
+    if(rb) rb.style.display='inline';
+    toast('Photo uploaded!');
+  };
+  r.readAsDataURL(file);
+}
+function removeAddonImg(){
+  pendingAddonImg=null;
+  const z=document.getElementById('addon-img-zone');
+  if(z){
+    z.classList.remove('has-img');
+    z.innerHTML=`<div style="margin-bottom:.4rem">${imgPlaceholder(36)}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--ink)">Upload Photo</div>
+      <div style="font-size:11px;color:var(--muted)">JPG, PNG — max 2MB</div>`;
+  }
+  const inp=document.getElementById('addon-img');
+  if(inp) inp.value='';
+  const rb=document.getElementById('remove-addon-img-btn');
+  if(rb) rb.style.display='none';
+}
+function openAddAddon(){
+  editingAddonId=null;pendingAddonImg=null;
+  document.getElementById('addon-modal-title').textContent='Add Add-on';
+  document.getElementById('addon-modal-body').innerHTML=getAddonModalBody(null);
+  openModal('addon-modal');
+}
+function openEditAddon(id){
+  const a=FC.getAddons().find(x=>x.id===id);if(!a)return;
+  editingAddonId=id;pendingAddonImg=a.img||null;
+  document.getElementById('addon-modal-title').textContent='Edit: '+a.name;
+  document.getElementById('addon-modal-body').innerHTML=getAddonModalBody(a);
+  openModal('addon-modal');
+}
+function saveAddon(){
+  const name=document.getElementById('am-name').value.trim();
+  const category=document.getElementById('am-cat').value;
+  const price=parseFloat(document.getElementById('am-price').value);
+  const stock=parseInt(document.getElementById('am-stock').value);
+  if(!name||!price||isNaN(stock)){toast('Fill in name, price and stock.','err');return;}
+  const addons=FC.getAddons();
+  const data={name,category,price,stock,
+    img:pendingAddonImg||null,
+    icon:null,  // no emoji icons
+    desc:document.getElementById('am-desc').value.trim()};
+  if(editingAddonId){
+    const idx=addons.findIndex(a=>a.id===editingAddonId);
+    if(idx!==-1) addons[idx]={...addons[idx],...data};
+    toast('Add-on updated!');
+  } else {
+    data.id='a'+Date.now();addons.push(data);toast('Add-on added!');
+  }
+  FC.saveAddons(addons);closeModal('addon-modal');renderAddons();
+}
+
+// ── DELETE ─────────────────────────────────────────────────
+function openDel(id,name,type){
+  deletingId=id;deleteType=type;
+  document.getElementById('del-name').textContent=name;
+  openModal('del-modal');
+}
+function confirmDelete(){
+  if(deleteType==='prod'){FC.saveProducts(FC.getProducts().filter(p=>p.id!==deletingId));renderProducts();}
+  else{FC.saveAddons(FC.getAddons().filter(a=>a.id!==deletingId));renderAddons();}
+  closeModal('del-modal');toast('Deleted.');
+}
+
+renderProducts();
+renderAddons();
+</script>
+</body>
+</html>

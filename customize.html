@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Customize Bouquet</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.custom-layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;padding:2rem 2.5rem;align-items:start}
+.step-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;margin-bottom:1rem}
+.step-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.step-title::after{content:'';flex:1;height:1px;background:var(--line)}
+/* SIZE CARDS */
+.size-row{display:flex;gap:8px}
+.size-btn{flex:1;border:2px solid var(--line);border-radius:var(--rl);padding:14px 10px;cursor:pointer;transition:all .2s;background:white;text-align:left}
+.size-btn:hover{border-color:var(--g5);background:var(--g9)}
+.size-btn.sel{border-color:var(--p4);background:var(--p9)}
+.size-btn .sb-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.size-btn .sb-range{font-size:12px;font-weight:600;color:var(--g3)}
+.size-btn .sb-desc{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+/* STEM PROGRESS */
+.stem-progress{background:var(--soft);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem}
+.stem-progress-bar-wrap{flex:1;background:var(--line);border-radius:10px;height:8px;overflow:hidden}
+.stem-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--g5),var(--g3));transition:width .3s}
+.stem-bar.ready{background:linear-gradient(90deg,var(--p4),var(--p3))}
+.stem-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.stem-count{font-size:13px;font-weight:700;color:var(--g2);white-space:nowrap}
+.stem-hint{font-size:11px;color:var(--muted);margin-top:3px}
+/* FLOWER GRID */
+.flower-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fo{background:var(--soft);border-radius:var(--r);padding:10px 6px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
+.fo.sel{border-color:var(--g4);background:var(--g9)}.fo.maxed-no-sel{opacity:.5}
+.fo .fi{font-size:22px;margin-bottom:3px}.fo strong{font-size:11px;color:var(--ink);display:block}.fo small{font-size:10px;color:var(--muted)}
+.fo-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:7px}
+.fo-btn{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;color:var(--ink);flex-shrink:0}
+.fo-btn:hover{background:var(--g8);border-color:var(--g5)}
+.fo-btn.rem:hover{background:var(--p9);border-color:var(--p5)}
+.fo-btn:disabled{opacity:.3;cursor:not-allowed;background:white}
+.fo-qty{font-size:13px;font-weight:700;min-width:22px;text-align:center;color:var(--ink)}
+/* FILLERS */
+.filler-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.filler-card{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s}
+.filler-card:hover{border-color:var(--g6)}.filler-card.sel{border-color:var(--g4);background:var(--g9)}
+.filler-icon{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
+.filler-name{font-size:10px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.filler-price{font-size:10px;color:var(--g3);font-weight:600}
+.filler-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+/* ADDONS */
+.acats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.acat{padding:5px 13px;border-radius:16px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
+.acat:hover{border-color:var(--g5);color:var(--g2)}.acat.active{background:var(--g9);border-color:var(--g5);color:var(--g2)}
+.addons-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.aoc{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
+.aoc:hover{border-color:var(--g6)}.aoc.sel{border-color:var(--g4);background:var(--g9)}
+.aoc .aoc-img{width:38px;height:38px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 4px}
+.aoc .aoc-icon-wrap{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
+.aoc .aoc-name{font-size:10px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
+.aoc .aoc-price{font-size:10px;color:var(--g3);font-weight:600}
+.aoc-chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--g4);border-radius:50%;display:none;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:700}
+.aoc.sel .aoc-chk{display:flex}
+.aoc-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+/* SHARED SMALL +/- */
+.sm-btn{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;flex-shrink:0}
+.sm-btn:hover{background:var(--g8)}.sm-btn.rem:hover{background:var(--p9)}
+.sm-btn:disabled{opacity:.3;cursor:not-allowed}
+.sm-qty{font-size:12px;font-weight:700;min-width:18px;text-align:center;color:var(--ink)}
+/* COLORS */
+.color-row{display:flex;gap:8px;flex-wrap:wrap}
+.cdot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.cdot:hover{transform:scale(1.1)}.cdot.sel{border-color:var(--ink);box-shadow:0 0 0 3px white,0 0 0 4.5px var(--ink)}
+/* SUMMARY */
+.sum-sticky{position:sticky;top:calc(var(--nh)+16px)}
+.sum-preview{background:var(--soft);border-radius:var(--rl);height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:1rem;border:1px solid var(--line)}
+.sum-preview img{width:100%;height:100%;object-fit:cover}
+.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.sum-row:last-of-type{border-bottom:none}.sum-k{color:var(--muted)}.sum-v{font-weight:500;text-align:right;max-width:155px;font-size:12px}
+.sum-total{display:flex;justify-content:space-between;font-size:17px;font-weight:700;padding:11px 0 0;border-top:2px solid var(--line);margin-top:4px;color:var(--g1)}
+.note-ta{width:100%;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:13px;resize:none;height:75px;color:var(--ink);outline:none;transition:border-color .2s;background:var(--soft)}
+.note-ta:focus{border-color:var(--g4);background:white}
+@media(max-width:900px){.custom-layout{grid-template-columns:1fr}.sum-sticky{position:static}}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<div class="main-area no-sidebar">
+<div class="custom-layout">
+  <div>
+    <div class="page-title" style="margin-bottom:.25rem">Build Your <span style="color:var(--p3);font-style:italic">Bouquet</span></div>
+    <div class="page-sub">Choose your flowers freely — total price is based on what you pick</div>
+
+    <!-- STEP 1: SIZE -->
+    <div class="step-card">
+      <div class="step-title">Step 1 — Bouquet size</div>
+      <div class="size-row" id="size-row"></div>
+    </div>
+
+    <!-- STEM PROGRESS -->
+    <div class="stem-progress">
+      <div class="stem-progress-row">
+        <div class="stem-progress-bar-wrap"><div class="stem-bar" id="stem-bar" style="width:0%"></div></div>
+        <span class="stem-count" id="stem-count">0 stems</span>
+      </div>
+      <div class="stem-hint" id="stem-hint">Add at least 3 stems to proceed</div>
+    </div>
+
+    <!-- STEP 2: FLOWERS -->
+    <div class="step-card">
+      <div class="step-title">Step 2 — Choose flowers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(use + / − to adjust stems)</span></div>
+      <div class="flower-grid" id="flower-grid"></div>
+    </div>
+
+    <!-- STEP 3: FILLERS (optional) -->
+    <div class="step-card">
+      <div class="step-title">Step 3 — Fillers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <div class="filler-grid" id="filler-grid"></div>
+    </div>
+
+    <!-- STEP 4: ADD-ONS -->
+    <div class="step-card">
+      <div class="step-title">Step 4 — Extras <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional — chocolates, teddies, gifts)</span></div>
+      <div class="acats" id="addon-cats"></div>
+      <div class="addons-grid" id="addons-grid"></div>
+    </div>
+
+    <!-- STEP 5: WRAPPING -->
+    <div class="step-card">
+      <div class="step-title">Step 5 — Wrapping color</div>
+      <div class="color-row" id="color-row"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px" id="color-lbl">Selected: Blush Pink</div>
+    </div>
+
+    <!-- STEP 6: NOTE -->
+    <div class="step-card">
+      <div class="step-title">Step 6 — Florist note <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <textarea class="note-ta" id="bouquet-note" placeholder="e.g. Extra lush, sage ribbon, no carnations..."></textarea>
+    </div>
+  </div>
+
+  <!-- STICKY SUMMARY -->
+  <div class="sum-sticky">
+    <div class="step-card">
+      <div class="step-title">Your Bouquet</div>
+      <div class="sum-preview" id="bq-preview"></div>
+      <div class="sum-row"><span class="sum-k">Size</span><span class="sum-v" id="s-size">Small (3–10 stems)</span></div>
+      <div class="sum-row"><span class="sum-k">Wrapping</span><span class="sum-v" id="s-wrap">Blush Pink</span></div>
+      <div class="sum-row"><span class="sum-k">Flowers</span><span class="sum-v" id="s-flowers">None selected</span></div>
+      <div class="sum-row"><span class="sum-k">Stems chosen</span><span class="sum-v" id="s-stems">0</span></div>
+      <div class="sum-row"><span class="sum-k">Flower cost</span><span class="sum-v" id="s-flw">₱0</span></div>
+      <div class="sum-row" id="row-fillers" style="display:none"><span class="sum-k">Fillers</span><span class="sum-v" id="s-fillers">₱0</span></div>
+      <div class="sum-row" id="row-extras" style="display:none"><span class="sum-k">Extras</span><span class="sum-v" id="s-extras">₱0</span></div>
+      <div class="sum-row"><span class="sum-k">Service fee</span><span class="sum-v" id="s-svc">₱50</span></div>
+      <div class="sum-total"><span>Total</span><span id="s-total">₱50</span></div>
+      <div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-green" style="justify-content:center;padding:12px" onclick="addCustomToCart()">Add to Cart</button>
+        <button class="btn btn-pink" style="justify-content:center;padding:12px" onclick="addCustomToCart(true)">Buy Now</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">Pre-order · Min. 48 hrs advance<br>Select at least the minimum stems to proceed</p>
+    </div>
+  </div>
+</div>
+<div id="footer-container"></div>
+</div>
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('customer');
+buildTopNav('customize');
+renderFooter('footer-container', false);
+
+const COLORS=[
+  {n:'Blush Pink',c:'#FFE4EC'},{n:'Sage Green',c:'#D4EDD7'},{n:'Lavender',c:'#E8D9F0'},
+  {n:'Cream',c:'#FFF5DC'},{n:'Rose Red',c:'#FECDD3'},{n:'Sky Blue',c:'#D0ECF8'},{n:'White',c:'#F8F8F8'},
+];
+
+// Fillers — dedicated step, not mixed with add-ons
+const FILLERS=[
+  {id:'fil1', name:"Baby's Breath", price:20, icon:'🌿'},
+  {id:'fil2', name:'Eucalyptus',    price:25, icon:'🍃'},
+  {id:'fil3', name:'Wax Flower',    price:30, icon:'🌸'},
+  {id:'fil4', name:'Fern Leaves',   price:20, icon:'🌱'},
+  {id:'fil5', name:'Gypsophila',    price:22, icon:'🤍'},
+];
+
+// Add-on categories — no flowers or fillers here
+const ADDON_CATS=[
+  {id:'all',        label:'All'},
+  {id:'chocolates', label:'Chocolates'},
+  {id:'toys',       label:'Teddies'},
+  {id:'cards',      label:'Cards'},
+  {id:'balloons',   label:'Balloons'},
+  {id:'extras',     label:'Extras'},
+];
+
+let selSize=FC.BOUQUET_SIZES.Small, selColor=COLORS[0];
+let flowerCounts={};    // { productId: stemCount }
+let fillerCounts={};    // { fillerId: qty }
+let selectedAddons={};  // { addonId: { ...addon, qty } }
+let activeCat='all';
+
+// ── SIZES ──────────────────────────────────────────────────
+function renderSizes(){
+  document.getElementById('size-row').innerHTML=Object.values(FC.BOUQUET_SIZES).map(s=>`
+    <div class="size-btn ${s.label===selSize.label?'sel':''}" onclick="setSize('${s.label}')">
+      <div class="sb-label">${s.label}</div>
+      <div class="sb-range">${s.minStems}–${s.maxStems} stems</div>
+      <div class="sb-desc">${s.desc}</div>
+    </div>`).join('');
+}
+
+function setSize(label){
+  selSize=FC.BOUQUET_SIZES[label];
+  // Remove flowers that exceed new max
+  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
+  if(used>selSize.maxStems){
+    flowerCounts={};
+    toast('Flower selections reset — new max: '+selSize.maxStems+' stems','warn');
+  }
+  renderSizes();renderFlowers();updateSummary();
+}
+
+// ── FLOWERS ────────────────────────────────────────────────
+function renderFlowers(){
+  const flowers=FC.getProducts().filter(p=>p.type==='flower');
+  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
+  const atMax=used>=selSize.maxStems;
+  document.getElementById('flower-grid').innerHTML=flowers.map(f=>{
+    const cnt=flowerCounts[f.id]||0;
+    const addDis=atMax?'disabled':'';
+    const remDis=cnt===0?'disabled':'';
+    const imgHtml=f.img
+      ?`<img src="${f.img}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 3px"/>`
+      :`<div style="display:flex;justify-content:center;margin-bottom:3px">${imgPlaceholder(40)}</div>`;
+    return `
+    <div class="fo ${cnt>0?'sel':''} ${atMax&&cnt===0?'maxed-no-sel':''}">
+      ${imgHtml}
+      <strong>${f.name}</strong>
+      <small>${fmtP(f.price)}/stem</small>
+      <div class="fo-ctrl">
+        <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
+        <span class="fo-qty">${cnt}</span>
+        <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addFlower(id){
+  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
+  if(used>=selSize.maxStems){toast('Maximum '+selSize.maxStems+' stems reached for '+selSize.label,'warn');return;}
+  flowerCounts[id]=(flowerCounts[id]||0)+1;
+  renderFlowers();updateSummary();
+}
+
+function removeFlower(id){
+  if(!flowerCounts[id]) return;
+  flowerCounts[id]--;
+  if(!flowerCounts[id]) delete flowerCounts[id];
+  renderFlowers();updateSummary();
+}
+
+// ── FILLERS ────────────────────────────────────────────────
+function renderFillers(){
+  document.getElementById('filler-grid').innerHTML=FILLERS.map(f=>{
+    const qty=fillerCounts[f.id]||0;
+    return `
+    <div class="filler-card ${qty>0?'sel':''}">
+      <div class="filler-icon">${imgPlaceholder(38)}</div>
+      <div class="filler-name">${f.name}</div>
+      <div class="filler-price">${fmtP(f.price)}/stem</div>
+      <div class="filler-ctrl">
+        <button class="sm-btn rem" ${qty===0?'disabled':''} onclick="changeFillerQty('${f.id}',-1)">−</button>
+        <span class="sm-qty">${qty}</span>
+        <button class="sm-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function changeFillerQty(id,delta){
+  fillerCounts[id]=Math.max(0,(fillerCounts[id]||0)+delta);
+  if(!fillerCounts[id]) delete fillerCounts[id];
+  renderFillers();updateSummary();
+}
+
+// ── ADD-ONS (store items only — no flowers, no fillers) ────
+function renderAddonCats(){
+  document.getElementById('addon-cats').innerHTML=ADDON_CATS.map(c=>
+    `<button class="acat ${activeCat===c.id?'active':''}" onclick="setAddonCat('${c.id}')">${c.label}</button>`
+  ).join('');
+}
+function setAddonCat(cat){activeCat=cat;renderAddonCats();renderAddons();}
+
+function renderAddons(){
+  const storeAddons=FC.getAddons();
+  const list=activeCat==='all'?storeAddons:storeAddons.filter(a=>a.category===activeCat);
+  document.getElementById('addons-grid').innerHTML=list.map(a=>{
+    const sel=!!selectedAddons[a.id];
+    const qty=sel?(selectedAddons[a.id].qty||1):0;
+    const imgHtml=a.img?`<img src="${a.img}" class="aoc-img"/>`:`<div class="aoc-icon-wrap">${imgPlaceholder(38)}</div>`;
+    const qtyRow=sel?`
+      <div class="aoc-ctrl" onclick="event.stopPropagation()">
+        <button class="sm-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
+        <span class="sm-qty">${qty}</span>
+        <button class="sm-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
+      </div>`:'';
+    return `
+    <div class="aoc ${sel?'sel':''}" id="aoc-${a.id}" onclick="toggleAddon('${a.id}')">
+      <div class="aoc-chk">✓</div>
+      ${imgHtml}
+      <div class="aoc-name">${a.name}</div>
+      <div class="aoc-price">${fmtP(a.price)}</div>
+      ${qtyRow}
+    </div>`;
+  }).join('')||`<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
+}
+
+function toggleAddon(id){
+  const a=FC.getAddons().find(x=>x.id===id); if(!a) return;
+  if(selectedAddons[id]) delete selectedAddons[id];
+  else selectedAddons[id]={...a,qty:1};
+  renderAddons();updateSummary();
+}
+function changeAddonQty(id,delta){
+  if(!selectedAddons[id]) return;
+  selectedAddons[id].qty=Math.max(1,(selectedAddons[id].qty||1)+delta);
+  renderAddons();updateSummary();
+}
+
+// ── COLORS ─────────────────────────────────────────────────
+function renderColors(){
+  document.getElementById('color-row').innerHTML=COLORS.map((c,i)=>
+    `<div class="cdot ${selColor.n===c.n?'sel':''}" style="background:${c.c}" title="${c.n}" onclick="pickColor(${i})"></div>`
+  ).join('');
+}
+function pickColor(i){selColor=COLORS[i];document.getElementById('color-lbl').textContent='Selected: '+selColor.n;renderColors();updateSummary();}
+
+// ── SUMMARY ────────────────────────────────────────────────
+function updateSummary(){
+  const products=FC.getProducts();
+  const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
+  const used=sel.reduce((s,[,v])=>s+v,0);
+
+  // Pricing: all dynamic
+  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
+  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
+  const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
+  const svcFee=FC.SERVICE_FEE;
+  const total=flwCost+fillerCost+extrasCost+svcFee;
+
+  // Stem progress bar — based on min/max range
+  const pct=selSize.maxStems>0?Math.min(100,Math.round((used/selSize.maxStems)*100)):0;
+  document.getElementById('stem-bar').style.width=pct+'%';
+  const atMin=used>=selSize.minStems;
+  const atMax=used>=selSize.maxStems;
+  document.getElementById('stem-bar').className='stem-bar'+(atMin?' ready':'');
+  document.getElementById('stem-count').textContent=used+' stem'+(used!==1?'s':'');
+  document.getElementById('stem-count').style.color=atMin?'var(--p3)':'var(--g2)';
+
+  // Hint text
+  let hint='';
+  if(used===0) hint='Add at least '+selSize.minStems+' stems to proceed';
+  else if(used<selSize.minStems) hint='Add '+(selSize.minStems-used)+' more stem'+(selSize.minStems-used>1?'s':'')+' (minimum '+selSize.minStems+')';
+  else if(atMax) hint='Maximum reached ('+selSize.maxStems+' stems)';
+  else hint='Good! You can add up to '+(selSize.maxStems-used)+' more stems';
+  document.getElementById('stem-hint').textContent=hint;
+
+  // Summary fields
+  document.getElementById('s-size').textContent=selSize.label+' ('+selSize.minStems+'–'+selSize.maxStems+' stems)';
+  document.getElementById('s-wrap').textContent=selColor.n;
+  document.getElementById('s-stems').textContent=used+' stem'+(used!==1?'s':'')+' (range: '+selSize.minStems+'–'+selSize.maxStems+')';
+  document.getElementById('s-flw').textContent=fmtP(flwCost);
+  document.getElementById('s-svc').textContent=fmtP(svcFee);
+  document.getElementById('s-total').textContent=fmtP(total);
+  document.getElementById('s-flowers').textContent=sel.length
+    ?sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ')
+    :'None selected';
+
+  // Fillers row
+  const fRow=document.getElementById('row-fillers');
+  if(fillerCost>0){
+    fRow.style.display='flex';
+    const names=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,q])=>{const f=FILLERS.find(x=>x.id===id);return(f?.name||id)+(q>1?' ×'+q:'');}).join(', ');
+    document.getElementById('s-fillers').textContent=fmtP(fillerCost)+(names?' ('+names+')':'');
+  } else fRow.style.display='none';
+
+  // Extras row
+  const eRow=document.getElementById('row-extras');
+  if(extrasCost>0){
+    eRow.style.display='flex';
+    const names=Object.values(selectedAddons).map(a=>a.name+(a.qty>1?' ×'+a.qty:'')).join(', ');
+    document.getElementById('s-extras').textContent=fmtP(extrasCost)+(names?' ('+names+')':'');
+  } else eRow.style.display='none';
+
+  // Preview — show top flower image or SVG placeholder
+  const previewEl=document.getElementById('bq-preview');
+  const topFlower=sel.sort((a,b)=>b[1]-a[1])[0];
+  if(topFlower){
+    const p=products.find(x=>x.id===topFlower[0]);
+    if(p?.img){
+      previewEl.innerHTML=`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rl)"/>`;
+    } else {
+      previewEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">${imgPlaceholder(80)}</div>`;
+    }
+  } else {
+    previewEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">${imgPlaceholder(80)}</div>`;
+  }
+}
+
+// ── ADD TO CART ────────────────────────────────────────────
+function addCustomToCart(buyNow=false){
+  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
+  // Validate against min stems
+  if(used<selSize.minStems){
+    toast('Please add at least '+selSize.minStems+' stems for a '+selSize.label+' bouquet (currently '+used+')','warn');
+    return;
+  }
+  // Validate against max stems (shouldn't be possible via UI, but safety check)
+  if(used>selSize.maxStems){
+    toast('Too many stems. '+selSize.label+' bouquet allows max '+selSize.maxStems+' stems','warn');
+    return;
+  }
+
+  const products=FC.getProducts();
+  const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
+  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
+  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
+  const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
+  const svcFee=FC.SERVICE_FEE;
+  const total=flwCost+fillerCost+extrasCost+svcFee;
+
+  const flowerList=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ');
+
+  // Combine fillers + store add-ons into addonDetails
+  const fillerDetails=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,qty])=>{
+    const f=FILLERS.find(x=>x.id===id);
+    return {addonId:f.id, name:f.name, img:null, price:f.price, qty};
+  });
+  const addonDetails=[
+    ...fillerDetails,
+    ...Object.values(selectedAddons).map(a=>({addonId:a.id,name:a.name,img:a.img||null,price:a.price,qty:a.qty||1}))
+  ];
+
+  // Build flower description for admin visibility
+  const flowerDesc=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+' ×'+cnt;}).join(', ');
+
+  const item={
+    cartId:'custom-'+Date.now(),
+    productId:'custom-'+selSize.label.toLowerCase(),
+    name:'Custom Bouquet ('+selSize.label+')',
+    icon:null, img:null,
+    price:total, qty:1, type:'bouquet',
+    sub:selSize.label+' · '+used+' stems · '+selColor.n+' wrapping · svc fee ₱'+svcFee,
+    checked:true,
+    flowers:flowerDesc,  // detailed flower list for admin
+    flowerDesc,           // explicit for order detail display
+    addonDetails,
+    note:document.getElementById('bouquet-note').value,
+    isCustom:true,
+    stems:used,
+    svcFee,
+  };
+
+  const cart=FC.getCart(); cart.push(item); FC.saveCart(cart); updateCartBadge();
+  toast('Custom bouquet added to cart!');
+  if(buyNow){
+    sessionStorage.setItem('fc_checkout_items',JSON.stringify([item]));
+    sessionStorage.setItem('fc_checkout_promo','');
+    location.href='checkout.html';
+  }
+}
+
+renderSizes();renderFlowers();renderFillers();renderAddonCats();renderAddons();renderColors();updateSummary();
+</script>
+</body>
+</html>

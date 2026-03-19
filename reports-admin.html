@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Reports</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+@media(max-width:900px){.metrics-grid{grid-template-columns:1fr 1fr}}
+.metric-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.3rem}
+.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.5rem}
+.metric-val{font-size:28px;font-weight:700;color:var(--ink);font-family:var(--font-d)}
+.metric-sub{font-size:11px;margin-top:5px}
+.ms-up{color:var(--g3)}.ms-dn{color:var(--p3)}.ms-n{color:var(--muted)}
+/* MINI BAR */
+.mini-bars{display:flex;gap:4px;align-items:flex-end;height:32px;margin-top:8px}
+.mb{border-radius:2px 2px 0 0;min-width:8px;transition:height .4s}
+/* PROGRESS BAR */
+.prog-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.prog-row:last-child{border-bottom:none}
+.prog-bg{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+/* MONTH FILTER */
+.month-select{border:1.5px solid var(--line);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:white;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div class="page-title">Reports & <span style="color:var(--p3);font-style:italic">Analytics</span></div>
+      <div class="page-sub" style="margin-bottom:0">Sales performance, revenue breakdown, and order insights</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="month-select" id="month-select" onchange="renderAll()">
+        <option value="march">March 2024</option>
+        <option value="february">February 2024</option>
+        <option value="january">January 2024</option>
+      </select>
+      <button class="btn btn-green btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics-grid" id="metrics-grid"></div>
+
+  <div class="two-col" style="margin-bottom:1.5rem">
+    <!-- TOP PRODUCTS -->
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>Top Selling Products</h3><span id="top-period" style="font-size:12px;color:var(--muted)"></span></div>
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Trend</th></tr></thead>
+        <tbody id="top-products-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- REVENUE BY CATEGORY -->
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>Revenue by Category</h3></div>
+      <div style="padding:1rem" id="category-breakdown"></div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:1.5rem">
+    <!-- PAYMENT METHODS -->
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>Payment Method Breakdown</h3></div>
+      <div style="padding:1rem" id="payment-breakdown"></div>
+    </div>
+
+    <!-- DELIVERY AREAS -->
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-head"><h3>Top Delivery Areas</h3></div>
+      <div style="padding:1rem" id="delivery-breakdown"></div>
+    </div>
+  </div>
+
+  <!-- ORDER LOG -->
+  <div class="table-wrap">
+    <div class="table-head">
+      <h3>Order Log</h3>
+      <span id="order-log-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" style="min-width:750px">
+        <thead><tr><th>Order #</th><th>Customer</th><th>Items</th><th>Location</th><th>Pay Method</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+        <tbody id="order-log-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script>
+<script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('reports-admin');
+buildAdminSidebar('reports-admin.html');
+
+const MONTH_DATA = {
+  march:    { label:'March 2024',    revenue:48200, orders:38, avgVal:398, repeat:38, prev:{revenue:39500,orders:33} },
+  february: { label:'February 2024', revenue:62400, orders:52, avgVal:450, repeat:45, prev:{revenue:41000,orders:38} },
+  january:  { label:'January 2024',  revenue:31800, orders:26, avgVal:322, repeat:28, prev:{revenue:28000,orders:23} },
+};
+const TOP_PRODUCTS = {
+  march: [
+    {name:'Red Rose Bouquet (M)',    icon:'🌹', units:14, rev:7700,  trend:'+18%'},
+    {name:'Custom Arrangement',      icon:'💐', units:10, rev:5500,  trend:'+25%'},
+    {name:"Love & Blooms Gift Set",  icon:'🎁', units:6,  rev:5880,  trend:'+8%'},
+    {name:'Tulip Spring Bundle',     icon:'🌷', units:12, rev:3360,  trend:'+12%'},
+    {name:'Cherry Blossom Fan',      icon:'🌸', units:8,  rev:5200,  trend:'+5%'},
+  ],
+  february: [
+    {name:"Valentine's Rose Trio",   icon:'🥀', units:28, rev:15400, trend:'+62%'},
+    {name:'Red Rose Bouquet (L)',     icon:'🌹', units:20, rev:17000, trend:'+44%'},
+    {name:"Love & Blooms Gift Set",  icon:'🎁', units:14, rev:13720, trend:'+40%'},
+    {name:'Custom Arrangement',      icon:'💐', units:12, rev:6600,  trend:'+30%'},
+    {name:'Peony Bliss Bundle',      icon:'🪷', units:10, rev:7500,  trend:'+22%'},
+  ],
+  january: [
+    {name:'Red Rose Bouquet (M)',    icon:'🌹', units:8,  rev:4400,  trend:'+5%'},
+    {name:'Custom Arrangement',      icon:'💐', units:6,  rev:3300,  trend:'+10%'},
+    {name:'Graduation Bouquet',      icon:'🌼', units:7,  rev:3640,  trend:'+15%'},
+    {name:'Sunflower Sale Bundle',   icon:'🌻', units:10, rev:1800,  trend:'+2%'},
+    {name:'Cherry Blossom Fan',      icon:'🌸', units:5,  rev:3250,  trend:'+8%'},
+  ],
+};
+const CATEGORIES = {
+  march:    [{c:'Ready-Made',col:'var(--g4)',pct:42,rev:20244},{c:'Customized',col:'var(--p4)',pct:28,rev:13496},{c:'Seasonal',col:'#1976D2',pct:16,rev:7712},{c:'Gift Sets',col:'#E65100',pct:10,rev:4820},{c:'On Sale',col:'var(--muted)',pct:4,rev:1928}],
+  february: [{c:'Ready-Made',col:'var(--g4)',pct:30,rev:18720},{c:'Customized',col:'var(--p4)',pct:20,rev:12480},{c:'Promo/Seasonal',col:'#1976D2',pct:36,rev:22464},{c:'Gift Sets',col:'#E65100',pct:12,rev:7488},{c:'On Sale',col:'var(--muted)',pct:2,rev:1248}],
+  january:  [{c:'Ready-Made',col:'var(--g4)',pct:48,rev:15264},{c:'Customized',col:'var(--p4)',pct:22,rev:6996},{c:'Seasonal',col:'#1976D2',pct:15,rev:4770},{c:'Gift Sets',col:'#E65100',pct:10,rev:3180},{c:'On Sale',col:'var(--muted)',pct:5,rev:1590}],
+};
+
+function pct(curr, prev) {
+  if (!prev) return null;
+  const p = Math.round(((curr - prev) / prev) * 100);
+  return (p >= 0 ? '+' : '') + p + '%';
+}
+
+function renderAll() {
+  const month = document.getElementById('month-select').value;
+  const md = MONTH_DATA[month];
+  document.getElementById('top-period').textContent = md.label;
+
+  // Metrics
+  const revChange = pct(md.revenue, md.prev.revenue);
+  const ordChange = pct(md.orders, md.prev.orders);
+  document.getElementById('metrics-grid').innerHTML = [
+    { label:'Gross Revenue',     val:'₱' + md.revenue.toLocaleString(), sub: revChange + ' vs prev month', cls: revChange?.startsWith('+') ? 'ms-up' : 'ms-dn' },
+    { label:'Completed Orders',  val: md.orders, sub: ordChange + ' vs prev month', cls: ordChange?.startsWith('+') ? 'ms-up' : 'ms-dn' },
+    { label:'Avg. Order Value',  val:'₱' + md.avgVal, sub:'per order', cls:'ms-n' },
+    { label:'Repeat Customers',  val: md.repeat + '%', sub:'of total customers', cls:'ms-n' },
+  ].map(m => `
+    <div class="metric-card">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-val">${m.val}</div>
+      <div class="metric-sub ${m.cls}">${m.sub}</div>
+    </div>`).join('');
+
+  // Top products
+  const tops = TOP_PRODUCTS[month] || TOP_PRODUCTS.march;
+  document.getElementById('top-products-tbody').innerHTML = tops.map((p,i) => `
+    <tr>
+      <td style="font-weight:700;color:var(--muted)">${i+1}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${p.icon}</span><span style="font-size:13px;font-weight:600">${p.name}</span></div></td>
+      <td style="font-weight:600">${p.units}</td>
+      <td style="font-weight:700;color:var(--g3)">${fmtP(p.rev)}</td>
+      <td><span class="tag ${p.trend.startsWith('+') ? 'tag-g' : 'tag-p'}" style="font-size:10px">${p.trend}</span></td>
+    </tr>`).join('');
+
+  // Category breakdown
+  const cats = CATEGORIES[month] || CATEGORIES.march;
+  document.getElementById('category-breakdown').innerHTML = cats.map(c => `
+    <div class="prog-row">
+      <span style="min-width:100px;font-weight:500;color:var(--ink)">${c.c}</span>
+      <div class="prog-bg"><div class="prog-fill" style="width:${c.pct}%;background:${c.col}"></div></div>
+      <span style="min-width:35px;text-align:right;font-size:12px;font-weight:600;color:${c.col}">${c.pct}%</span>
+      <span style="min-width:70px;text-align:right;font-size:12px;color:var(--muted)">${fmtP(c.rev)}</span>
+    </div>`).join('');
+
+  // Payment methods
+  const payData = [
+    {m:'GCash 50% Deposit', icon:'💚', pct:45, count:Math.round(md.orders*.45)},
+    {m:'Full GCash',        icon:'💳', pct:28, count:Math.round(md.orders*.28)},
+    {m:'Maya 50% Deposit',  icon:'📱', pct:15, count:Math.round(md.orders*.15)},
+    {m:'Cash on Delivery',  icon:'💵', pct:12, count:Math.round(md.orders*.12)},
+  ];
+  document.getElementById('payment-breakdown').innerHTML = payData.map(p => `
+    <div class="prog-row">
+      <span style="font-size:16px;min-width:24px">${p.icon}</span>
+      <span style="flex:1;font-size:12px;font-weight:500;color:var(--ink)">${p.m}</span>
+      <div class="prog-bg" style="max-width:80px"><div class="prog-fill" style="width:${p.pct}%;background:var(--g4)"></div></div>
+      <span style="min-width:32px;text-align:right;font-size:12px;font-weight:600;color:var(--g3)">${p.pct}%</span>
+      <span style="font-size:11px;color:var(--muted);min-width:30px;text-align:right">${p.count}</span>
+    </div>`).join('');
+
+  // Delivery areas
+  const areaData = [
+    {a:'Legazpi City', pct:52, orders:Math.round(md.orders*.52)},
+    {a:'Daraga',       pct:24, orders:Math.round(md.orders*.24)},
+    {a:'Camalig',      pct:8,  orders:Math.round(md.orders*.08)},
+    {a:'Tabaco City',  pct:7,  orders:Math.round(md.orders*.07)},
+    {a:'Other Albay',  pct:9,  orders:Math.round(md.orders*.09)},
+  ];
+  document.getElementById('delivery-breakdown').innerHTML = areaData.map(a => `
+    <div class="prog-row">
+      <span style="flex:1;font-size:12px;font-weight:500;color:var(--ink)">📍 ${a.a}</span>
+      <div class="prog-bg" style="max-width:90px"><div class="prog-fill" style="width:${a.pct}%;background:var(--g4)"></div></div>
+      <span style="min-width:35px;text-align:right;font-size:12px;font-weight:600;color:var(--g3)">${a.pct}%</span>
+      <span style="font-size:11px;color:var(--muted);min-width:40px;text-align:right">${a.orders} orders</span>
+    </div>`).join('');
+
+  // Order log
+  const orders = FC.getOrders();
+  document.getElementById('order-log-count').textContent = orders.length + ' total orders';
+  const sc = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w',Cancelled:'tag-p'};
+  document.getElementById('order-log-tbody').innerHTML = orders.map(o => `
+    <tr>
+      <td style="font-weight:700;font-size:12px">${o.id}</td>
+      <td>${o.customer||o.cust||'—'}</td>
+      <td style="font-size:12px;max-width:140px">${(o.items||'').slice(0,40)}${(o.items||'').length>40?'...':''}</td>
+      <td style="font-size:12px">${o.loc||'—'}</td>
+      <td style="font-size:11px">${o.payMethod||'—'}</td>
+      <td><span class="tag ${sc[o.status]||'tag-w'}">${o.status}</span></td>
+      <td style="font-weight:700;color:var(--g3)">${fmtP(o.total)}</td>
+      <td style="font-size:11px;color:var(--muted)">${o.placedAt?new Date(o.placedAt).toLocaleDateString('en-PH',{month:'short',day:'numeric'}):o.delivDate||'—'}</td>
+    </tr>`).join('');
+}
+
+function exportCSV() {
+  const orders = FC.getOrders();
+  const rows = [['Order ID','Customer','Location','Items','Pay Method','Status','Total','Date']];
+  orders.forEach(o => rows.push([o.id, o.customer||o.cust||'—', o.loc||'—', (o.items||'').replace(/,/g,';'), o.payMethod||'—', o.status, o.total, o.placedAt||o.delivDate||'']));
+  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'fleurChase_orders_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('CSV exported! 📊');
+}
+
+renderAll();
+</script>
+</body>
+</html>

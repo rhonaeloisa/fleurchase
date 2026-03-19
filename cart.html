@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — My Cart</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+.cart-wrap{max-width:980px;margin:0 auto;padding:2rem 1.5rem}
+.cart-layout{display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start}
+.cart-header-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:white;border-radius:var(--r);border:1px solid var(--line);margin-bottom:10px;font-size:13px;font-weight:600;color:var(--muted)}
+.ci-wrap{background:white;border-radius:var(--rl);border:1px solid var(--line);margin-bottom:10px;overflow:hidden;transition:box-shadow .2s}
+.ci-wrap:hover{box-shadow:0 3px 14px rgba(0,0,0,.07)}.ci-wrap.selected{border-color:var(--g4);border-width:2px}
+.ci{display:flex;align-items:center;gap:12px;padding:1rem 1.1rem}
+.ci-img{font-size:32px;width:56px;height:56px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.ci-img img{width:100%;height:100%;object-fit:cover}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:13px;font-weight:600;color:var(--ink)}
+.ci-sub{font-size:11px;color:var(--muted);margin-top:1px;line-height:1.4}
+.ci-price{font-size:14px;font-weight:700;color:var(--g3);flex-shrink:0;min-width:70px;text-align:right}
+.ci-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .2s;flex-shrink:0}
+.ci-del:hover{color:var(--p3);background:var(--p9)}
+/* WORKING QTY BUTTONS — inline onclick, no event binding */
+.qty-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.qbtn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--soft);cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;color:var(--ink);flex-shrink:0;user-select:none;-webkit-user-select:none}
+.qbtn:hover{background:var(--g8);border-color:var(--g5)}.qbtn:active{background:var(--g7)}
+.qval{font-size:14px;font-weight:700;min-width:30px;text-align:center;color:var(--ink)}
+/* ORDER SUMMARY */
+.oc{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;position:sticky;top:calc(var(--nh)+16px)}
+.oc h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:1rem}
+.oc-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:5px 0}
+.oc-row.disc{color:var(--p3);font-weight:600}
+.oc-total{display:flex;justify-content:space-between;font-size:16px;font-weight:700;padding:10px 0 0;border-top:1.5px solid var(--line);margin-top:4px;color:var(--ink)}
+.deposit-info{background:var(--g9);border-radius:var(--r);padding:10px;font-size:12px;color:var(--g2);margin:10px 0;line-height:1.6;border:1px solid var(--g7)}
+.select-count{font-size:12px;color:var(--g3);font-weight:600;margin-top:8px;text-align:center}
+.promo-input-row{display:flex;gap:8px;margin-top:8px}
+.promo-input-row input{flex:1;border:1.5px solid var(--line);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;outline:none;transition:border-color .2s;background:var(--soft)}
+.promo-input-row input:focus{border-color:var(--g4)}
+.promo-result{font-size:12px;margin-top:5px;line-height:1.5}
+.promo-ok{color:var(--g3)}.promo-fail{color:var(--p3)}
+.auto-promo{background:var(--g9);border:1px solid var(--g6);border-radius:var(--r);padding:8px 10px;font-size:12px;color:var(--g2);margin-top:8px;display:none}
+@media(max-width:760px){.cart-layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<div class="main-area no-sidebar">
+<div class="cart-wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <div class="page-title" style="margin-bottom:0">My <span style="color:var(--p3);font-style:italic">Cart</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="clearCart()">Clear All</button>
+  </div>
+
+  <div class="cart-layout">
+    <!-- LEFT: Items -->
+    <div>
+      <div class="cart-header-row">
+        <input type="checkbox" class="fc-checkbox" id="select-all" onchange="toggleSelectAll(this.checked)"/>
+        <label for="select-all" style="cursor:pointer;color:var(--ink);font-weight:600">Select All</label>
+        <span style="margin-left:auto;font-size:12px;color:var(--muted)" id="sel-summary">0 items selected</span>
+      </div>
+      <div id="cart-items"></div>
+    </div>
+
+    <!-- RIGHT: Summary -->
+    <div class="oc">
+      <h3>Order Summary</h3>
+      <div class="oc-row"><span>Items selected</span><span id="os-count">0</span></div>
+      <div class="oc-row"><span>Subtotal</span><span id="os-sub">₱0</span></div>
+      <div class="oc-row disc" id="os-disc-row" style="display:none">
+        <span id="os-disc-label">🏷️ Promo</span><span id="os-disc">−₱0</span>
+      </div>
+      <div class="oc-row"><span>Delivery</span><span style="color:var(--muted)">Calc. at checkout</span></div>
+      <div class="oc-total"><span>Estimated Total</span><span id="os-total">₱0</span></div>
+      <div class="deposit-info" id="os-deposit" style="display:none">
+        50% deposit: <strong id="os-dep-amt">₱0</strong><br>
+        Balance on delivery: <strong id="os-bal-amt">₱0</strong>
+      </div>
+      <div class="auto-promo" id="auto-promo"></div>
+      <div class="divider"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Promo Code</div>
+      <div class="promo-input-row">
+        <input id="promo-code" placeholder="Enter code..."/>
+        <button class="btn btn-green btn-sm" onclick="applyPromoCode()">Apply</button>
+      </div>
+      <div class="promo-result" id="promo-result"></div>
+      <div class="divider"></div>
+      <button class="btn btn-green" style="width:100%;justify-content:center;padding:13px;margin-bottom:8px" onclick="proceedCheckout()">Checkout Selected →</button>
+      <a class="btn btn-ghost" href="shop.html" style="width:100%;justify-content:center;text-decoration:none">← Continue Shopping</a>
+      <div class="select-count" id="checkout-hint"></div>
+    </div>
+  </div>
+</div>
+<div id="footer-container"></div>
+</div>
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('customer');
+buildTopNav('cart');
+renderFooter('footer-container', false);
+
+let appliedPromo = null;
+let manualPromoUsed = false;
+
+// ── RENDER CART ─────────────────────────────────────────────
+function renderCart() {
+  const cart = FC.getCart();
+  const el = document.getElementById('cart-items');
+
+  if (!cart.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ei">🌸</div><h3>Your cart is empty</h3><p>Browse our shop and add some beautiful flowers!</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now →</a></div>`;
+    updateSummary();
+    return;
+  }
+
+  el.innerHTML = cart.map((item, i) => {
+    const imgHtml = item.img
+      ? `<img src="${item.img}" alt="${item.name}"/>`
+      : imgPlaceholder(48);
+    const addonsLine = (item.addonDetails && item.addonDetails.length)
+      ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">Extras: ${item.addonDetails.map(a=>a.name).join(', ')}</div>` : '';
+    const flowerLine = item.type==='flower'
+      ? `<div style="font-size:10px;color:var(--g3);margin-top:2px">🌸 ${fmtP(item.price)}/stem</div>` : '';
+    return `
+    <div class="ci-wrap ${item.checked?'selected':''}" id="ciw-${i}">
+      <div class="ci">
+        <input type="checkbox" class="fc-checkbox" id="chk-${i}" ${item.checked?'checked':''} onchange="toggleItem(${i},this.checked)"/>
+        <div class="ci-img">${imgHtml}</div>
+        <div class="ci-info">
+          <div class="ci-name">${item.name}</div>
+          <div class="ci-sub">${item.sub||''}</div>
+          ${flowerLine}${addonsLine}
+          <div class="qty-row">
+            <button class="qbtn" onclick="changeQty(${i},-1)" title="Decrease">−</button>
+            <span class="qval" id="qty-${i}">${item.qty}</span>
+            <button class="qbtn" onclick="changeQty(${i},1)" title="Increase">+</button>
+            <span style="font-size:11px;color:var(--muted)">${item.type==='flower'?'stems':'pcs'}</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+          <div class="ci-price" id="price-${i}">${fmtP(item.price*item.qty)}</div>
+          ${(item.addonDetails||[]).length?`<div style="font-size:10px;color:var(--muted)">+${fmtP((item.addonDetails||[]).reduce((s,a)=>s+(a.price||0),0))} extras</div>`:''}
+        </div>
+        <button class="ci-del" onclick="removeItem(${i})" title="Remove">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateSummary();
+  syncSelectAll();
+  if (!manualPromoUsed) autoApplyPromo();
+}
+
+// ── QTY — WORKING inline onclick ─────────────────────────
+function changeQty(i, delta) {
+  const cart = FC.getCart();
+  if (!cart[i]) return;
+  cart[i].qty = Math.max(1, (cart[i].qty || 1) + delta);
+  FC.saveCart(cart);
+  // Update DOM without full re-render
+  const qEl = document.getElementById('qty-' + i);
+  if (qEl) qEl.textContent = cart[i].qty;
+  const pEl = document.getElementById('price-' + i);
+  if (pEl) pEl.textContent = fmtP(cart[i].price * cart[i].qty);
+  updateCartBadge();
+  updateSummary();
+  if (!manualPromoUsed) autoApplyPromo();
+}
+
+// ── SELECTION ─────────────────────────────────────────────
+function toggleItem(i, checked) {
+  const cart = FC.getCart();
+  if (!cart[i]) return;
+  cart[i].checked = checked;
+  FC.saveCart(cart);
+  document.getElementById('ciw-'+i)?.classList.toggle('selected', checked);
+  updateSummary();
+  syncSelectAll();
+  if (!manualPromoUsed) autoApplyPromo();
+}
+
+function toggleSelectAll(checked) {
+  const cart = FC.getCart();
+  cart.forEach(item => item.checked = checked);
+  FC.saveCart(cart);
+  renderCart();
+}
+
+function syncSelectAll() {
+  const cart = FC.getCart();
+  const sa = document.getElementById('select-all');
+  if (!sa) return;
+  const all = cart.length>0 && cart.every(i=>i.checked);
+  const none = cart.every(i=>!i.checked);
+  sa.checked = all;
+  sa.indeterminate = !all && !none;
+  const sel = cart.filter(i=>i.checked);
+  document.getElementById('sel-summary').textContent = sel.length+' of '+cart.length+' item'+(cart.length!==1?'s':'')+' selected';
+}
+
+// ── REMOVE / CLEAR ────────────────────────────────────────
+function removeItem(i) {
+  const cart = FC.getCart();
+  cart.splice(i, 1);
+  FC.saveCart(cart);
+  updateCartBadge();
+  renderCart();
+  toast('Item removed.');
+}
+
+function clearCart() {
+  if (!confirm('Remove all items from your cart?')) return;
+  FC.saveCart([]);
+  updateCartBadge();
+  renderCart();
+  toast('Cart cleared.');
+}
+
+// ── SUMMARY ───────────────────────────────────────────────
+function getSelectedSub() {
+  const selected = FC.getCart().filter(i=>i.checked);
+  return selected.reduce((s,i)=>s+i.price*i.qty+((i.addonDetails||[]).reduce((a,ad)=>a+(ad.price||0),0)),0);
+}
+
+function updateSummary() {
+  const cart = FC.getCart();
+  const selected = cart.filter(i=>i.checked);
+  const count = selected.length;
+  const sub = getSelectedSub();
+
+  let discount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.type==='percent') discount = Math.round(sub*appliedPromo.value/100);
+    else if (appliedPromo.type==='fixed') discount = Math.min(appliedPromo.value, sub);
+  }
+  const finalSub = sub - discount;
+
+  document.getElementById('os-count').textContent = count;
+  document.getElementById('os-sub').textContent = fmtP(sub);
+
+  const discRow = document.getElementById('os-disc-row');
+  if (discount > 0) {
+    discRow.style.display = 'flex';
+    document.getElementById('os-disc-label').textContent = '🏷️ '+(appliedPromo?.name||'Promo');
+    document.getElementById('os-disc').textContent = '−'+fmtP(discount);
+  } else discRow.style.display = 'none';
+
+  document.getElementById('os-total').textContent = fmtP(finalSub);
+
+  const depBox = document.getElementById('os-deposit');
+  if (count > 0) {
+    depBox.style.display = 'block';
+    document.getElementById('os-dep-amt').textContent = fmtP(Math.ceil(finalSub/2));
+    document.getElementById('os-bal-amt').textContent = fmtP(Math.floor(finalSub/2));
+  } else depBox.style.display = 'none';
+
+  document.getElementById('checkout-hint').textContent = count===0
+    ? 'Select items to checkout'
+    : count+' item'+(count!==1?'s':'')+' will be checked out';
+}
+
+// ── AUTO-APPLY BEST PROMO ─────────────────────────────────
+function autoApplyPromo() {
+  const cart = FC.getCart();
+  const selected = cart.filter(i=>i.checked);
+  if (!selected.length) { appliedPromo = null; updateSummary(); return; }
+  const sub = getSelectedSub();
+
+  const promos = FC.getPromos().filter(p=>p.status==='active');
+  let best = null, bestDisc = 0;
+  promos.forEach(p => {
+    const r = FC.validatePromo(p.id, sub, selected);
+    if (r.ok && r.discount > bestDisc) { bestDisc = r.discount; best = r.promo; }
+  });
+  // If no % discount found, try any eligible
+  if (!best) {
+    promos.forEach(p => {
+      const r = FC.validatePromo(p.id, sub, selected);
+      if (r.ok && !best) best = r.promo;
+    });
+  }
+
+  const noticeEl = document.getElementById('auto-promo');
+  if (best) {
+    appliedPromo = best;
+    noticeEl.style.display = 'block';
+    const disc = bestDisc > 0 ? ' — save '+fmtP(bestDisc) : '';
+    noticeEl.innerHTML = `🏷️ <strong>${best.name}</strong> auto-applied!${disc}`;
+    // Clear manual promo result if auto took over
+    const resEl = document.getElementById('promo-result');
+    if (resEl && !manualPromoUsed) resEl.textContent = '';
+  } else {
+    appliedPromo = null;
+    noticeEl.style.display = 'none';
+  }
+  updateSummary();
+}
+
+// ── MANUAL PROMO CODE ─────────────────────────────────────
+function applyPromoCode() {
+  const code = document.getElementById('promo-code').value.trim().toUpperCase();
+  if (!code) { toast('Please enter a promo code.','warn'); return; }
+  const cart = FC.getCart();
+  const selected = cart.filter(i=>i.checked);
+  if (!selected.length) { toast('Select items first.','warn'); return; }
+  const sub = getSelectedSub();
+  const resEl = document.getElementById('promo-result');
+  const result = FC.validatePromo(code, sub, selected);
+  if (result.ok) {
+    manualPromoUsed = true;
+    appliedPromo = result.promo;
+    document.getElementById('auto-promo').style.display = 'none';
+    resEl.className = 'promo-result promo-ok';
+    resEl.innerHTML = '✓ <strong>'+result.label+'</strong> applied!'+(result.discount>0?' Save '+fmtP(result.discount)+'.':'');
+    toast('🏷️ Promo applied!');
+    updateSummary();
+  } else {
+    manualPromoUsed = false;
+    appliedPromo = null;
+    resEl.className = 'promo-result promo-fail';
+    resEl.innerHTML = '✕ '+result.reason;
+    autoApplyPromo();
+  }
+}
+
+// ── PROCEED TO CHECKOUT ───────────────────────────────────
+function proceedCheckout() {
+  const cart = FC.getCart();
+  const selected = cart.filter(i=>i.checked);
+  if (!selected.length) { toast('Please select at least one item.','warn'); return; }
+  sessionStorage.setItem('fc_checkout_items', JSON.stringify(selected));
+  sessionStorage.setItem('fc_checkout_promo', appliedPromo ? JSON.stringify(appliedPromo) : '');
+  location.href = 'checkout.html';
+}
+
+renderCart();
+</script>
+</body>
+</html>

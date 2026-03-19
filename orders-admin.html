@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FleurChase — Orders Admin</title>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+/* ── RECEIPT ── */
+.receipt-img{max-width:100%;max-height:250px;border-radius:var(--r);border:1px solid var(--line);object-fit:contain;display:block;margin:0 auto}
+.receipt-placeholder{background:var(--soft);border-radius:var(--r);border:1px dashed var(--line);height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:13px;gap:6px}
+/* ── DETAIL MODAL ── */
+.detail-modal-box{background:white;border-radius:var(--rxl);padding:0;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18);transform:translateY(14px);transition:transform .22s}
+.modal-overlay.open .detail-modal-box{transform:translateY(0)}
+.dm-header{background:linear-gradient(135deg,var(--g1),var(--g3));color:white;padding:1.4rem 1.6rem;border-radius:var(--rxl) var(--rxl) 0 0;display:flex;justify-content:space-between;align-items:flex-start}
+.dm-header h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:.3rem}
+.dm-header p{font-size:12px;opacity:.75}
+.dm-close{background:rgba(255,255,255,.2);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0;margin-left:.5rem}
+.dm-close:hover{background:rgba(255,255,255,.35)}
+.dm-body{padding:1.4rem 1.6rem}
+.dm-section{margin-bottom:1.4rem}
+.dm-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:.7rem;display:flex;align-items:center;gap:6px}
+.dm-section-title::after{content:'';flex:1;height:1px;background:var(--line)}
+.dm-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.dm-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem}
+.dm-field{background:var(--soft);border-radius:var(--r);padding:.6rem .8rem}
+.dm-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);display:block;margin-bottom:3px}
+.dm-field span{font-size:13px;color:var(--ink);font-weight:500;word-break:break-word}
+.dm-field span.green{color:var(--g3);font-weight:700}
+.dm-field span.pink{color:var(--p3);font-weight:700}
+/* Order items list */
+.dm-item{display:flex;align-items:center;gap:10px;padding:.6rem .8rem;background:white;border-radius:var(--r);border:1px solid var(--line);margin-bottom:6px}
+.dm-item-icon{font-size:22px;width:40px;height:40px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.dm-item-icon img{width:100%;height:100%;object-fit:cover}
+.dm-item-info{flex:1}
+.dm-item-name{font-size:13px;font-weight:600;color:var(--ink)}
+.dm-item-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.dm-item-price{font-size:13px;font-weight:700;color:var(--g3);flex-shrink:0}
+/* Price breakdown */
+.dm-price-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.dm-price-row:last-child{border:none}
+.dm-price-row.total-row{font-size:15px;font-weight:700;color:var(--ink);padding-top:8px;border-top:2px solid var(--line);border-bottom:none}
+.dm-price-row.disc-row{color:var(--p3);font-weight:500}
+/* Gift message */
+.dm-gift-msg{background:var(--p9);border:1px solid var(--p6);border-radius:var(--r);padding:.8rem 1rem;font-size:13px;color:var(--p2);line-height:1.6;font-style:italic}
+/* Status badges inline */
+.dm-action-bar{display:flex;gap:8px;flex-wrap:wrap;padding:1rem 1.6rem;border-top:1px solid var(--line);background:var(--soft);border-radius:0 0 var(--rxl) var(--rxl)}
+</style>
+</head>
+<body>
+<div id="top-nav" class="app-nav"></div>
+<aside class="sidebar" id="fc-sidebar"></aside>
+<div class="main-area">
+<div class="p-page">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+    <div><div class="page-title">Orders</div><div class="page-sub" style="margin-bottom:0">Manage, validate, and update customer pre-orders</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="ord-filter" onchange="renderOrders()" style="border:1.5px solid var(--line);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:white;cursor:pointer">
+        <option value="all">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Processing">Processing</option>
+        <option value="Out for Delivery">Out for Delivery</option>
+        <option value="Delivered">Delivered</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-head"><h3>All Orders</h3><span id="ord-count" style="font-size:12px;color:var(--muted)"></span></div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th>Order #</th>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Items</th>
+          <th>Delivery</th>
+          <th>Payment</th>
+          <th>Receipt</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th style="min-width:160px">Actions</th>
+        </tr></thead>
+        <tbody id="ord-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── VIEW DETAILS MODAL ── -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="detail-modal-box">
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ── VALIDATE MODAL ── -->
+<div class="modal-overlay" id="validate-modal">
+  <div class="modal-box" style="max-width:540px">
+    <div class="modal-head"><h3>Validate Payment</h3><button class="modal-close" onclick="closeModal('validate-modal')">✕</button></div>
+    <div id="vm-body"></div>
+  </div>
+</div>
+
+<!-- ── UPDATE STATUS MODAL ── -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head"><h3>Update Order Status</h3><button class="modal-close" onclick="closeModal('update-modal')">✕</button></div>
+    <div id="um-body"></div>
+  </div>
+</div>
+
+<div id="fc-toast" class="toast"></div>
+<script src="data.js"></script><script src="nav.js"></script>
+<script>
+requireAuth('admin');
+buildTopNav('orders-admin');
+buildAdminSidebar('orders-admin.html');
+
+const STATUS_CLASS = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w',Cancelled:'tag-p'};
+const PAY_ICON     = {'GCash 50% Deposit':'💚','Full GCash Payment':'💚','Cash on Delivery':'💵','Maya 50% Deposit':'📱'};
+
+// ── ORDERS TABLE ────────────────────────────────────────────────────────────
+function renderOrders() {
+  const filter = document.getElementById('ord-filter').value;
+  const orders = FC.getOrders();
+  const list = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+  document.getElementById('ord-count').textContent = list.length + ' order' + (list.length !== 1 ? 's' : '');
+
+  document.getElementById('ord-tbody').innerHTML = list.map(o => {
+    const hasReceipt = !!localStorage.getItem('fc_receipt_' + o.id)
+      || !!(o.receipt && o.receipt.startsWith('data:image'));
+    const payIcon = PAY_ICON[o.payMethod] || '💳';
+    const payStatusLabel = o.payStatus === 'verified' ? 'Verified ✓'
+      : o.payStatus === 'rejected' ? 'Rejected'
+      : o.payStatus === 'cod-pending' ? 'COD'
+      : o.payStatus === 'uploaded' ? 'Uploaded'
+      : 'Pending';
+    const payStatusCls = o.payStatus === 'verified' ? 'tag-g'
+      : o.payStatus === 'rejected' ? 'tag-p'
+      : o.payStatus === 'cod-pending' ? 'tag-w' : 'tag-a';
+    return `
+    <tr>
+      <td style="font-weight:700;font-size:12px">${o.id}</td>
+      <td>${o.customer||'—'}<br><span style="font-size:11px;color:var(--muted)">${o.loc||'—'}</span></td>
+      <td style="font-size:12px">
+        ${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);font-weight:600;text-decoration:none">${o.phone}</a>`:'<span style="color:var(--muted)">—</span>'}
+      </td>
+      <td style="font-size:12px;max-width:150px">
+        ${o.items}
+        ${o.giftMsg?`<br><span style="font-size:10px;color:var(--p3)">💌 "${o.giftMsg.slice(0,28)}${o.giftMsg.length>28?'…':''}"</span>`:''}
+      </td>
+      <td style="font-size:12px">${o.delivDate||'—'}<br><span style="font-size:11px;color:var(--muted)">${o.delivTime||''}</span></td>
+      <td style="font-size:12px">${payIcon} ${o.payMethod||'—'}<br><span class="tag ${payStatusCls}" style="margin-top:3px;display:inline-block">${payStatusLabel}</span></td>
+      <td>${hasReceipt?`<button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="viewReceipt('${o.id}')">View 📷</button>`:'<span style="color:var(--muted);font-size:12px">—</span>'}</td>
+      <td><span class="tag ${STATUS_CLASS[o.status]||'tag-w'}">${o.status}</span></td>
+      <td style="font-weight:600">${fmtP(o.total)}${o.discount?`<br><span style="font-size:10px;color:var(--p3)">−${fmtP(o.discount)} disc</span>`:''}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" style="font-size:11px" onclick="openDetail('${o.id}')">🔍 Details</button>
+          ${o.payStatus==='uploaded'&&o.status==='Pending'?`<button class="btn btn-green btn-sm" style="font-size:11px" onclick="openValidate('${o.id}')">✓ Validate</button>`:''}
+          ${o.status!=='Delivered'&&o.status!=='Cancelled'?`<button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="openUpdate('${o.id}')">Update</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">No orders found</td></tr>`;
+}
+
+// ── VIEW DETAILED ORDER ──────────────────────────────────────────────────────
+function openDetail(id) {
+  const o = FC.getOrders().find(x => x.id === id);
+  if (!o) return;
+
+  const payStatusLabel = o.payStatus==='verified'?'✅ Verified'
+    :o.payStatus==='rejected'?'❌ Rejected'
+    :o.payStatus==='uploaded'?'⏳ Receipt Uploaded — Awaiting Review'
+    :'⏳ Pending';
+  const payStatusColor = o.payStatus==='verified'?'var(--g3)':o.payStatus==='rejected'?'var(--p3)':'var(--muted)';
+
+  // Build items list
+  const itemRows = (o.itemDetails||[]).map(it => {
+    const iconHtml = it.img
+      ? `<img src="${it.img}" style="width:100%;height:100%;object-fit:cover"/>`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${imgPlaceholder(40)}</div>`;
+    const stemNote = it.stems>0 ? ` · ${it.stems} stems` : '';
+    const flowerNote = it.flowers ? `<div style="font-size:10px;color:var(--g3);margin-top:2px">Flowers: ${it.flowers}</div>` : '';
+    const noteNote = it.note ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">Note: ${it.note}</div>` : '';
+    return `<div class="dm-item">
+      <div class="dm-item-icon">${iconHtml}</div>
+      <div class="dm-item-info">
+        <div class="dm-item-name">${it.name||'—'}</div>
+        <div class="dm-item-sub">Qty: ${it.qty||1}${stemNote}</div>
+        ${flowerNote}${noteNote}
+      </div>
+      <div class="dm-item-price">${fmtP((it.price||0)*(it.qty||1))}</div>
+    </div>`;
+  }).join('') || `<div style="font-size:12px;color:var(--muted);padding:.5rem">No item details recorded</div>`;
+
+  // Build add-ons list
+  const addonRows = (o.addonDetails||[]).length
+    ? (o.addonDetails||[]).map(a => `
+      <div class="dm-item">
+        <div class="dm-item-icon">${a.img?`<img src="${a.img}" style="width:100%;height:100%;object-fit:cover"/>`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${imgPlaceholder(40)}</div>`}</div>
+        <div class="dm-item-info">
+          <div class="dm-item-name">${a.name}</div>
+          <div class="dm-item-sub">Qty: ${a.qty||1}</div>
+        </div>
+        <div class="dm-item-price">${fmtP((a.price||0)*(a.qty||1))}</div>
+      </div>`).join('')
+    : `<div style="font-size:12px;color:var(--muted);padding:.5rem 0">No add-ons</div>`;
+
+  // Price breakdown
+  const deposit = o.payMethod && o.payMethod.includes('50%') ? Math.ceil(o.total/2) : null;
+
+  document.getElementById('detail-content').innerHTML = `
+    <!-- HEADER -->
+    <div class="dm-header">
+      <div>
+        <h2>Order ${o.id}</h2>
+        <p>Placed ${o.placedAt ? new Date(o.placedAt).toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—'}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="tag ${STATUS_CLASS[o.status]||'tag-w'}" style="font-size:11px">${o.status}</span>
+        <button class="dm-close" onclick="closeModal('detail-modal')">✕</button>
+      </div>
+    </div>
+
+    <div class="dm-body">
+
+      <!-- CUSTOMER INFO -->
+      <div class="dm-section">
+        <div class="dm-section-title">👤 Customer Information</div>
+        <div class="dm-grid2">
+          <div class="dm-field"><label>Full Name</label><span>${o.customer||'—'}</span></div>
+          <div class="dm-field"><label>Phone Number</label><span>${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);text-decoration:none;font-weight:600">${o.phone}</a>`:'—'}</span></div>
+          <div class="dm-field" style="grid-column:1/-1"><label>Delivery Address</label><span>${o.address||o.loc||'—'}</span></div>
+        </div>
+      </div>
+
+      <!-- DELIVERY -->
+      <div class="dm-section">
+        <div class="dm-section-title">📍 Delivery Details</div>
+        <div class="dm-grid3">
+          <div class="dm-field"><label>Municipality</label><span>${o.loc||'—'}</span></div>
+          <div class="dm-field"><label>Delivery Date</label><span>${o.delivDate||'—'}</span></div>
+          <div class="dm-field"><label>Time Slot</label><span>${o.delivTime||'—'}</span></div>
+        </div>
+      </div>
+
+      <!-- ORDER ITEMS -->
+      <div class="dm-section">
+        <div class="dm-section-title">💐 Order Items</div>
+        ${itemRows}
+      </div>
+
+      <!-- ADD-ONS -->
+      <div class="dm-section">
+        <div class="dm-section-title">🎁 Add-ons</div>
+        ${addonRows}
+      </div>
+
+      <!-- GIFT MESSAGE -->
+      ${o.giftMsg ? `
+      <div class="dm-section">
+        <div class="dm-section-title">💌 Gift Message</div>
+        <div class="dm-gift-msg">"${o.giftMsg}"</div>
+      </div>` : ''}
+
+      <!-- PAYMENT & PRICING -->
+      <div class="dm-section">
+        <div class="dm-section-title">💳 Payment & Pricing</div>
+        <div class="dm-grid2" style="margin-bottom:.8rem">
+          <div class="dm-field"><label>Payment Method</label><span>${o.payMethod||'—'}</span></div>
+          <div class="dm-field"><label>Payment Status</label><span style="color:${payStatusColor};font-weight:600">${payStatusLabel}</span></div>
+          ${o.promo||o.promoLabel?`<div class="dm-field"><label>Promo Applied</label><span style="color:var(--p3)">🏷️ ${o.promo||o.promoLabel}</span></div>`:''}
+          ${o.refNum?`<div class="dm-field"><label>Reference #</label><span style="font-family:monospace">${o.refNum}</span></div>`:''}
+        </div>
+        <div style="background:var(--soft);border-radius:var(--r);padding:.8rem 1rem">
+          <div class="dm-price-row"><span style="color:var(--muted)">Items subtotal</span><span>${fmtP(o.sub||o.total)}</span></div>
+          ${o.addonTotal?`<div class="dm-price-row"><span style="color:var(--muted)">Add-ons</span><span>${fmtP(o.addonTotal)}</span></div>`:''}
+          ${o.discount?`<div class="dm-price-row disc-row"><span>Discount (${o.promo||o.promoLabel||'promo'})</span><span>−${fmtP(o.discount)}</span></div>`:''}
+          ${o.shippingFee?`<div class="dm-price-row"><span style="color:var(--muted)">Shipping fee</span><span>${fmtP(o.shippingFee)}</span></div>`:`<div class="dm-price-row"><span style="color:var(--muted)">Shipping fee</span><span style="color:var(--g3)">FREE</span></div>`}
+          <div class="dm-price-row total-row"><span>Total</span><span style="color:var(--g3)">${fmtP(o.total)}</span></div>
+          ${deposit?`<div style="margin-top:.5rem;font-size:12px;color:var(--muted)">50% deposit paid: <strong style="color:var(--g3)">${fmtP(deposit)}</strong> · Balance on delivery: <strong>${fmtP(o.total-deposit)}</strong></div>`:''}
+        </div>
+      </div>
+
+      <!-- RECEIPT -->
+      <div class="dm-section">
+        <div class="dm-section-title">📷 Payment Receipt</div>
+        <div id="detail-receipt-${o.id}">
+          <div style="font-size:12px;color:var(--muted)">Loading receipt...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ACTION BAR -->
+    <div class="dm-action-bar">
+      ${o.payStatus==='uploaded'&&o.status==='Pending'?`<button class="btn btn-green" onclick="closeModal('detail-modal');openValidate('${o.id}')">✓ Validate Payment</button>`:''}
+      ${o.status!=='Delivered'&&o.status!=='Cancelled'?`<button class="btn btn-outline" onclick="closeModal('detail-modal');openUpdate('${o.id}')">📦 Update Status</button>`:''}
+      <button class="btn btn-ghost" onclick="closeModal('detail-modal')" style="margin-left:auto">Close</button>
+    </div>
+  `;
+
+  openModal('detail-modal');
+
+  // Load receipt asynchronously after modal opens
+  setTimeout(() => {
+    const receiptEl = document.getElementById('detail-receipt-' + o.id);
+    if (!receiptEl) return;
+    const receiptSrc = localStorage.getItem('fc_receipt_' + o.id)
+      || (o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
+    if (receiptSrc) {
+      receiptEl.innerHTML = `
+        <img src="${receiptSrc}" class="receipt-img" alt="Payment receipt"
+          onerror="this.style.display='none';this.nextSibling.style.display='block'"/>
+        <div style="display:none;background:var(--soft);border-radius:var(--r);padding:.8rem;text-align:center;color:var(--muted);font-size:12px">⚠ Image could not be loaded</div>
+        <div style="text-align:center;margin-top:.4rem;font-size:11px;color:var(--muted)">${o.receiptFile||'Receipt image'}</div>`;
+    } else {
+      receiptEl.innerHTML = `<div class="receipt-placeholder"><span style="font-size:26px">📷</span><span>No receipt uploaded</span></div>`;
+    }
+  }, 80);
+}
+
+// ── VIEW RECEIPT (quick modal) ───────────────────────────────────────────────
+function viewReceipt(id) {
+  const o = FC.getOrders().find(x => x.id === id);
+  const receiptSrc = localStorage.getItem('fc_receipt_' + id)
+    || (o && o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
+  if (!receiptSrc) { toast('No receipt image found.','err'); return; }
+  document.getElementById('vm-body').innerHTML = `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">${o?.id} · ${o?.customer||'—'} · ${o?.payMethod||'—'}</p>
+    <img src="${receiptSrc}" class="receipt-img" alt="Receipt"
+      onerror="this.style.display='none';this.nextSibling.style.display='block'"/>
+    <div style="display:none;background:var(--soft);border-radius:var(--r);padding:1rem;text-align:center;color:var(--muted);font-size:13px">Image could not be loaded</div>
+    <div style="text-align:center;margin-top:.5rem;font-size:12px;color:var(--muted)">${o?.receiptFile||'Receipt image'}</div>`;
+  openModal('validate-modal');
+}
+
+// ── VALIDATE PAYMENT ─────────────────────────────────────────────────────────
+function openValidate(id) {
+  const o = FC.getOrders().find(x => x.id === id);
+  if (!o) return;
+  const receiptSrc = localStorage.getItem('fc_receipt_' + id)
+    || (o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
+  document.getElementById('vm-body').innerHTML = `
+    <div style="background:var(--soft);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem;font-size:13px">
+      <div style="font-weight:600;color:var(--ink)">${o.id} · ${o.customer||'—'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">${o.payMethod||'—'} · Total: <strong style="color:var(--g3)">${fmtP(o.total)}</strong> · Deposit: <strong>${fmtP(Math.ceil(o.total/2))}</strong></div>
+      ${o.giftMsg?`<div style="font-size:12px;margin-top:6px;background:var(--p9);border-radius:6px;padding:6px 8px;color:var(--p2)">💌 <strong>Gift message:</strong> ${o.giftMsg}</div>`:''}
+    </div>
+    ${receiptSrc
+      ?`<div style="text-align:center;margin-bottom:.5rem">
+          <img src="${receiptSrc}" class="receipt-img" style="max-height:200px"
+            onerror="this.style.display='none'"/>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${o.receiptFile||'Receipt'}</div>
+        </div>`
+      :`<div class="receipt-placeholder"><span style="font-size:28px">📷</span><span>No receipt uploaded yet</span></div>`}
+    <div class="ff" style="margin-top:1rem">
+      <label>GCash Reference #</label>
+      <input id="ref-num" placeholder="Enter reference number from receipt" style="font-family:monospace"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-green" style="flex:1;justify-content:center" onclick="approveOrder('${id}')">✓ Approve & Verify</button>
+      <button class="btn btn-danger" style="flex:1;justify-content:center" onclick="rejectOrder('${id}')">✕ Reject</button>
+    </div>`;
+  openModal('validate-modal');
+}
+
+function approveOrder(id) {
+  const orders = FC.getOrders();
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.payStatus = 'verified';
+  o.status = 'Processing';
+  o.refNum = document.getElementById('ref-num')?.value || '';
+  FC.deductStock(
+    (o.itemDetails||[]).map(i=>({...i,qty:i.qty||1})),
+    (o.addonDetails||[]).map(a=>({addonId:a.addonId,name:a.name,qty:a.qty||1}))
+  );
+  FC.saveOrders(orders);
+  closeModal('validate-modal');
+  toast('✓ Order '+id+' approved! Stock deducted.');
+  renderOrders();
+}
+
+function rejectOrder(id) {
+  const orders = FC.getOrders();
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.payStatus = 'rejected';
+  o.status = 'Cancelled';
+  FC.saveOrders(orders);
+  closeModal('validate-modal');
+  toast('Order '+id+' rejected.','err');
+  renderOrders();
+}
+
+// ── UPDATE STATUS ─────────────────────────────────────────────────────────────
+function openUpdate(id) {
+  const o = FC.getOrders().find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('um-body').innerHTML = `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">${o.id} · ${o.customer||'—'}</p>
+    <div class="ff"><label>New Status</label>
+      <select id="new-status">
+        <option ${o.status==='Pending'?'selected':''}>Pending</option>
+        <option ${o.status==='Processing'?'selected':''}>Processing</option>
+        <option ${o.status==='Out for Delivery'?'selected':''}>Out for Delivery</option>
+        <option ${o.status==='Delivered'?'selected':''}>Delivered</option>
+      </select>
+    </div>
+    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="updateStatus('${id}')">Update Status</button>`;
+  openModal('update-modal');
+}
+
+function updateStatus(id) {
+  const newStatus = document.getElementById('new-status').value;
+  const orders = FC.getOrders();
+  const o = orders.find(x => x.id === id);
+  if (o) o.status = newStatus;
+  FC.saveOrders(orders);
+  closeModal('update-modal');
+  toast('Status updated to: '+newStatus);
+  renderOrders();
+}
+
+renderOrders();
+</script>
+</body>
+</html>
