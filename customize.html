@@ -240,7 +240,7 @@ function renderFlowers(){
     const addDis=atMax?'disabled':'';
     const remDis=cnt===0?'disabled':'';
     const imgHtml=f.img
-      ?`<img class="fo-bg" src="${f.img}"/>`
+      ?`<img class="fo-bg" src="images/${f.img}"/>`
       :`<div class="fo-placeholder">${imgPlaceholder(40)}</div>`;
     return `
     <div class="fo ${cnt>0?'sel':''} ${atMax&&cnt===0?'maxed-no-sel':''}">
@@ -315,7 +315,7 @@ function renderAddons(){
     const sel=!!selectedAddons[a.id];
     const qty=sel?(selectedAddons[a.id].qty||1):0;
     const imgHtml=a.img
-      ?`<img class="aoc-bg" src="${a.img}"/>`
+      ?`<img class="aoc-bg" src="images/${a.img}"/>`
       :`<div class="aoc-placeholder">${imgPlaceholder(40)}</div>`;
     const qtyRow=sel?`
       <div class="aoc-ctrl" onclick="event.stopPropagation()">
