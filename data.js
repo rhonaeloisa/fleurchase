@@ -5,7 +5,7 @@ const FC = (() => {
   const SEED_PRODUCTS = [
     { id:'p1', name:'Red Rose Bouquet',       type:'bouquet', category:'ready-made', price:350,  maxPrice:850, bg:'#fff5f7', badge:'New',      rating:4.8, reviews:42,  stock:30, desc:'Classic 12-stem red rose arrangement.' },
     { id:'p2', name:'Tulip Spring Bundle',    type:'bouquet', category:'seasonal',   price:280,  oldPrice:450, bg:'#f0f4ff', badge:'Sale',     rating:4.6, reviews:28,  stock:20, desc:'Fresh seasonal tulip bundle.' },
-    { id:'p3', name:'Custom Arrangement',     type:'bouquet', category:'customized', price:350,  maxPrice:850, bg:'#f0fdf4', badge:'Popular',  rating:4.9, reviews:88,  stock:99, desc:'You design it — our florists bring it to life.' },
+    { id:'p3', name:'Custom Arrangement',     type:'bouquet', category:'customized', price:350,  maxPrice:850, bg:'#f0fdf4', badge:'Popular',  rating:4.9, reviews:88,  stock:99, desc:'You design it. Our florists bring it to life.' },
     { id:'p4', name:'Love & Blooms Gift Set', type:'bouquet', category:'gift-set',   price:980,                bg:'#fdf4ff', badge:'',         rating:4.7, reviews:35,  stock:15, desc:'Roses + Chocolates + Greeting card.' },
     { id:'p5', name:'Cherry Blossom Fan',     type:'bouquet', category:'seasonal',   price:650,                bg:'#fff0f6', badge:'Seasonal', rating:4.5, reviews:19,  stock:12, desc:'Japanese-inspired seasonal arrangement.' },
     { id:'p6', name:"Valentine's Rose Trio",  type:'bouquet', category:'promo',      price:550,                bg:'#fff5f7', badge:'Promo',    rating:4.8, reviews:64,  stock:25, desc:"Buy 3 get 2 free! Special arrangement." },
