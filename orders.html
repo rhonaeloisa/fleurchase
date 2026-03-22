@@ -115,7 +115,7 @@ function renderOrderCard(o){
           </div>`).join('')}
       </div>
       ${o.status!=='Delivered'?`<div class="alert alert-g" style="margin-top:.5rem">⏰ Scheduled for <strong>${o.delivDate}${o.delivTime?' · '+o.delivTime:''}</strong></div>`:''}
-      ${o.payStatus==='uploaded'&&o.status==='Pending'?`<div class="alert alert-b" style="margin-top:.5rem">⏳ Receipt uploaded — awaiting payment verification.</div>`:''}
+      ${o.payStatus==='uploaded'&&o.status==='Pending'?`<div class="alert alert-b" style="margin-top:.5rem">⏳ Receipt uploaded. Awaiting payment verification.</div>`:''}
       ${o.payStatus==='verified'?`<div class="alert alert-g" style="margin-top:.5rem">✅ Payment verified! Your order is being processed.</div>`:''}
       ${deliveredActions}
     </div>`;
