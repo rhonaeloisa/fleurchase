@@ -27,42 +27,55 @@
 .stem-hint{font-size:11px;color:var(--muted);margin-top:3px}
 /* FLOWER GRID */
 .flower-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.fo{background:var(--soft);border-radius:var(--r);padding:10px 6px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.fo.sel{border-color:var(--g4);background:var(--g9)}.fo.maxed-no-sel{opacity:.5}
-.fo .fi{font-size:22px;margin-bottom:3px}.fo strong{font-size:11px;color:var(--ink);display:block}.fo small{font-size:10px;color:var(--muted)}
-.fo-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:7px}
-.fo-btn{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;color:var(--ink);flex-shrink:0}
-.fo-btn:hover{background:var(--g8);border-color:var(--g5)}
-.fo-btn.rem:hover{background:var(--p9);border-color:var(--p5)}
-.fo-btn:disabled{opacity:.3;cursor:not-allowed;background:white}
-.fo-qty{font-size:13px;font-weight:700;min-width:22px;text-align:center;color:var(--ink)}
+.fo{border-radius:var(--r);border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden;aspect-ratio:1/1;cursor:pointer;background:var(--g8)}
+.fo:hover{border-color:var(--g5)}.fo.sel{border-color:var(--p4)}.fo.maxed-no-sel{opacity:.45}
+.fo-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.fo-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.fo-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.35) 60%,transparent 100%);padding:6px 5px 6px;display:flex;flex-direction:column;align-items:center}
+.fo strong{font-size:10px;font-weight:700;color:#fff;display:block;text-align:center;margin-bottom:1px}
+.fo small{font-size:9px;color:rgba(255,255,255,.75);display:block;text-align:center}
+.fo-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:5px}
+.fo-btn{width:18px;height:18px;border-radius:5px;border:1.5px solid rgba(255,255,255,.45);background:rgba(255,255,255,.18);cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;color:#fff;flex-shrink:0;transition:background .15s}
+.fo-btn:hover{background:rgba(255,255,255,.35)}.fo-btn.rem:hover{background:rgba(200,50,70,.55)}
+.fo-btn:disabled{opacity:.3;cursor:not-allowed}
+.fo-qty{font-size:11px;font-weight:700;min-width:16px;text-align:center;color:#fff}
+.fo-sel-badge{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--p4);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700}
+.fo.sel .fo-sel-badge{display:flex}
+
 /* FILLERS */
 .filler-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.filler-card{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s}
-.filler-card:hover{border-color:var(--g6)}.filler-card.sel{border-color:var(--g4);background:var(--g9)}
-.filler-icon{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.filler-name{font-size:10px;font-weight:600;color:var(--ink);margin-bottom:2px}
-.filler-price{font-size:10px;color:var(--g3);font-weight:600}
-.filler-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+.filler-card{border-radius:var(--r);border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden;aspect-ratio:1/1;cursor:pointer;background:var(--g8)}
+.filler-card:hover{border-color:var(--g6)}.filler-card.sel{border-color:var(--p4)}
+.filler-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.filler-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.35) 60%,transparent 100%);padding:6px 5px 6px;display:flex;flex-direction:column;align-items:center}
+.filler-name{font-size:10px;font-weight:700;color:#fff;text-align:center}
+.filler-price{font-size:9px;color:rgba(255,255,255,.75);font-weight:600;text-align:center}
+.filler-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:5px}
+.filler-sel-badge{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--p4);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700}
+.filler-card.sel .filler-sel-badge{display:flex}
+
+/* SHARED SMALL +/- */
+.sm-btn{width:18px;height:18px;border-radius:5px;border:1.5px solid rgba(255,255,255,.45);background:rgba(255,255,255,.18);cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;flex-shrink:0;color:#fff}
+.sm-btn:hover{background:rgba(255,255,255,.35)}.sm-btn.rem:hover{background:rgba(200,50,70,.55)}
+.sm-btn:disabled{opacity:.3;cursor:not-allowed}
+.sm-qty{font-size:11px;font-weight:700;min-width:16px;text-align:center;color:#fff}
+
 /* ADDONS */
 .acats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
 .acat{padding:5px 13px;border-radius:16px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
 .acat:hover{border-color:var(--g5);color:var(--g2)}.acat.active{background:var(--g9);border-color:var(--g5);color:var(--g2)}
 .addons-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.aoc{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.aoc:hover{border-color:var(--g6)}.aoc.sel{border-color:var(--g4);background:var(--g9)}
-.aoc .aoc-img{width:38px;height:38px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 4px}
-.aoc .aoc-icon-wrap{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.aoc .aoc-name{font-size:10px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
-.aoc .aoc-price{font-size:10px;color:var(--g3);font-weight:600}
-.aoc-chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--g4);border-radius:50%;display:none;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:700}
+.aoc{border-radius:var(--r);border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden;aspect-ratio:1/1;cursor:pointer;background:var(--g8)}
+.aoc:hover{border-color:var(--g6)}.aoc.sel{border-color:var(--p4)}
+.aoc-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.aoc-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.aoc-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.35) 60%,transparent 100%);padding:6px 5px 6px;display:flex;flex-direction:column;align-items:center}
+.aoc .aoc-name{font-size:10px;font-weight:700;color:#fff;text-align:center;line-height:1.3;margin-bottom:1px}
+.aoc .aoc-price{font-size:9px;color:rgba(255,255,255,.75);font-weight:600;text-align:center}
+.aoc-chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--p4);border-radius:50%;display:none;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:700}
 .aoc.sel .aoc-chk{display:flex}
-.aoc-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-/* SHARED SMALL +/- */
-.sm-btn{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;flex-shrink:0}
-.sm-btn:hover{background:var(--g8)}.sm-btn.rem:hover{background:var(--p9)}
-.sm-btn:disabled{opacity:.3;cursor:not-allowed}
-.sm-qty{font-size:12px;font-weight:700;min-width:18px;text-align:center;color:var(--ink)}
+.aoc-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:5px}
+
 /* COLORS */
 .color-row{display:flex;gap:8px;flex-wrap:wrap}
 .cdot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
@@ -227,17 +240,20 @@ function renderFlowers(){
     const addDis=atMax?'disabled':'';
     const remDis=cnt===0?'disabled':'';
     const imgHtml=f.img
-      ?`<img src="${f.img}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 3px"/>`
-      :`<div style="display:flex;justify-content:center;margin-bottom:3px">${imgPlaceholder(40)}</div>`;
+      ?`<img class="fo-bg" src="${f.img}"/>`
+      :`<div class="fo-placeholder">${imgPlaceholder(40)}</div>`;
     return `
     <div class="fo ${cnt>0?'sel':''} ${atMax&&cnt===0?'maxed-no-sel':''}">
       ${imgHtml}
-      <strong>${f.name}</strong>
-      <small>${fmtP(f.price)}/stem</small>
-      <div class="fo-ctrl">
-        <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
-        <span class="fo-qty">${cnt}</span>
-        <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
+      <div class="fo-sel-badge">✓</div>
+      <div class="fo-overlay">
+        <strong>${f.name}</strong>
+        <small>${fmtP(f.price)}/stem</small>
+        <div class="fo-ctrl">
+          <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
+          <span class="fo-qty">${cnt}</span>
+          <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -263,13 +279,16 @@ function renderFillers(){
     const qty=fillerCounts[f.id]||0;
     return `
     <div class="filler-card ${qty>0?'sel':''}">
-      <div class="filler-icon">${imgPlaceholder(38)}</div>
-      <div class="filler-name">${f.name}</div>
-      <div class="filler-price">${fmtP(f.price)}/stem</div>
-      <div class="filler-ctrl">
-        <button class="sm-btn rem" ${qty===0?'disabled':''} onclick="changeFillerQty('${f.id}',-1)">−</button>
-        <span class="sm-qty">${qty}</span>
-        <button class="sm-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+      <div class="filler-placeholder">${f.icon}</div>
+      <div class="filler-sel-badge">✓</div>
+      <div class="filler-overlay">
+        <div class="filler-name">${f.name}</div>
+        <div class="filler-price">${fmtP(f.price)}/stem</div>
+        <div class="filler-ctrl">
+          <button class="sm-btn rem" ${qty===0?'disabled':''} onclick="changeFillerQty('${f.id}',-1)">−</button>
+          <span class="sm-qty">${qty}</span>
+          <button class="sm-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -295,7 +314,9 @@ function renderAddons(){
   document.getElementById('addons-grid').innerHTML=list.map(a=>{
     const sel=!!selectedAddons[a.id];
     const qty=sel?(selectedAddons[a.id].qty||1):0;
-    const imgHtml=a.img?`<img src="${a.img}" class="aoc-img"/>`:`<div class="aoc-icon-wrap">${imgPlaceholder(38)}</div>`;
+    const imgHtml=a.img
+      ?`<img class="aoc-bg" src="${a.img}"/>`
+      :`<div class="aoc-placeholder">${imgPlaceholder(40)}</div>`;
     const qtyRow=sel?`
       <div class="aoc-ctrl" onclick="event.stopPropagation()">
         <button class="sm-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
@@ -306,9 +327,11 @@ function renderAddons(){
     <div class="aoc ${sel?'sel':''}" id="aoc-${a.id}" onclick="toggleAddon('${a.id}')">
       <div class="aoc-chk">✓</div>
       ${imgHtml}
-      <div class="aoc-name">${a.name}</div>
-      <div class="aoc-price">${fmtP(a.price)}</div>
-      ${qtyRow}
+      <div class="aoc-overlay">
+        <div class="aoc-name">${a.name}</div>
+        <div class="aoc-price">${fmtP(a.price)}</div>
+        ${qtyRow}
+      </div>
     </div>`;
   }).join('')||`<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
 }
