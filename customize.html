@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FleurChase — Customize Bouquet</title>
+<title>FleurChase - Customize Bouquet</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
 .custom-layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;padding:2rem 2.5rem;align-items:start}
@@ -85,11 +85,11 @@
 <div class="custom-layout">
   <div>
     <div class="page-title" style="margin-bottom:.25rem">Build Your <span style="color:var(--p3);font-style:italic">Bouquet</span></div>
-    <div class="page-sub">Choose your flowers freely — total price is based on what you pick</div>
+    <div class="page-sub">Choose your flowers freely - total price is based on what you pick</div>
 
     <!-- STEP 1: SIZE -->
     <div class="step-card">
-      <div class="step-title">Step 1 — Bouquet size</div>
+      <div class="step-title">Step 1 - Bouquet size</div>
       <div class="size-row" id="size-row"></div>
     </div>
 
@@ -104,33 +104,33 @@
 
     <!-- STEP 2: FLOWERS -->
     <div class="step-card">
-      <div class="step-title">Step 2 — Choose flowers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(use + / − to adjust stems)</span></div>
+      <div class="step-title">Step 2 - Choose flowers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(use + / − to adjust stems)</span></div>
       <div class="flower-grid" id="flower-grid"></div>
     </div>
 
     <!-- STEP 3: FILLERS (optional) -->
     <div class="step-card">
-      <div class="step-title">Step 3 — Fillers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <div class="step-title">Step 3 - Fillers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
       <div class="filler-grid" id="filler-grid"></div>
     </div>
 
     <!-- STEP 4: ADD-ONS -->
     <div class="step-card">
-      <div class="step-title">Step 4 — Extras <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional — chocolates, teddies, gifts)</span></div>
+      <div class="step-title">Step 4 - Extras <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional — chocolates, teddies, gifts)</span></div>
       <div class="acats" id="addon-cats"></div>
       <div class="addons-grid" id="addons-grid"></div>
     </div>
 
     <!-- STEP 5: WRAPPING -->
     <div class="step-card">
-      <div class="step-title">Step 5 — Wrapping color</div>
+      <div class="step-title">Step 5 - Wrapping color</div>
       <div class="color-row" id="color-row"></div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px" id="color-lbl">Selected: Blush Pink</div>
     </div>
 
     <!-- STEP 6: NOTE -->
     <div class="step-card">
-      <div class="step-title">Step 6 — Florist note <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <div class="step-title">Step 6 - Florist note <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
       <textarea class="note-ta" id="bouquet-note" placeholder="e.g. Extra lush, sage ribbon, no carnations..."></textarea>
     </div>
   </div>
@@ -345,7 +345,7 @@ function updateSummary(){
   const svcFee=FC.SERVICE_FEE;
   const total=flwCost+fillerCost+extrasCost+svcFee;
 
-  // Stem progress bar — based on min/max range
+  // Stem progress bar - based on min/max range
   const pct=selSize.maxStems>0?Math.min(100,Math.round((used/selSize.maxStems)*100)):0;
   document.getElementById('stem-bar').style.width=pct+'%';
   const atMin=used>=selSize.minStems;
