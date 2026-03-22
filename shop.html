@@ -4,32 +4,185 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>FleurChase — Shop</title>
 <link rel="stylesheet" href="shared.css"/>
-<style>
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:1.2rem}
-.prod-card{background:white;border-radius:var(--rl);border:1px solid var(--line);overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
-.prod-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.09)}
-.pc-img{height:155px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
-.pc-bdg{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.4px}
-.pc-wl{position:absolute;top:8px;right:8px;background:white;border:none;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.12);transition:all .2s;display:flex;align-items:center;justify-content:center}
-.pc-wl:hover,.pc-wl.on{color:var(--p3);transform:scale(1.15)}
-.pc-body{padding:10px 12px;background:white}
-.pc-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
-.pc-sub{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:5px}
-.pc-stars{font-size:11px;color:#D4891A}
-.pc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-.pc-price{font-size:14px;font-weight:700;color:var(--g3)}
-.pc-old{font-size:11px;color:var(--muted);text-decoration:line-through;margin-left:3px}
-.add-btn{background:linear-gradient(135deg,var(--g5),var(--g3));border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(46,150,82,.3)}
-.add-btn:hover{transform:scale(1.12)}
-.stem-badge{font-size:9px;background:var(--g9);color:var(--g3);padding:2px 6px;border-radius:6px;font-weight:700;margin-left:4px}
-.cat-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1rem}
-.cat-pill{background:white;border:1.5px solid var(--line);padding:6px 14px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .2s}
-.cat-pill:hover{border-color:var(--g5);color:var(--g2)}
-.cat-pill.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
-/* stem modal */
-.stem-modal-product{display:flex;gap:1rem;align-items:center;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)}
-.stem-modal-icon{font-size:44px;width:70px;height:70px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
-</style>
+  <style>
+      /* SHOP GRID LAYOUT */
+      .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+        margin-top: 1.2rem;
+      }
+
+      /* PRODUCT CARD */
+      .prod-card {
+        background: white;
+        border-radius: var(--rl);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.22s ease;
+      }
+
+      .prod-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+      }
+
+      /* PRODUCT IMAGE */
+      .pc-img {
+        height: 155px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 52px;
+        position: relative;
+      }
+
+      /* BADGE */
+      .pc-bdg {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      /* PRODUCT BODY */
+      .pc-body {
+        padding: 10px 12px;
+        background: white;
+      }
+
+      .pc-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 2px;
+      }
+
+      .pc-sub {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+        margin-bottom: 5px;
+      }
+
+      .pc-stars {
+        font-size: 11px;
+        color: #D4891A;
+      }
+
+      /* FOOTER SECTION */
+      .pc-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+      }
+
+      .pc-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--g3);
+      }
+
+      .pc-old {
+        font-size: 11px;
+        color: var(--muted);
+        text-decoration: line-through;
+        margin-left: 3px;
+      }
+
+      /* ADD BUTTON */
+      .add-btn {
+        background: linear-gradient(135deg, var(--g5), var(--g3));
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(46, 150, 82, 0.3);
+        transition: all 0.2s ease;
+      }
+
+      .add-btn:hover {
+        transform: scale(1.12);
+      }
+
+      /* STEM BADGE */
+      .stem-badge {
+        font-size: 9px;
+        background: var(--g9);
+        color: var(--g3);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-weight: 700;
+        margin-left: 4px;
+      }
+
+      /*  CATEGORY FILTER */
+      .cat-row {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .cat-pill {
+        background: white;
+        border: 1.5px solid var(--line);
+        padding: 6px 14px;
+        border-radius: 18px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--muted);
+        transition: all 0.2s ease;
+      }
+
+      .cat-pill:hover {
+        border-color: var(--g5);
+        color: var(--g2);
+      }
+
+      .cat-pill.active {
+        background: var(--g9);
+        border-color: var(--g5);
+        color: var(--g2);
+        font-weight: 600;
+      }
+
+      /* STEM MODAL */
+      .stem-modal-product {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.2rem;
+        padding-bottom: 1.2rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stem-modal-icon {
+        font-size: 44px;
+        width: 70px;
+        height: 70px;
+        background: var(--soft);
+        border-radius: var(--r);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+  </style>
 </head>
 <body>
 <nav class="app-nav" id="top-nav"></nav>
@@ -43,14 +196,11 @@
       <h2 style="font-family:var(--font-d);font-size:40px;font-weight:700;color:var(--g1);line-height:1.05;margin-bottom:.7rem">Every bloom <em style="color:var(--p3);font-style:italic">tells</em> a story</h2>
       <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;max-width:380px">Pre-order handcrafted arrangements or mix your own stems. Delivered fresh across Albay.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="customize.html" class="btn btn-pink">🎨 Build Custom Bouquet</a>
-        <a href="promos.html" class="btn btn-outline">🏷️ See Promos</a>
+        <a href="customize.html" class="btn btn-pink">Build Custom Bouquet</a>
+        <a href="promos.html" class="btn btn-outline">See Promos</a>
       </div>
     </div>
-    <div style="display:flex;gap:10px;flex-shrink:0">
-      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05)"><div style="font-size:22px;margin-bottom:.3rem">📅</div><strong style="font-size:10px;display:block;color:var(--ink)">Pre-order</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">48hr advance</p></div>
-      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05);margin-top:16px"><div style="font-size:22px;margin-bottom:.3rem">💳</div><strong style="font-size:10px;display:block;color:var(--ink)">Multi-Pay</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">GCash, COD, Maya</p></div>
-    </div>
+    
   </div>
 
   <div class="p-page">
@@ -59,14 +209,14 @@
       <button class="btn btn-ghost btn-sm" onclick="resetFilter()">Reset</button>
     </div>
     <div class="cat-row" id="cat-row">
-      <div class="cat-pill active" onclick="filterCat('all',this)">🌺 All</div>
-      <div class="cat-pill" onclick="filterCat('ready-made',this)">💐 Ready-Made</div>
-      <div class="cat-pill" onclick="filterCat('individual',this)">🌹 Individual Stems</div>
-      <div class="cat-pill" onclick="filterCat('customized',this)">🎨 Customized</div>
-      <div class="cat-pill" onclick="filterCat('seasonal',this)">🌸 Seasonal</div>
-      <div class="cat-pill" onclick="filterCat('gift-set',this)">🎁 Gift Sets</div>
-      <div class="cat-pill" onclick="filterCat('promo',this)">🏷️ Promos</div>
-      <div class="cat-pill" onclick="filterCat('sale',this)">🔖 On Sale</div>
+      <div class="cat-pill active" onclick="filterCat('all',this)"> All</div>
+      <div class="cat-pill" onclick="filterCat('ready-made',this)"> Ready-Made</div>
+      <div class="cat-pill" onclick="filterCat('individual',this)"> Individual Stems</div>
+      <div class="cat-pill" onclick="filterCat('customized',this)"> Customized</div>
+      <div class="cat-pill" onclick="filterCat('seasonal',this)"> Seasonal</div>
+      <div class="cat-pill" onclick="filterCat('gift-set',this)"> Gift Sets</div>
+      <div class="cat-pill" onclick="filterCat('promo',this)"> Promos</div>
+      <div class="cat-pill" onclick="filterCat('sale',this)"> On Sale</div>
     </div>
     <div class="shop-grid" id="shop-grid"></div>
   </div>
@@ -96,6 +246,7 @@
   </div>
 </div>
 <div id="fc-toast" class="toast"></div>
+
 <script src="data.js"></script><script src="nav.js"></script>
 <script>
 let _cat='all', _stemProd=null, _stemQty=1;
@@ -126,7 +277,7 @@ function renderProducts(cat){
       <div class="pc-img" style="background:${p.bg||'var(--soft)'}">
         ${imgContent}
         ${p.badge?`<span class="pc-bdg ${bdgCls}">${p.badge}</span>`:''}
-        <button class="pc-wl" onclick="event.stopPropagation();this.classList.toggle('on');toast(this.classList.contains('on')?'Added to wishlist 💖':'Removed from wishlist')">♡</button>
+        
       </div>
       <div class="pc-body">
         <div class="pc-name">${p.name}${isFlower?`<span class="stem-badge">per stem</span>`:''}</div>
