@@ -5,19 +5,179 @@
 <title>FleurChase — Inventory</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-.fresh-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-right:6px}
-.fresh-fill{height:100%;border-radius:3px}.fresh-ok{background:var(--g4)}.fresh-mid{background:#FFA000}.fresh-low{background:var(--p4)}
-.alert{border-radius:var(--r);padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:6px;border-left:3px solid}
-.alert-r{background:var(--p9);border-color:var(--p3)}.alert-a{background:#FFF8E1;border-color:#FFA000}.alert-g{background:var(--g9);border-color:var(--g4)}
-.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
-.metric-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.2rem}
-.metric-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.5rem}
-.metric-val{font-size:26px;font-weight:700;color:var(--ink);font-family:var(--font-d)}
-.metric-sub{font-size:11px;margin-top:4px}
-.metric-up{color:var(--g3)}.metric-dn{color:var(--p3)}.metric-n{color:var(--muted)}
-.inv-two{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem}
-.restock-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
-.restock-item:last-child{border-bottom:none}
+  /* --- Freshness Progress Bars --- */
+  .fresh-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow: hidden;
+    width: 80px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  .fresh-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  .fresh-ok  { background: var(--g4); }
+  .fresh-mid { background: #FFA000; }
+  .fresh-low { background: var(--p4); }
+
+  /* --- Inventory Alerts --- */
+  .alert {
+    border-radius: var(--r);
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    border-left: 3px solid;
+  }
+
+  .alert-r { background: var(--p9); border-color: var(--p3); } /* Critical */
+  .alert-a { background: #FFF8E1; border-color: #FFA000; }     /* Warning */
+  .alert-g { background: var(--g9); border-color: var(--g4); } /* Good */
+
+  /* --- Dashboard Metrics (Top Cards) --- */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric-card {
+    background: white;
+    border-radius: var(--rl);
+    border: 1px solid var(--line);
+    padding: 1.2rem;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+
+  .metric-val {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    font-family: var(--font-d);
+  }
+
+  .metric-sub {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .metric-up { color: var(--g3); }
+  .metric-dn { color: var(--p3); }
+  .metric-n  { color: var(--muted); }
+
+  /* --- Bottom Layout & Restock List --- */
+  .inv-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .restock-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+
+  .restock-item:last-child {
+    border-bottom: none;
+  }
+
+  /* --- Inventory Images --- */
+.inv-img-thumb {
+    width: 36px;
+    height: 36px;
+    background: var(--g9); 
+    border-radius: var(--r);
+    border: 1px solid var(--line);
+    object-fit: contain; 
+    padding: 2px; 
+  }
+
+.inv-img-large {
+  width: 60px; 
+    height: 60px;
+    background: var(--g9);
+    border-radius: var(--r);
+    border: 1px solid var(--line);
+    object-fit: contain;
+    padding: 4px;
+}
+
+/* --- Updated Drag & Drop UI --- */
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: var(--rl);
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--soft);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Green border when a photo is uploaded or dragging over */
+.dropzone.has-photo, .dropzone.dragover {
+  border-color: var(--g4);
+  background: var(--g9);
+}
+
+.dz-preview-img {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid var(--line);
+}
+
+.dz-status-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--g2);
+}
+
+.dz-remove-link {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--p3);
+  text-decoration: underline;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -105,7 +265,6 @@ let editingInvId = null;
 function getInventory() { return FC.getInventory(); }
 
 function calcFreshness(item) {
-  // Recalculate freshness based on arrival date and life days
   const arrived = new Date(item.arrived + ' 2024');
   const now = new Date('2024-03-19');
   const daysPassed = Math.floor((now - arrived) / 86400000);
@@ -142,14 +301,19 @@ function renderMetrics() {
 
 function renderTable() {
   const inv = getInventory();
-  document.getElementById('inv-tbody').innerHTML = inv.map(item => {
+  const tbody = document.getElementById('inv-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = inv.map(item => {
     const pct = item.freshness;
     const fillCls = pct > 60 ? 'fresh-ok' : pct > 25 ? 'fresh-mid' : 'fresh-low';
+    const imgSrc = (item.img && item.img.startsWith('data:')) ? item.img : `images/${item.img || 'default-flower.jpg'}`;
+
     return `
     <tr>
       <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:36px;height:36px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px">${item.icon}</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="${imgSrc}" class="inv-img-thumb" onerror="this.src='images/default.jpg'">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--ink)">${item.name}</div>
             <div style="font-size:11px;color:var(--muted)">ID: ${item.id}</div>
@@ -172,7 +336,9 @@ function renderTable() {
       <td>
         <div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
-          <button class="btn ${item.onSale ? 'btn-green' : 'btn-danger'} btn-sm" onclick="openSaleModal('${item.id}')">${item.onSale ? `🏷️ ${fmtP(item.salePrice)}` : 'Mark Sale'}</button>
+          <button class="btn ${item.onSale ? 'btn-green' : 'btn-danger'} btn-sm" onclick="openSaleModal('${item.id}')">
+            ${item.onSale ? `🏷️ ${fmtP(item.salePrice)}` : 'Mark Sale'}
+          </button>
         </div>
       </td>
     </tr>`;
@@ -190,11 +356,14 @@ function renderAlerts(inv) {
     el.innerHTML = '<div class="alert alert-g">✅ All inventory is in good condition!</div>';
     return;
   }
-  el.innerHTML = alerts.map(i => `
+  el.innerHTML = alerts.map(i => {
+    const imgSrc = (i.img && i.img.startsWith('data:')) ? i.img : `images/${i.img || 'default.jpg'}`;
+    return `
     <div class="alert ${i.freshness <= 15 ? 'alert-r' : 'alert-a'}">
-      ${i.icon} <strong>${i.name}</strong> — ${i.freshness}% freshness · ${i.stock} stems remaining
-      ${i.freshness <= 15 ? '<br><small>Consider immediate markdown or disposal</small>' : ''}
-    </div>`).join('');
+      <img src="${imgSrc}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:8px;border-radius:4px;background:white">
+      <strong>${i.name}</strong> — ${i.freshness}% freshness
+    </div>`;
+  }).join('');
 }
 
 function renderRestock(inv) {
@@ -204,35 +373,107 @@ function renderRestock(inv) {
     el.innerHTML = '<p style="font-size:13px;color:var(--muted)">All items are well-stocked!</p>';
     return;
   }
-  el.innerHTML = low.map(i => `
+  el.innerHTML = low.map(i => {
+    const imgSrc = (i.img && i.img.startsWith('data:')) ? i.img : `images/${i.img || 'default.jpg'}`;
+    return `
     <div class="restock-item">
-      <div>${i.icon} <strong>${i.name}</strong><div style="font-size:11px;color:var(--muted)">${i.stock} stems · ${i.freshness}% fresh</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="${imgSrc}" style="width:30px;height:30px;object-fit:contain;border-radius:4px;background:var(--soft)">
+        <div><strong>${i.name}</strong><div style="font-size:11px;color:var(--muted)">${i.stock} stems</div></div>
+      </div>
       <span class="tag ${i.stock < 30 ? 'tag-p' : 'tag-a'}">${i.stock < 30 ? 'Urgent' : 'Soon'}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function getModalBody(item) {
   const p = item || {};
+  const hasImg = !!p.img;
   return `
-    <div class="fg2">
-      <div class="ff"><label>Flower name *</label><input id="inv-name" value="${p.name||''}" placeholder="e.g. Red Roses"/></div>
-      <div class="ff"><label>Emoji icon *</label><input id="inv-icon" value="${p.icon||''}" placeholder="🌹"/></div>
+    <div class="ff" style="margin-bottom: 1rem;"><label>FLOWER NAME *</label><input id="inv-name" value="${p.name||''}" placeholder="e.g. Red Roses"/></div>
+    <div class="ff" style="margin-bottom: 1.5rem;"><label>FLOWER IMAGE *</label>
+      <div class="dropzone ${hasImg ? 'has-photo' : ''}" id="dropzone">
+        <img src="${p.img || ''}" class="dz-preview-img" id="dz-preview" style="${hasImg ? 'display:block' : 'display:none'}">
+        <div id="dz-upload-prompt" style="${hasImg ? 'display:none' : 'display:block'}">
+          <div style="font-size: 24px; margin-bottom: 8px;">👤</div>
+          <div style="font-weight:700; font-size:14px; color:var(--ink)">Upload Photo</div>
+          <div style="font-size:11px; color:var(--muted)">JPG, PNG — max 2MB · Click or drag</div>
+        </div>
+        <div id="dz-ready-prompt" style="${hasImg ? 'display:block' : 'display:none'}"><div class="dz-status-text">Photo ready — click to change</div></div>
+        <input type="file" id="inv-file" accept="image/*" onchange="handleFileSelect(event)">
+        <input type="hidden" id="inv-img-data" value="${p.img || ''}">
+      </div>
+      <button type="button" class="dz-remove-link" id="dz-remove" style="${hasImg ? 'display:block' : 'display:none'}" onclick="removePhoto()">Remove photo</button>
     </div>
     <div class="fg2">
-      <div class="ff"><label>Stock (stems) *</label><input id="inv-stock" type="number" value="${p.stock||''}" placeholder="100" min="0"/></div>
-      <div class="ff"><label>Base price per stem (₱) *</label><input id="inv-price" type="number" value="${p.pricePerStem||''}" placeholder="45" min="1"/></div>
+      <div class="ff"><label>STOCK (STEMS) *</label><input id="inv-stock" type="number" value="${p.stock||''}" placeholder="200" min="0"/></div>
+      <div class="ff"><label>BASE PRICE PER STEM (₱) *</label><input id="inv-price" type="number" value="${p.pricePerStem||''}" placeholder="45" min="1"/></div>
     </div>
     <div class="fg2">
-      <div class="ff"><label>Date arrived *</label><input id="inv-arrived" value="${p.arrived||'Mar 19'}" placeholder="Mar 19"/></div>
-      <div class="ff"><label>Shelf life (days) *</label><input id="inv-life" type="number" value="${p.lifeDays||7}" placeholder="7" min="1"/></div>
+      <div class="ff"><label>DATE ARRIVED *</label><input id="inv-arrived" value="${p.arrived||'Mar 15'}" placeholder="Mar 15"/></div>
+      <div class="ff"><label>SHELF LIFE (DAYS) *</label><input id="inv-life" type="number" value="${p.lifeDays||7}" placeholder="7" min="1"/></div>
     </div>
-    <div class="ff"><label>Linked flower product ID (optional)</label><input id="inv-flower-id" value="${p.flowerId||''}" placeholder="e.g. f1 (links to product)"/></div>
-    <div style="background:var(--g9);border-radius:var(--r);padding:10px;font-size:12px;color:var(--g2);margin-bottom:1rem;border:1px solid var(--g7)">
-      ℹ Freshness is auto-calculated from arrival date and shelf life. Stock is only deducted after admin validates payment.
-    </div>
-    <button class="btn btn-green" style="width:100%;justify-content:center" onclick="saveInventory()">
-      ${item ? '✓ Save Changes' : '+ Add to Inventory'}
-    </button>`;
+    <div class="ff"><label>LINKED FLOWER PRODUCT ID (OPTIONAL)</label><input id="inv-flower-id" value="${p.flowerId||''}" placeholder="f1"/></div>
+    <button class="btn btn-green" style="width:100%; justify-content:center; margin-top:1.5rem; padding: 14px;" onclick="saveInventory()">✓ Save Changes</button>`;
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('Image is too large (max 2MB)', 'err'); return; }
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const dataUrl = event.target.result;
+    document.getElementById('inv-img-data').value = dataUrl;
+    document.getElementById('dz-preview').src = dataUrl;
+    document.getElementById('dz-preview').style.display = 'block';
+    document.getElementById('dz-upload-prompt').style.display = 'none';
+    document.getElementById('dz-ready-prompt').style.display = 'block';
+    document.getElementById('dz-remove').style.display = 'block';
+    document.getElementById('dropzone').classList.add('has-photo');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  document.getElementById('inv-img-data').value = "";
+  document.getElementById('inv-file').value = "";
+  document.getElementById('dz-preview').src = "";
+  document.getElementById('dz-preview').style.display = 'none';
+  document.getElementById('dz-upload-prompt').style.display = 'block';
+  document.getElementById('dz-ready-prompt').style.display = 'none';
+  document.getElementById('dz-remove').style.display = 'none';
+  document.getElementById('dropzone').classList.remove('has-photo');
+}
+
+function saveInventory() {
+  const name = document.getElementById('inv-name').value.trim();
+  const imgData = document.getElementById('inv-img-data').value;
+  const stock = parseInt(document.getElementById('inv-stock').value);
+  const pricePerStem = parseFloat(document.getElementById('inv-price').value);
+  const arrived = document.getElementById('inv-arrived').value.trim();
+  const lifeDays = parseInt(document.getElementById('inv-life').value);
+  const flowerId = document.getElementById('inv-flower-id').value.trim();
+
+  if (!name || !imgData || isNaN(stock) || isNaN(pricePerStem) || !arrived || isNaN(lifeDays)) {
+    toast('Please fill in all fields and upload an image.', 'err'); 
+    return;
+  }
+
+  const inv = getInventory();
+  if (editingInvId) {
+    const idx = inv.findIndex(i => i.id === editingInvId);
+    if (idx !== -1) {
+      inv[idx] = { ...inv[idx], name, img: imgData, stock, pricePerStem, arrived, lifeDays, flowerId };
+    }
+  } else {
+    inv.push({ id: 'i' + Date.now(), flowerId, name, img: imgData, stock, pricePerStem, arrived, lifeDays, freshness: 100 });
+  }
+
+  FC.saveInventory(inv);
+  closeModal('add-modal');
+  renderTable();
+  toast('✓ Inventory saved');
 }
 
 function openAddModal() {
@@ -251,78 +492,35 @@ function openEditModal(id) {
   openModal('add-modal');
 }
 
-function saveInventory() {
-  const name = document.getElementById('inv-name').value.trim();
-  const icon = document.getElementById('inv-icon').value.trim();
-  const stock = parseInt(document.getElementById('inv-stock').value);
-  const pricePerStem = parseFloat(document.getElementById('inv-price').value);
-  const arrived = document.getElementById('inv-arrived').value.trim();
-  const lifeDays = parseInt(document.getElementById('inv-life').value);
-  const flowerId = document.getElementById('inv-flower-id').value.trim();
-  if (!name || !icon || isNaN(stock) || isNaN(pricePerStem) || !arrived || isNaN(lifeDays)) {
-    toast('Please fill in all required fields.', 'err'); return;
-  }
-  const inv = getInventory();
-  const daysPassed = 0; // new arrivals are 100% fresh
-  const freshness = 100;
-  if (editingInvId) {
-    const idx = inv.findIndex(i => i.id === editingInvId);
-    if (idx !== -1) {
-      inv[idx] = { ...inv[idx], name, icon, stock, pricePerStem, arrived, lifeDays, flowerId: flowerId||inv[idx].flowerId, freshness: inv[idx].freshness };
-    }
-    toast('✓ Inventory updated: ' + name);
-  } else {
-    inv.push({ id: 'i' + Date.now(), flowerId: flowerId || '', name, icon, stock, pricePerStem, arrived, lifeDays, freshness });
-    toast('✓ ' + name + ' added to inventory!');
-    // Also update product stock if linked
-    if (flowerId) {
-      const prods = FC.getProducts();
-      const p = prods.find(x => x.id === flowerId);
-      if (p) { p.stock = stock; FC.saveProducts(prods); }
-    }
-  }
-  FC.saveInventory(inv);
-  closeModal('add-modal');
-  renderTable();
-}
-
 function openSaleModal(id) {
   const item = getInventory().find(i => i.id === id);
   if (!item) return;
-  // Suggest a sale price based on freshness
   const suggested = Math.max(10, Math.round(item.pricePerStem * (item.freshness / 100)));
   const isOnSale = item.onSale;
+  const imgSrc = (item.img && item.img.startsWith('data:')) ? item.img : `images/${item.img || 'default.jpg'}`;
+
   document.getElementById('sale-modal-body').innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)">
-      <div style="width:48px;height:48px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:26px">${item.icon}</div>
+      <img src="${imgSrc}" class="inv-img-large" onerror="this.src='images/default.jpg'">
       <div>
         <div style="font-size:15px;font-weight:700;color:var(--g1)">${item.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">Current price: <strong style="color:var(--g3)">${fmtP(item.pricePerStem)}/stem</strong> · Freshness: <strong style="color:${item.freshness>60?'var(--g3)':item.freshness>25?'#FFA000':'var(--p3)'}">${item.freshness}%</strong></div>
+        <div style="font-size:12px;color:var(--muted)">Current: <strong style="color:var(--g3)">${fmtP(item.pricePerStem)}</strong> · Fresh: <strong>${item.freshness}%</strong></div>
       </div>
     </div>
-    ${isOnSale ? `<div class="alert alert-g" style="margin-bottom:1rem">✅ This flower is currently on sale at <strong>${fmtP(item.salePrice)}/stem</strong>.</div>` : ''}
     <div class="fg2">
-      <div class="ff"><label>Original price (₱/stem)</label>
-        <input type="number" id="sale-orig" value="${item.pricePerStem}" min="1" style="background:var(--soft)" readonly/>
-      </div>
-      <div class="ff"><label>Sale price (₱/stem) *</label>
-        <input type="number" id="sale-price" value="${isOnSale ? item.salePrice : suggested}" min="1" oninput="updateSalePreview(${item.pricePerStem})"/>
-      </div>
+      <div class="ff"><label>Original (₱)</label><input type="number" id="sale-orig" value="${item.pricePerStem}" readonly style="background:var(--soft)"/></div>
+      <div class="ff"><label>Sale Price (₱) *</label><input type="number" id="sale-price" value="${isOnSale ? item.salePrice : suggested}" oninput="updateSalePreview(${item.pricePerStem})"/></div>
     </div>
     <div id="sale-preview" style="background:var(--p9);border:1px solid var(--p6);border-radius:var(--r);padding:10px;font-size:12px;color:var(--p2);margin-bottom:1rem"></div>
-    <div class="ff"><label>Reason / Label</label>
+    <div class="ff"><label>Reason</label>
       <select id="sale-reason">
-        <option value="Low freshness — markdown">Low freshness — markdown</option>
-        <option value="Near expiry — clearance">Near expiry — clearance</option>
-        <option value="Seasonal special">Seasonal special</option>
-        <option value="Overstock reduction">Overstock reduction</option>
-        <option value="Admin discount">Admin discount</option>
+        <option value="Markdown">Markdown</option>
+        <option value="Clearance">Clearance</option>
       </select>
     </div>
     <div style="display:flex;gap:8px;margin-top:1rem">
-      <button class="btn btn-pink" style="flex:1;justify-content:center" onclick="confirmSale('${id}')">🏷️ Apply Sale Price</button>
-      ${isOnSale ? `<button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="removeSale('${id}')">✕ Remove Sale</button>` : ''}
-      <button class="btn btn-ghost" style="justify-content:center;min-width:80px" onclick="closeModal('sale-modal')">Cancel</button>
+      <button class="btn btn-pink" style="flex:1" onclick="confirmSale('${id}')">Apply</button>
+      <button class="btn btn-ghost" onclick="closeModal('sale-modal')">Cancel</button>
     </div>`;
   openModal('sale-modal');
   updateSalePreview(item.pricePerStem);
@@ -331,84 +529,20 @@ function openSaleModal(id) {
 function updateSalePreview(original) {
   const salePrice = parseFloat(document.getElementById('sale-price')?.value) || 0;
   const el = document.getElementById('sale-preview');
-  if (!el) return;
-  if (!salePrice || salePrice >= original) {
-    el.textContent = 'Sale price must be less than the original price.';
-    el.style.background = '#FFF8E1'; el.style.borderColor = '#FFD54F'; el.style.color = '#E65100';
-    return;
-  }
-  const savings = original - salePrice;
-  const pct = Math.round((savings / original) * 100);
-  el.innerHTML = `🏷️ <strong>${pct}% off</strong> — customers save ${fmtP(savings)} per stem. New price: <strong>${fmtP(salePrice)}/stem</strong>`;
-  el.style.background = 'var(--p9)'; el.style.borderColor = 'var(--p6)'; el.style.color = 'var(--p2)';
+  if (!el || salePrice >= original) return;
+  const pct = Math.round(((original - salePrice) / original) * 100);
+  el.innerHTML = `🏷️ <strong>${pct}% off</strong> — New price: <strong>${fmtP(salePrice)}</strong>`;
 }
 
 function confirmSale(id) {
   const inv = getInventory();
   const item = inv.find(i => i.id === id);
-  if (!item) return;
   const salePrice = parseFloat(document.getElementById('sale-price').value);
-  const reason = document.getElementById('sale-reason').value;
-  if (!salePrice || salePrice <= 0) { toast('Please enter a valid sale price.', 'err'); return; }
-  if (salePrice >= item.pricePerStem) { toast('Sale price must be lower than the original price.', 'err'); return; }
-
-  // Mark inventory item as on sale
-  item.onSale = true;
-  item.salePrice = salePrice;
-  item.saleReason = reason;
+  if (salePrice >= item.pricePerStem) { toast('Invalid price', 'err'); return; }
+  item.onSale = true; item.salePrice = salePrice;
   FC.saveInventory(inv);
-
-  // Update the linked product in the shop
-  if (item.flowerId) {
-    const prods = FC.getProducts();
-    const p = prods.find(x => x.id === item.flowerId);
-    if (p) {
-      p.oldPrice = p.price;
-      p.price = salePrice;
-      p.badge = 'Sale';
-      p.category = 'sale';
-      FC.saveProducts(prods);
-    }
-  }
   closeModal('sale-modal');
-  toast(`${item.icon} ${item.name} is now on sale at ${fmtP(salePrice)}/stem!`);
   renderTable();
-}
-
-function removeSale(id) {
-  const inv = getInventory();
-  const item = inv.find(i => i.id === id);
-  if (!item) return;
-  const originalPrice = item.pricePerStem;
-  item.onSale = false;
-  delete item.salePrice;
-  delete item.saleReason;
-  FC.saveInventory(inv);
-
-  // Restore linked product price
-  if (item.flowerId) {
-    const prods = FC.getProducts();
-    const p = prods.find(x => x.id === item.flowerId);
-    if (p && p.oldPrice) {
-      p.price = p.oldPrice;
-      delete p.oldPrice;
-      p.badge = '';
-      p.category = 'individual';
-      FC.saveProducts(prods);
-    }
-  }
-  closeModal('sale-modal');
-  toast(`Sale removed from ${item.name}.`);
-  renderTable();
-}
-
-function refreshFreshness() {
-  // Simulate freshness tick
-  const inv = getInventory();
-  inv.forEach(i => { i.freshness = Math.max(0, i.freshness - Math.floor(Math.random() * 3)); });
-  FC.saveInventory(inv);
-  renderTable();
-  toast('Freshness refreshed!');
 }
 
 renderTable();
