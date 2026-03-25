@@ -33,7 +33,7 @@
 
   <!-- Active promos -->
   <div style="margin-bottom:1.5rem">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.8rem">🟢 Active Promotions</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:.8rem">🟢 Active Promos</div>
     <div id="active-promos"></div>
   </div>
 
@@ -54,7 +54,7 @@
 <!-- ADD/EDIT PROMO MODAL -->
 <div class="modal-overlay" id="promo-modal">
   <div class="modal-box" style="max-width:560px">
-    <div class="modal-head"><h3 id="pm-title">Add Promotion</h3><button class="modal-close" onclick="closeModal('promo-modal')">✕</button></div>
+    <div class="modal-head"><h3 id="pm-title">Add Promos</h3><button class="modal-close" onclick="closeModal('promo-modal')">✕</button></div>
     <div id="pm-body"></div>
   </div>
 </div>
@@ -104,9 +104,9 @@ function renderPromos() {
   const activeEl = document.getElementById('active-promos');
   const inactiveEl = document.getElementById('inactive-promos');
   activeEl.innerHTML = active.length ? active.map(renderCard).join('') :
-    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No active promotions. Add one above!</div>';
+    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No active promos. Add one above!</div>';
   inactiveEl.innerHTML = inactive.length ? inactive.map(renderCard).join('') :
-    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No inactive promotions.</div>';
+    '<div style="font-size:13px;color:var(--muted);padding:1rem 0">No inactive promos.</div>';
 
   renderSaleProducts();
 }
@@ -136,10 +136,10 @@ function togglePromo(id) {
 }
 
 function deletePromo(id) {
-  if (!confirm('Delete this promotion?')) return;
+  if (!confirm('Delete this promo?')) return;
   const promos = FC.getPromos().filter(p => p.id !== id);
   FC.savePromos(promos);
-  toast('Promotion deleted.', 'err');
+  toast('Promo deleted.', 'err');
   renderPromos();
 }
 
@@ -193,7 +193,7 @@ function getModalBody(promo) {
       </select>
     </div>
     <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="savePromo()">
-      ${promo ? '✓ Save Changes' : '+ Add Promotion'}
+      ${promo ? '✓ Save Changes' : '+ Add Promo'}
     </button>`;
 }
 
@@ -212,7 +212,7 @@ function previewDisc() {
 
 function openAddModal() {
   editingPromoId = null;
-  document.getElementById('pm-title').textContent = 'Add New Promotion';
+  document.getElementById('pm-title').textContent = 'Add New Promo';
   document.getElementById('pm-body').innerHTML = getModalBody(null);
   openModal('promo-modal');
 }
@@ -248,7 +248,7 @@ function savePromo() {
     toast('✓ Promo updated!');
   } else {
     promos.push({ id: 'pr' + Date.now(), ...data });
-    toast('✓ Promotion added!');
+    toast('✓ Promo added!');
   }
   FC.savePromos(promos);
   closeModal('promo-modal');
