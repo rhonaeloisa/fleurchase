@@ -5,78 +5,580 @@
 <title>FleurChase — Customize Bouquet</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-.custom-layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;padding:2rem 2.5rem;align-items:start}
-.step-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;margin-bottom:1rem}
-.step-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
-.step-title::after{content:'';flex:1;height:1px;background:var(--line)}
-/* SIZE CARDS */
-.size-row{display:flex;gap:8px}
-.size-btn{flex:1;border:2px solid var(--line);border-radius:var(--rl);padding:14px 10px;cursor:pointer;transition:all .2s;background:white;text-align:left}
-.size-btn:hover{border-color:var(--g5);background:var(--g9)}
-.size-btn.sel{border-color:var(--p4);background:var(--p9)}
-.size-btn .sb-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px}
-.size-btn .sb-range{font-size:12px;font-weight:600;color:var(--g3)}
-.size-btn .sb-desc{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
-/* STEM PROGRESS */
-.stem-progress{background:var(--soft);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem}
-.stem-progress-bar-wrap{flex:1;background:var(--line);border-radius:10px;height:8px;overflow:hidden}
-.stem-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--g5),var(--g3));transition:width .3s}
-.stem-bar.ready{background:linear-gradient(90deg,var(--p4),var(--p3))}
-.stem-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
-.stem-count{font-size:13px;font-weight:700;color:var(--g2);white-space:nowrap}
-.stem-hint{font-size:11px;color:var(--muted);margin-top:3px}
-/* FLOWER GRID */
-.flower-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.fo{background:var(--soft);border-radius:var(--r);padding:10px 6px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.fo.sel{border-color:var(--g4);background:var(--g9)}.fo.maxed-no-sel{opacity:.5}
-.fo .fi{font-size:22px;margin-bottom:3px}.fo strong{font-size:11px;color:var(--ink);display:block}.fo small{font-size:10px;color:var(--muted)}
-.fo-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:7px}
-.fo-btn{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;color:var(--ink);flex-shrink:0}
-.fo-btn:hover{background:var(--g8);border-color:var(--g5)}
-.fo-btn.rem:hover{background:var(--p9);border-color:var(--p5)}
-.fo-btn:disabled{opacity:.3;cursor:not-allowed;background:white}
-.fo-qty{font-size:13px;font-weight:700;min-width:22px;text-align:center;color:var(--ink)}
-/* FILLERS */
-.filler-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.filler-card{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s}
-.filler-card:hover{border-color:var(--g6)}.filler-card.sel{border-color:var(--g4);background:var(--g9)}
-.filler-icon{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.filler-name{font-size:10px;font-weight:600;color:var(--ink);margin-bottom:2px}
-.filler-price{font-size:10px;color:var(--g3);font-weight:600}
-.filler-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-/* ADDONS */
-.acats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
-.acat{padding:5px 13px;border-radius:16px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
-.acat:hover{border-color:var(--g5);color:var(--g2)}.acat.active{background:var(--g9);border-color:var(--g5);color:var(--g2)}
-.addons-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.aoc{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.aoc:hover{border-color:var(--g6)}.aoc.sel{border-color:var(--g4);background:var(--g9)}
-.aoc .aoc-img{width:38px;height:38px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 4px}
-.aoc .aoc-icon-wrap{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.aoc .aoc-name{font-size:10px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
-.aoc .aoc-price{font-size:10px;color:var(--g3);font-weight:600}
-.aoc-chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--g4);border-radius:50%;display:none;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:700}
-.aoc.sel .aoc-chk{display:flex}
-.aoc-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-/* SHARED SMALL +/- */
-.sm-btn{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;flex-shrink:0}
-.sm-btn:hover{background:var(--g8)}.sm-btn.rem:hover{background:var(--p9)}
-.sm-btn:disabled{opacity:.3;cursor:not-allowed}
-.sm-qty{font-size:12px;font-weight:700;min-width:18px;text-align:center;color:var(--ink)}
-/* COLORS */
-.color-row{display:flex;gap:8px;flex-wrap:wrap}
-.cdot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
-.cdot:hover{transform:scale(1.1)}.cdot.sel{border-color:var(--ink);box-shadow:0 0 0 3px white,0 0 0 4.5px var(--ink)}
-/* SUMMARY */
-.sum-sticky{position:sticky;top:calc(var(--nh)+16px)}
-.sum-preview{background:var(--soft);border-radius:var(--rl);height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:1rem;border:1px solid var(--line)}
-.sum-preview img{width:100%;height:100%;object-fit:cover}
-.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
-.sum-row:last-of-type{border-bottom:none}.sum-k{color:var(--muted)}.sum-v{font-weight:500;text-align:right;max-width:155px;font-size:12px}
-.sum-total{display:flex;justify-content:space-between;font-size:17px;font-weight:700;padding:11px 0 0;border-top:2px solid var(--line);margin-top:4px;color:var(--g1)}
-.note-ta{width:100%;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:13px;resize:none;height:75px;color:var(--ink);outline:none;transition:border-color .2s;background:var(--soft)}
-.note-ta:focus{border-color:var(--g4);background:white}
-@media(max-width:900px){.custom-layout{grid-template-columns:1fr}.sum-sticky{position:static}}
+/* --- LAYOUT STRUCTURE --- */
+.custom-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  padding: 2rem 2.5rem;
+  align-items: start;
+}
+
+.step-card {
+  background: white;
+  border-radius: var(--rl);
+  border: 1px solid var(--line);
+  padding: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.step-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* --- STEP 1: BOUQUET SIZE CARDS --- */
+.size-row {
+  display: flex;
+  gap: 8px;
+}
+
+.size-btn {
+  flex: 1;
+  border: 2px solid var(--line);
+  border-radius: var(--rl);
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  text-align: left;
+}
+
+.size-btn:hover {
+  border-color: var(--g5);
+  background: var(--g9);
+}
+
+.size-btn.sel {
+  border-color: var(--p4);
+  background: var(--p9);
+}
+
+.size-btn .sb-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+
+.size-btn .sb-range {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--g3);
+}
+
+.size-btn .sb-desc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+/* --- STEM PROGRESS BAR --- */
+.stem-progress {
+  background: var(--soft);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  margin-bottom: 1rem;
+}
+
+.stem-progress-bar-wrap {
+  flex: 1;
+  background: var(--line);
+  border-radius: 10px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.stem-bar {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--g5), var(--g3));
+  transition: width 0.3s;
+}
+
+.stem-bar.ready {
+  background: linear-gradient(90deg, var(--p4), var(--p3));
+}
+
+.stem-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.stem-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--g2);
+  white-space: nowrap;
+}
+
+.stem-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* --- STEP 2: FLOWER SELECTION --- */
+.flower-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 12px;
+}
+
+.fo {
+  background: var(--soft);
+  border-radius: var(--rl);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; 
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  min-height: 120px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.fo:hover {
+  border-color: var(--g6); /* Darker border on hover */
+}
+
+/* --- SELECTED STATE (Turns Green) --- */
+.fo.sel {
+  border-color: var(--g4);
+  background: var(--g9);
+}
+
+.fo.maxed-no-sel {
+  opacity: 0.5;
+}
+
+/* Image on the left */
+.fo img, .fo .fi {
+  width: 90px;             /* Bigger size */
+  height: 90px;            /* Bigger size */
+  flex-shrink: 0;
+  object-fit: contain;       
+  border-radius: 10px;
+  padding: 5px;
+  display: block;
+}
+
+/* Text Block: Positioned Right, but Content is Centered */
+.fo-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* Right-aligns the text and buttons */
+  text-align: right;
+  flex: 1;
+  padding-left: 15px;
+  gap: 2px;
+}
+
+.fo strong {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.fo small {
+  font-size: 12px;
+  color: var(--g3);         /* Green Price */
+  font-weight: 700;
+}
+
+/* Controls - Centered under the text */
+.fo-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.fo-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  color: var(--ink);
+}
+
+.fo-btn:hover { 
+  background: var(--g8); 
+  border-color: var(--g5); 
+}
+
+.fo-btn.rem:hover { 
+  background: var(--p9); 
+  border-color: var(--p5); 
+}
+
+.fo-btn:disabled { 
+  opacity: 0.3; 
+  cursor: not-allowed; 
+}
+
+.fo-qty {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* --- STEP 3: FILLERS (Matched to Flower Style) --- */
+.filler-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 items per row */
+  gap: 12px;
+}
+
+.filler-card {
+  background: var(--soft);
+  border-radius: var(--r);
+  
+  /* Pushed text away from the right border */
+  padding: 14px 30px 14px 14px; 
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  
+  /* Forces the square shape */
+  aspect-ratio: 1 / 1; 
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Hover effect */
+.filler-card:hover {
+  border-color: var(--g6);
+}
+
+/* Selected state (Green) */
+.filler-card.sel {
+  border-color: var(--g4);
+  background: var(--g9);
+}
+
+/* Icon on the left */
+.filler-icon {
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24px;
+}
+
+/* Text Block: Positioned Right, but Content is Centered */
+.fo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    /* Centered relative to each other */
+  text-align: center;     
+  padding-left: 35px;     /* The "nudge" to the right side */
+  gap: 3px;
+}
+
+.filler-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.filler-price {
+  font-size: 12px;
+  color: var(--g3);         /* Green Price */
+  font-weight: 700;
+}
+
+/* Controls - Centered under the text */
+.filler-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Shared button styles are already in your CSS, but added here for safety */
+.sm-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  color: var(--ink);
+}
+
+.sm-btn:hover { background: var(--g8); border-color: var(--g5); }
+.sm-btn.rem:hover { background: var(--p9); border-color: var(--p5); }
+.sm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.sm-qty {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* --- STEP 4: EXTRAS & ADD-ONS (Matched to Flower Style) --- */
+/* --- STEP 4: EXTRAS & ADD-ONS (No Checkmark) --- */
+.acats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.acat {
+  padding: 5px 13px;
+  border-radius: 16px;
+  border: 1.5px solid var(--line);
+  background: white;
+  font-family: var(--font-b);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.acat:hover { border-color: var(--g5); color: var(--g2); }
+.acat.active { background: var(--g9); border-color: var(--g5); color: var(--g2); }
+
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 12px;
+}
+
+.aoc {
+  background: var(--soft);
+  border-radius: var(--r);
+  padding: 14px 30px 14px 14px; 
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  aspect-ratio: 1 / 1; 
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.aoc:hover { border-color: var(--g6); }
+
+/* Selected state - still turns green, but no checkmark */
+.aoc.sel { 
+  border-color: var(--g4); 
+  background: var(--g9); 
+}
+
+.aoc .aoc-img, .aoc .aoc-icon-wrap {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aoc .fo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    
+  text-align: center;     
+  padding-left: 35px;     
+  gap: 3px;
+}
+
+.aoc .aoc-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.aoc .aoc-price {
+  font-size: 12px;
+  color: var(--g3);         
+  font-weight: 700;
+}
+
+/* --- REMOVED THE CHECKMARK LOGIC --- */
+.aoc-chk {
+  display: none !important; /* Forces the checkmark to stay hidden */
+}
+
+.aoc-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* --- STEP 5: WRAPPING COLOR --- */
+.color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cdot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.cdot:hover {
+  transform: scale(1.1);
+}
+
+.cdot.sel {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px white, 0 0 0 4.5px var(--ink);
+}
+
+/* --- STEP 6: NOTES & SUMMARY SIDEBAR --- */
+.sum-sticky {
+  position: sticky;
+  top: calc(var(--nh) + 16px);
+}
+
+.sum-preview {
+  background: var(--soft);
+  border-radius: var(--rl);
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+}
+
+.sum-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.sum-row:last-of-type {
+  border-bottom: none;
+}
+
+.sum-k {
+  color: var(--muted);
+}
+
+.sum-v {
+  font-weight: 500;
+  text-align: right;
+  max-width: 155px;
+  font-size: 12px;
+}
+
+.sum-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 11px 0 0;
+  border-top: 2px solid var(--line);
+  margin-top: 4px;
+  color: var(--g1);
+}
+
+.note-ta {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  resize: none;
+  height: 75px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+  background: var(--soft);
+}
+
+.note-ta:focus {
+  border-color: var(--g4);
+  background: white;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 900px) {
+  .custom-layout {
+    grid-template-columns: 1fr;
+  }
+  .sum-sticky {
+    position: static;
+  }
+}
 </style>
 </head>
 <body>
@@ -218,27 +720,33 @@ function setSize(label){
 
 // ── FLOWERS ────────────────────────────────────────────────
 function renderFlowers(){
-  const flowers=FC.getProducts().filter(p=>p.type==='flower');
-  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
-  const atMax=used>=selSize.maxStems;
-  document.getElementById('flower-grid').innerHTML=flowers.map(f=>{
-    const cnt=flowerCounts[f.id]||0;
-    const addDis=atMax?'disabled':'';
-    const remDis=cnt===0?'disabled':'';
-    const imgHtml=f.img
-      ?`<img src="${f.img}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 3px"/>`
-      :`<div style="display:flex;justify-content:center;margin-bottom:3px">${imgPlaceholder(40)}</div>`;
+  // 1. GET ONLY FLOWERS (This hides Fern Leaves/Fillers from this section)
+  const flowers = FC.getProducts().filter(p => p.type === 'flower');
+  
+  const used = Object.values(flowerCounts).reduce((s, v) => s + v, 0);
+  const atMax = used >= selSize.maxStems;
+
+  document.getElementById('flower-grid').innerHTML = flowers.map(f => {
+    const cnt = flowerCounts[f.id] || 0;
+    const addDis = atMax ? 'disabled' : '';
+    const remDis = cnt === 0 ? 'disabled' : '';
+
+    // Fix Image Path
+    const imgPath = f.img ? (f.img.startsWith('data:') ? f.img : `images/${f.img}`) : 'images/default.jpg';
+
     return `
-    <div class="fo ${cnt>0?'sel':''} ${atMax&&cnt===0?'maxed-no-sel':''}">
-      ${imgHtml}
-      <strong>${f.name}</strong>
-      <small>${fmtP(f.price)}/stem</small>
-      <div class="fo-ctrl">
-        <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
-        <span class="fo-qty">${cnt}</span>
-        <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
-      </div>
-    </div>`;
+      <div class="fo ${cnt > 0 ? 'sel' : ''} ${atMax && cnt === 0 ? 'maxed-no-sel' : ''}">
+        <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
+        <div class="fo-info"> 
+          <strong>${f.name}</strong>
+          <small>₱${f.price}/stem</small>
+          <div class="fo-ctrl">
+            <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
+            <span class="fo-qty">${cnt}</span>
+            <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
+          </div>
+        </div>
+      </div>`;
   }).join('');
 }
 
@@ -258,20 +766,31 @@ function removeFlower(id){
 
 // ── FILLERS ────────────────────────────────────────────────
 function renderFillers(){
-  document.getElementById('filler-grid').innerHTML=FILLERS.map(f=>{
-    const qty=fillerCounts[f.id]||0;
+  // 1. GET ONLY FILLERS from your Inventory
+  const fillers = FC.getProducts().filter(p => p.type === 'filler');
+  
+  const html = fillers.map(f => {
+    const qty = fillerCounts[f.id] || 0;
+    
+    // Fix Image Path logic to match flowers
+    const imgPath = f.img ? (f.img.startsWith('data:') ? f.img : `images/${f.img}`) : 'images/default.jpg';
+
     return `
-    <div class="filler-card ${qty>0?'sel':''}">
-      <div class="filler-icon">${imgPlaceholder(38)}</div>
-      <div class="filler-name">${f.name}</div>
-      <div class="filler-price">${fmtP(f.price)}/stem</div>
-      <div class="filler-ctrl">
-        <button class="sm-btn rem" ${qty===0?'disabled':''} onclick="changeFillerQty('${f.id}',-1)">−</button>
-        <span class="sm-qty">${qty}</span>
-        <button class="sm-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+    <div class="fo ${qty > 0 ? 'sel' : ''}">
+      <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
+      <div class="fo-info"> 
+        <strong class="filler-name">${f.name}</strong>
+        <small class="filler-price">₱${f.price}/stem</small>
+        <div class="fo-ctrl">
+          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeFillerQty('${f.id}',-1)">">−</button>
+          <span class="fo-qty">${qty}</span>
+          <button class="fo-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+
+  document.getElementById('filler-grid').innerHTML = html || `<div style="grid-column:1/-1; color:var(--muted); font-size:12px; padding:10px;">No fillers in stock</div>`;
 }
 
 function changeFillerQty(id,delta){
@@ -289,27 +808,31 @@ function renderAddonCats(){
 function setAddonCat(cat){activeCat=cat;renderAddonCats();renderAddons();}
 
 function renderAddons(){
-  const storeAddons=FC.getAddons();
-  const list=activeCat==='all'?storeAddons:storeAddons.filter(a=>a.category===activeCat);
-  document.getElementById('addons-grid').innerHTML=list.map(a=>{
-    const sel=!!selectedAddons[a.id];
-    const qty=sel?(selectedAddons[a.id].qty||1):0;
-    const imgHtml=a.img?`<img src="${a.img}" class="aoc-img"/>`:`<div class="aoc-icon-wrap">${imgPlaceholder(38)}</div>`;
-    const qtyRow=sel?`
-      <div class="aoc-ctrl" onclick="event.stopPropagation()">
-        <button class="sm-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
-        <span class="sm-qty">${qty}</span>
-        <button class="sm-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
-      </div>`:'';
+  const storeAddons = FC.getAddons();
+  const list = activeCat === 'all' ? storeAddons : storeAddons.filter(a => a.category === activeCat);
+  
+  document.getElementById('addons-grid').innerHTML = list.map(a => {
+    const sel = !!selectedAddons[a.id];
+    const qty = sel ? (selectedAddons[a.id].qty || 1) : 0;
+    
+    // Fix Image Path for Extras
+    const imgPath = a.img ? (a.img.startsWith('data:') ? a.img : `images/${a.img}`) : 'images/default.jpg';
+
     return `
-    <div class="aoc ${sel?'sel':''}" id="aoc-${a.id}" onclick="toggleAddon('${a.id}')">
-      <div class="aoc-chk">✓</div>
-      ${imgHtml}
-      <div class="aoc-name">${a.name}</div>
-      <div class="aoc-price">${fmtP(a.price)}</div>
-      ${qtyRow}
+    <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
+      <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
+      <div class="fo-info"> 
+        <strong>${a.name}</strong>
+        <small>₱${a.price}</small>
+        ${sel ? `
+          <div class="fo-ctrl" onclick="event.stopPropagation()">
+            <button class="fo-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
+            <span class="fo-qty">${qty}</span>
+            <button class="fo-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
+          </div>` : ''}
+      </div>
     </div>`;
-  }).join('')||`<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
+  }).join('') || `<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
 }
 
 function toggleAddon(id){
@@ -318,10 +841,22 @@ function toggleAddon(id){
   else selectedAddons[id]={...a,qty:1};
   renderAddons();updateSummary();
 }
-function changeAddonQty(id,delta){
-  if(!selectedAddons[id]) return;
-  selectedAddons[id].qty=Math.max(1,(selectedAddons[id].qty||1)+delta);
-  renderAddons();updateSummary();
+function changeAddonQty(id, delta) {
+  if (!selectedAddons[id]) return;
+  
+  // Change Math.max(1, ...) to Math.max(0, ...)
+  const newQty = Math.max(0, (selectedAddons[id].qty || 1) + delta);
+  
+  if (newQty === 0) {
+    // If it hits 0, remove it from the selected list
+    delete selectedAddons[id];
+  } else {
+    // Otherwise, just update the number
+    selectedAddons[id].qty = newQty;
+  }
+  
+  renderAddons();
+  updateSummary();
 }
 
 // ── COLORS ─────────────────────────────────────────────────

@@ -147,7 +147,11 @@ function switchTab(tab,btn){
 
 // ── PRODUCT THUMBNAIL (table row) ───────────────────────────
 function prodThumb(p){
-  if(p.img) return `<img src="${p.img}" class="prod-img"/>`;
+  if(p.img) {
+    // Check if it's a base64 upload or a file in the images folder
+    const src = p.img.startsWith('data:') ? p.img : `images/${p.img}`;
+    return `<img src="${src}" class="prod-img" onerror="this.src='images/default.jpg'"/>`;
+  }
   return `<div class="prod-thumb-wrap">${imgPlaceholder(42)}</div>`;
 }
 
@@ -158,12 +162,23 @@ function setProdFilter(f,btn){
   btn.classList.add('active'); renderProducts();
 }
 function renderProducts(){
-  const q=document.getElementById('prod-search').value.toLowerCase();
-  let list=FC.getProducts();
-  if(prodFilter!=='all') list=list.filter(p=>p.type===prodFilter||p.category===prodFilter);
-  if(q) list=list.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));
-  document.getElementById('prod-count').textContent=list.length;
-  document.getElementById('prod-tbody').innerHTML=list.length?list.map(p=>`
+  const q = document.getElementById('prod-search').value.toLowerCase();
+  let list = FC.getProducts(); // This now pulls from the "merged" data in data.js
+  
+  if(prodFilter !== 'all') list = list.filter(p => p.type === prodFilter || p.category === prodFilter);
+  if(q) list = list.filter(p => (p.name || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+  
+  document.getElementById('prod-count').textContent = list.length;
+  
+  document.getElementById('prod-tbody').innerHTML = list.length ? list.map(p => {
+    // Determine the action buttons based on type
+    // If it's a flower (Stem), redirect to inventory. If bouquet, allow edit/del here.
+    const actionButtons = p.type === 'flower' 
+      ? `<button class="btn btn-ghost btn-sm" onclick="location.href='inventory-admin.html'" style="color:var(--g2); border-color:var(--g5)">Manage in Inventory</button>`
+      : `<button class="btn btn-ghost btn-sm" onclick="openEditProd('${p.id}')">Edit</button>
+         <button class="btn btn-danger btn-sm" onclick="openDel('${p.id}','${(p.name||'').replace(/'/g,"\\'")}','prod')">Del</button>`;
+
+    return `
     <tr>
       <td><div style="display:flex;align-items:center;gap:10px">${prodThumb(p)}<div>
         <div style="font-size:13px;font-weight:600">${p.name}</div>
@@ -175,11 +190,13 @@ function renderProducts(){
       <td>${p.stock>0?p.stock:'<span style="color:var(--p3);font-weight:600">Out</span>'}</td>
       <td class="star-rating">★${p.rating||4.5} <span style="color:var(--muted);font-size:10px">(${p.reviews||0})</span></td>
       <td><span class="tag ${p.stock>0?'tag-g':'tag-p'}">${p.stock>0?'Active':'Out of Stock'}</span></td>
-      <td><div style="display:flex;gap:4px">
-        <button class="btn btn-ghost btn-sm" onclick="openEditProd('${p.id}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="openDel('${p.id}','${(p.name||'').replace(/'/g,"\\'")}','prod')">Del</button>
-      </div></td>
-    </tr>`).join(''):`<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No products found</td></tr>`;
+      <td>
+        <div style="display:flex;gap:4px">
+          ${actionButtons}
+        </div>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No products found</td></tr>`;
 }
 
 // ── PRODUCT MODAL ────────────────────────────────────────────
@@ -325,35 +342,53 @@ function openEditProd(id){
   document.getElementById('prod-modal-body').innerHTML=getProdModalBody(p);
   openModal('prod-modal');onTypeChange();
 }
-function saveProd(){
-  const name=document.getElementById('p-name').value.trim();
-  const type=document.getElementById('p-type').value;
-  const category=document.getElementById('p-cat').value;
-  const price=parseFloat(document.getElementById('p-price').value);
-  const stock=parseInt(document.getElementById('p-stock').value);
-  if(!name||!price||isNaN(stock)){toast('Fill in name, price and stock.','err');return;}
-  const products=FC.getProducts();
-  const data={
-    name,type,category,price,stock,
-    img:pendingImg||null,    // base64 photo or null
-    icon:null,               // no emoji icons — always null
-    bg:'var(--soft)',
-    maxPrice:parseFloat(document.getElementById('p-maxprice')?.value)||null,
-    oldPrice:parseFloat(document.getElementById('p-oldprice').value)||null,
-    badge:document.getElementById('p-badge').value.trim(),
-    desc:document.getElementById('p-desc').value.trim(),
-    rating:parseFloat(document.getElementById('p-rating').value)||4.5,
-    reviews:parseInt(document.getElementById('p-reviews').value)||0,
+function saveProd() {
+  const name = document.getElementById('p-name').value.trim();
+  const fileInput = document.getElementById('prod-img'); // The hidden file input
+  
+  // 1. Get the filename logic
+  // If a new file is chosen, we take the .name property (e.g. "tulip.jpg")
+  // If no new file is chosen, we stick with the existing pendingImg
+  let filename = pendingImg; 
+  if (fileInput && fileInput.files.length > 0) {
+      filename = fileInput.files[0].name; 
+  }
+
+  if (!name || isNaN(parseFloat(document.getElementById('p-price').value))) {
+    toast('Please fill in the required fields.', 'err');
+    return;
+  }
+
+  const products = FC.getProducts();
+  const type = document.getElementById('p-type').value;
+
+  const data = {
+    name,
+    type: type,
+    category: document.getElementById('p-cat').value,
+    price: parseFloat(document.getElementById('p-price').value),
+    stock: parseInt(document.getElementById('p-stock').value),
+    img: filename, // <--- SAVES "rose.jpg" 
+    icon: null,
+    bg: 'var(--soft)',
+    maxPrice: parseFloat(document.getElementById('p-maxprice')?.value) || null,
+    oldPrice: parseFloat(document.getElementById('p-oldprice').value) || null,
+    badge: document.getElementById('p-badge').value.trim(),
+    desc: document.getElementById('p-desc').value.trim(),
+    rating: parseFloat(document.getElementById('p-rating').value) || 4.5,
+    reviews: parseInt(document.getElementById('p-reviews').value) || 0,
   };
-  if(editingProdId){
-    const idx=products.findIndex(p=>p.id===editingProdId);
-    if(idx!==-1) products[idx]={...products[idx],...data};
+
+  if (editingProdId) {
+    const idx = products.findIndex(p => p.id === editingProdId);
+    if (idx !== -1) products[idx] = { ...products[idx], ...data };
     toast('Product updated!');
   } else {
-    data.id=(type==='flower'?'f':'p')+Date.now();
+    data.id = (type === 'flower' ? 'f' : 'p') + Date.now();
     products.push(data);
     toast('Product added!');
   }
+
   FC.saveProducts(products);
   closeModal('prod-modal');
   renderProducts();

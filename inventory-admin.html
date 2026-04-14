@@ -391,6 +391,15 @@ function getModalBody(item) {
   const hasImg = !!p.img;
   return `
     <div class="ff" style="margin-bottom: 1rem;"><label>FLOWER NAME *</label><input id="inv-name" value="${p.name||''}" placeholder="e.g. Red Roses"/></div>
+    
+    <div class="ff" style="margin-bottom: 1rem;">
+      <label>STEM TYPE *</label>
+      <select id="inv-type" style="width:100%; padding:10px; border:1.5px solid var(--line); border-radius:var(--r); background:var(--soft); outline:none; font-family:inherit;">
+        <option value="flower" ${p.type === 'flower' ? 'selected' : ''}>Main Flower</option>
+        <option value="filler" ${p.type === 'filler' ? 'selected' : ''}>Filler</option>
+      </select>
+    </div>
+
     <div class="ff" style="margin-bottom: 1.5rem;"><label>FLOWER IMAGE *</label>
       <div class="dropzone ${hasImg ? 'has-photo' : ''}" id="dropzone">
         <img src="${p.img || ''}" class="dz-preview-img" id="dz-preview" style="${hasImg ? 'display:block' : 'display:none'}">
@@ -448,6 +457,7 @@ function removePhoto() {
 
 function saveInventory() {
   const name = document.getElementById('inv-name').value.trim();
+  const type = document.getElementById('inv-type').value; // Gets "flower" or "filler"
   const imgData = document.getElementById('inv-img-data').value;
   const stock = parseInt(document.getElementById('inv-stock').value);
   const pricePerStem = parseFloat(document.getElementById('inv-price').value);
@@ -464,10 +474,12 @@ function saveInventory() {
   if (editingInvId) {
     const idx = inv.findIndex(i => i.id === editingInvId);
     if (idx !== -1) {
-      inv[idx] = { ...inv[idx], name, img: imgData, stock, pricePerStem, arrived, lifeDays, flowerId };
+      // Added "type" here for updates
+      inv[idx] = { ...inv[idx], name, type, img: imgData, stock, pricePerStem, arrived, lifeDays, flowerId };
     }
   } else {
-    inv.push({ id: 'i' + Date.now(), flowerId, name, img: imgData, stock, pricePerStem, arrived, lifeDays, freshness: 100 });
+    // Added "type" here for new entries
+    inv.push({ id: 'i' + Date.now(), flowerId, type, name, img: imgData, stock, pricePerStem, arrived, lifeDays, freshness: 100 });
   }
 
   FC.saveInventory(inv);
