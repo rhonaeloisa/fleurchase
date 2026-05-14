@@ -163,7 +163,7 @@ async function doLogin(event) {
     const user = {
       email: data.email,
       role: data.role,
-      name: data.role === 'admin' ? 'Admin' : 'Customer',
+      name: data.role === 'admin' ? 'Admin' : 'customer',
       initial: data.email[0].toUpperCase()
     };
 
@@ -173,7 +173,7 @@ async function doLogin(event) {
       if (data.role === 'admin') {
         window.location.href = 'admin.html';
       } else {
-        window.location.href = 'customers-admin.html';
+        window.location.href = 'shop.html';
       }
     }, 500);
 
