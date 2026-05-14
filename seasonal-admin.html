@@ -93,82 +93,24 @@ requireAuth('admin');
 buildTopNav('seasonal-admin');
 buildAdminSidebar('seasonal-admin.html');
 
-const SEASONS = {
-  valentines: {
-    label:"Valentine's", icon:'💝', period:'February',
-    banner:{ bg:'#FFF0F5', border:'#F48FB1', text:"💝 <strong>Valentine's season</strong> is your highest-demand period. Start stocking 2 weeks before Feb 14. Red roses are #1 — order 300–500 stems minimum." },
-    flowers:[
-      {n:"Red Roses",   i:'🌹', v:100, c:'#E91E63'},
-      {n:"Pink Carnations",i:'🌸',v:82, c:'#F06292'},
-      {n:"Peonies",     i:'🪷', v:76, c:'#C2185B'},
-      {n:"Tulips",      i:'🌷', v:65, c:'#EC407A'},
-      {n:"Baby's Breath",i:'🌿',v:55, c:'var(--g4)'},
-    ],
-    restock:[["Red Roses","300–500 stems","🔴 Critical"],["Pink Carnations","200–300 stems","🔴 Critical"],["Peonies","150–200 stems","🟡 High"],["Pink/Red Ribbon","100 rolls","🟡 High"],["Ferrero Rocher","50+ boxes","🔵 Medium"]],
-  },
-  mothers: {
-    label:"Mother's Day", icon:'💐', period:'May',
-    banner:{ bg:'#FFF8E1', border:'#FFB74D', text:"💐 <strong>Mother's Day</strong> is the second biggest occasion. Mixed bouquets and personalized arrangements dominate. Prepare gift sets with add-ons like teddies and chocolates." },
-    flowers:[
-      {n:"Lilies",      i:'🌺', v:90, c:'var(--g3)'},
-      {n:"Mixed Bouquet",i:'💐',v:85, c:'var(--g4)'},
-      {n:"Roses",       i:'🌹', v:78, c:'var(--p3)'},
-      {n:"Cherry Blossom",i:'🌸',v:60,c:'#FF80AB'},
-      {n:"Lavender",    i:'💜', v:48, c:'#9C27B0'},
-    ],
-    restock:[["White Lilies","200–300 stems","🔴 Critical"],["Mixed Flowers","250+ stems","🔴 Critical"],["Roses","200 stems","🟡 High"],["Gift Sets","30–50 units","🟡 High"],["Greeting Cards","100+ pcs","🔵 Medium"]],
-  },
-  graduation: {
-    label:'Graduation', icon:'🎓', period:'Mar–Apr',
-    banner:{ bg:'#FFFDE7', border:'#FFD54F', text:"🎓 <strong>Graduation season</strong>: peak demand for sunflowers and bright, cheerful arrangements. Families often order for multiple graduates at once — prepare bulk-order capacity." },
-    flowers:[
-      {n:"Sunflowers",  i:'🌻', v:95, c:'#F9A825'},
-      {n:"Tulips",      i:'🌷', v:75, c:'var(--p4)'},
-      {n:"Baby's Breath",i:'🌿',v:70, c:'var(--g4)'},
-      {n:"Gerbera",     i:'🌼', v:60, c:'#FF6F00'},
-      {n:"Roses",       i:'🌹', v:55, c:'var(--p3)'},
-    ],
-    restock:[["Sunflowers","300–400 stems","🔴 Critical"],["Tulips","200 stems","🟡 High"],["Baby's Breath","200 bunches","🟡 High"],["Yellow Ribbon","60 rolls","🔵 Medium"],["Small Teddy Bears","20–30 pcs","🔵 Medium"]],
-  },
-  christmas: {
-    label:'Christmas', icon:'🎄', period:'December',
-    banner:{ bg:'var(--g9)', border:'var(--g5)', text:"🎄 <strong>Christmas & New Year</strong>: poinsettias, white lilies, and gift sets trend strongly. Families order for home decoration and as gifts. Start stocking early in November." },
-    flowers:[
-      {n:"Poinsettia",  i:'🌺', v:88, c:'var(--p3)'},
-      {n:"White Lilies",i:'🌼', v:80, c:'var(--g4)'},
-      {n:"Roses",       i:'🌹', v:72, c:'#C62828'},
-      {n:"Holly",       i:'🌿', v:58, c:'var(--g3)'},
-      {n:"Chrysanthemum",i:'🌸',v:45, c:'#F57F17'},
-    ],
-    restock:[["Poinsettia","200 pots","🔴 Critical"],["White Lilies","250 stems","🔴 Critical"],["Red Roses","200 stems","🟡 High"],["Gift Boxes","50+ pcs","🟡 High"],["Wine/Chocolates","30 sets","🔵 Medium"]],
-  },
-  weddings: {
-    label:'Weddings', icon:'💍', period:'Nov–Feb',
-    banner:{ bg:'var(--g9)', border:'var(--g7)', text:"💍 <strong>Wedding season</strong>: large bulk orders, require 2+ weeks advance booking. Peonies and roses dominate. Maintain extra stock of filler greens and premium ribbons." },
-    flowers:[
-      {n:"Roses",       i:'🌹', v:95, c:'var(--p3)'},
-      {n:"Peonies",     i:'🪷', v:88, c:'#C2185B'},
-      {n:"Filler Greens",i:'🌿',v:78, c:'var(--g4)'},
-      {n:"Hydrangeas",  i:'💐', v:65, c:'#7E57C2'},
-      {n:"Baby's Breath",i:'🌿',v:52, c:'var(--g5)'},
-    ],
-    restock:[["Roses (bulk)","500+ stems","🔴 Critical"],["Peonies","300 stems","🔴 Critical"],["Filler Greens","400 bunches","🟡 High"],["White Ribbon","100 rolls","🟡 High"],["Large Teddies","10 pcs","🔵 Medium"]],
-  },
-  birthday: {
-    label:'Year-round', icon:'🎉', period:'All Year',
-    banner:{ bg:'var(--soft)', border:'var(--line)', text:"🎉 <strong>Year-round birthdays & anniversaries</strong>: consistent demand across all months. Keep a steady rotating stock of roses, sunflowers, and mixed bouquet components." },
-    flowers:[
-      {n:"Roses",       i:'🌹', v:85, c:'var(--p3)'},
-      {n:"Sunflowers",  i:'🌻', v:70, c:'#F9A825'},
-      {n:"Mixed Bouquet",i:'💐',v:65, c:'var(--g4)'},
-      {n:"Gerbera",     i:'🌼', v:55, c:'#FF7043'},
-      {n:"Lavender",    i:'💜', v:40, c:'#7B1FA2'},
-    ],
-    restock:[["Roses","200–300 stems","🟡 High"],["Sunflowers","150–200 stems","🟡 High"],["Gerbera","100 stems","🔵 Medium"],["Balloon Bouquets","50+ pcs","🔵 Medium"],["Gift Cards","100+ pcs","🔵 Medium"]],
-  },
-};
+let SEASONS = {};
+let activeSeason = "all";
 
-let activeSeason = 'valentines';
+async function loadSeasonalData() {
+  try {
+    const res = await fetch("get_seasonal.php");
+    SEASONS = await res.json();
+
+    activeSeason = Object.keys(SEASONS)[0];
+
+    renderTabs();
+    renderContent();
+  } catch (error) {
+    console.error(error);
+    toast("Cannot load seasonal data from database.", "err");
+  }
+}
+
 
 function renderTabs() {
   document.getElementById('season-btns').innerHTML = Object.entries(SEASONS).map(([k,s])=>
@@ -228,8 +170,7 @@ function renderContent() {
     </tr>`).join('');
 }
 
-renderTabs();
-renderContent();
+loadSeasonalData();
 </script>
 </body>
 </html>
