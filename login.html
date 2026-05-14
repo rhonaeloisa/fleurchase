@@ -163,6 +163,15 @@ async function doLogin(event) {
 
     toast('Login successful!', 'success');
 
+    const user = {
+      email: data.email,
+      role: data.role,
+      name: data.role === 'admin' ? 'Admin' : 'Customer',
+      initial: data.email[0].toUpperCase()
+    };
+
+    FC.setUser(user);
+
     setTimeout(() => {
       if (data.role === 'admin') {
         window.location.href = 'admin.html';
@@ -176,8 +185,6 @@ async function doLogin(event) {
     toast('Cannot reach login.php. Check file path/server.', 'err');
   }
 }
-
-
 
 function doSignup() {
   const fn = document.getElementById('su-fn').value.trim();
