@@ -148,7 +148,9 @@ h1,h2,h3{font-family:var(--font-d);font-weight:700}
 /* ── FRESHNESS BAR ── */
 .fresh-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
 .fresh-fill{height:100%;border-radius:3px;transition:width .4s}
-.fresh-ok{background:var(--g4)}.fresh-mid{background:#FFA000}.fresh-low{background:var(--p4)}
+.fresh-ok{background:var(--g4)}
+.fresh-mid{background:#FFA000}
+.fresh-low{background:var(--p4)}
 
 /* ── PROMO BANNER ── */
 .promo-banner{background:linear-gradient(90deg,var(--p3),var(--p4),var(--g4));color:white;padding:9px 1.5rem;display:flex;align-items:center;gap:1rem;overflow:hidden}
