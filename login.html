@@ -160,6 +160,8 @@ async function doLogin(event) {
 
     toast('Login successful!', 'success');
 
+    const role = String(data.role || '').trim().toLowerCase();
+
     const user = {
       email: data.email,
       role: data.role,
@@ -170,7 +172,7 @@ async function doLogin(event) {
     FC.setUser(user);
 
     setTimeout(() => {
-      if (data.role === 'admin') {
+      if (role === 'admin') {
         window.location.href = 'admin.html';
       } else {
         window.location.href = 'shop.html';
