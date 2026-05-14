@@ -29,8 +29,8 @@
 <div class="main-area">
 <div class="p-page">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
-    <div><div class="page-title">Products &amp; Add-ons</div></div>
-    <button class="btn btn-green btn-sm" id="add-btn" onclick="openAddModal()">+ Add Product</button>
+    <div><div class="page-title">Bouquets</div></div>
+    <button class="btn btn-green btn-sm" id="add-btn" onclick="openAddModal()">+ Add Bouquet</button>
   </div>
 
 
@@ -40,7 +40,7 @@
     <div class="filter-bar" id="prod-filter-bar">
       <button class="filt-btn active" onclick="setProdFilter('all',this)">All</button>
       <button class="filt-btn" onclick="setProdFilter('bouquet',this)">Bouquets</button>
-      <button class="filt-btn" onclick="setProdFilter('flower',this)">Stems</button>
+      <button class="filt-btn" onclick="setProdFilter('customized',this)">Customized</button>
       <button class="filt-btn" onclick="setProdFilter('ready-made',this)">Ready-Made</button>
       <button class="filt-btn" onclick="setProdFilter('seasonal',this)">Seasonal</button>
       <button class="filt-btn" onclick="setProdFilter('gift-set',this)">Gift Sets</button>
@@ -62,8 +62,14 @@
 
       <h3>Products (<span id="prod-count"><?php echo $total_products; ?></span>)</h3>
 
-      <input id="prod-search" placeholder="Search..." style="border:1.5px solid var(--line);border-radius:var(--r);padding:7px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:var(--soft);width:180px" />
-    </div>
+      <input 
+        id="prod-search" 
+        placeholder="Search..." 
+        style="border:1.5px solid var(--line);border-radius:var(--r);padding:7px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:var(--soft);width:180px" 
+        oninput="renderProducts()"
+      />
+
+      </div>
   </div>
 
   <div style="overflow-x:auto">
@@ -97,7 +103,7 @@
 
       while ($row = mysqli_fetch_assoc($result)) {
     ?>
-      <tr>
+      <tr data-category="<?php echo htmlspecialchars($row['category']); ?>">
         <td>
           <img 
             src="images/<?php echo htmlspecialchars($row['image']); ?>" 
@@ -187,12 +193,13 @@
 
 <div id="fc-toast" class="toast"></div>
 
-<script src="data.js"></script><script src="nav.js"></script>
-<script src="shared.js"></script>
+<script src="data.js"></script>
+<script src="nav.js"></script>
+
 <script>
 requireAuth('admin');
 buildTopNav('products-admin');
-buildAdminSidebar('products-admin.html');
+buildAdminSidebar('products-admin.php');
 
 let activeTab = 'products';
 let editingProdId = null;
@@ -273,9 +280,15 @@ function getProdModalBody(p) {
         </div>
 
         <div class="ff">
-          <label>Variation</label>
-          <input id="p-variation" name="variation" value="${pv.variation || ''}">
+          <label>Variation*</label>
+          <select id="p-variation" name="variation" required>
+            <option value="small" ${pv.variation === 'small' ? 'selected' : ''}>Small</option>
+            <option value="medium" ${pv.variation === 'medium' ? 'selected' : ''}>Medium</option>
+            <option value="large" ${pv.variation === 'large' ? 'selected' : ''}>Large</option>
+          </select>
         </div>
+
+        
       </div>
 
       <div class="ff">
@@ -348,6 +361,47 @@ function confirmDelete() {
     window.location.href = 'db/delete_bouquet.php?id=' + encodeURIComponent(deletingId);
   }
 }
+
+
+//FILTER PRODUCTS
+let prodFilter = 'all';
+
+function setProdFilter(filter, btn) {
+  prodFilter = filter;
+
+  document.querySelectorAll('#prod-filter-bar .filt-btn').forEach(button => {
+    button.classList.remove('active');
+  });
+
+  btn.classList.add('active');
+
+  renderProducts();
+}
+
+function renderProducts() {
+  const q = document.getElementById('prod-search').value.toLowerCase();
+  const rows = document.querySelectorAll('#prod-tbody tr');
+
+  let visibleCount = 0;
+
+  rows.forEach(row => {
+    const category = row.dataset.category || '';
+    const rowText = row.textContent.toLowerCase();
+
+    const matchesCategory = prodFilter === 'all' || category === prodFilter;
+    const matchesSearch = !q || rowText.includes(q);
+
+    if (matchesCategory && matchesSearch) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  document.getElementById('prod-count').textContent = visibleCount;
+}
+
 
 </script>
 </body>
