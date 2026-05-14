@@ -76,11 +76,11 @@ function buildAdminSidebar(activePage) {
       { href:'orders-admin.html',  icon:'📦', label:'Orders', badge: pending||'' },
     ]},
     { s:'Catalog', items:[
-      { href:'products-admin.html',icon:'🛍️', label:'Products & Add-ons' },
+      { href:'products-admin.php',icon:'💐', label:'Bouquets' },
       { href:'promos-admin.html',  icon:'🏷️', label:'Promos & Sales' },
     ]},
     { s:'Stock', items:[
-      { href:'inventory-admin.html',icon:'🌿', label:'Inventory' },
+      { href:'inventory-admin.html',icon:'🌿', label:'Products' },
     ]},
     { s:'Insights', items:[
       { href:'seasonal-admin.html',icon:'📈', label:'Seasonal Trends' },
@@ -123,7 +123,7 @@ function renderFooter(containerId, isAdmin) {
         <h4>Quick Links</h4>
         ${!isAdmin
           ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.html">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.html">My Cart</a>`
-          :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.html">Products</a>`}
+          :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.php">Bouquets</a>`}
       </div>
       <div>
         <h4>Information</h4>
