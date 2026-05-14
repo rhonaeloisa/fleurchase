@@ -97,7 +97,7 @@ function buildAdminSidebar(activePage) {
       { href:'promos-admin.html',  icon:'🏷️', label:'Promos & Sales' },
     ]},
     { s:'Stock', items:[
-      { href:'inventory-admin.html',icon:'🌿', label:'Products' },
+      { href:'inventory-admin.php',icon:'🌿', label:'Products' },
     ]},
     { s:'Insights', items:[
       { href:'seasonal-admin.html',icon:'📈', label:'Seasonal Trends' },
