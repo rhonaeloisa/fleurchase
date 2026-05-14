@@ -255,6 +255,7 @@
 
 <script src="data.js"></script><script src="nav.js"></script>
 <script>
+
 let _cat='all', _stemProd=null, _stemQty=1;
 const BADGE_CLS={'Sale':'tag-p','On Sale':'tag-p','Promo':'tag-g','Popular':'tag-g','New':'tag-gold','Seasonal':'tag-b','Premium':'tag-gold'};
 
@@ -314,7 +315,7 @@ function renderProducts(cat){
         <div class="pc-stars">${'★'.repeat(Math.floor(p.rating))}${p.rating%1>=.5?'⭐':''} <span style="color:var(--muted);font-size:10px">(${p.reviews})</span></div>
         <div class="pc-foot">
           <div><span class="pc-price">${fmtP(p.price)}</span>${p.oldPrice?`<span class="pc-old">${fmtP(p.oldPrice)}</span>`:''}</div>
-          <button class="add-btn" onclick="${isFlower?`openStemModal('${p.id}')`:`addToCart('${p.id}',1)`}" title="${isFlower?'Select stems':'Add to cart'}">+</button>
+          <button class="add-btn" onclick="addToCart('${p.id}', 1)" title="Add to cart">+</button>
         </div>
         ${isFlower?`<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem · Select quantity →</div>`:''}
       </div>
@@ -334,14 +335,41 @@ function resetFilter(){
   renderProducts('all');
 }
 
-function addToCart(productId, qty, stems=0){
-  const p=FC.getProducts().find(x=>x.id===productId); if(!p) return;
-  if(p.stock<qty){toast('Not enough stock!','err');return;}
-  const cart=FC.getCart();
-  const cartId=stems>0?productId+'_stem':productId;
-  const ex=cart.find(i=>i.cartId===cartId);
-  if(ex){ex.qty+=qty; if(stems>0)ex.stems+=stems;}
-  else cart.push({cartId,productId:p.id,name:stems>0?p.name+' (stems)':p.name,img:p.img||null,type:p.type,price:p.price,qty,stems,checked:true});
+function addToCart(productId, qty = 1, stems = 0) {
+  const p = DB_PRODUCTS.find(x => String(x.id) === String(productId));
+
+  if (!p) {
+    toast('Product not found.', 'err');
+    return;
+  }
+
+  if (p.stock && p.stock < qty) {
+    toast('Not enough stock!', 'err');
+    return;
+  }
+
+  const cart = FC.getCart();
+  const cartId = stems > 0 ? p.id + '_stem' : String(p.id);
+
+  const existingItem = cart.find(i => String(i.cartId) === String(cartId));
+
+  if (existingItem) {
+    existingItem.qty += qty;
+    if (stems > 0) existingItem.stems += stems;
+  } else {
+    cart.push({
+      cartId: cartId,
+      productId: p.id,
+      name: stems > 0 ? p.name + ' (stems)' : p.name,
+      img: p.img || null,
+      type: p.type || 'bouquet',
+      price: Number(p.price),
+      qty: qty,
+      stems: stems,
+      checked: true
+    });
+  }
+
   FC.saveCart(cart);
   updateCartBadge();
   toast(`"${p.name}" added to cart!`);
