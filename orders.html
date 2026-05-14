@@ -66,14 +66,14 @@ renderFooter('footer-container', false);
 
 const STEPS=['Confirmed','Processing','Out for Delivery','Delivered'];
 const SC={Confirmed:'stp-conf',Processing:'stp-proc','Out for Delivery':'stp-deliv',Delivered:'stp-done',Pending:'stp-pend'};
-let reviews=JSON.parse(localStorage.getItem('fc_reviews')||'{}');
+let DB_ORDERS = [];
 
 function getStep(status){const i=STEPS.indexOf(status);return i===-1?0:i;}
 
 function renderOrderCard(o){
   const step=getStep(o.status);
   const isFree=o.shippingFee===0;
-  const rev=reviews[o.id];
+  const rev = o.review;
   const deliveredActions=o.status==='Delivered'?`
     <div style="display:flex;gap:8px;margin-top:.5rem;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="toast('Reorder initiated!');setTimeout(()=>location.href='shop.html',1200)">↻ Reorder</button>
@@ -81,7 +81,7 @@ function renderOrderCard(o){
         <div style="font-size:12px;font-weight:600;color:var(--g2);margin-bottom:3px">Your Review</div>
         <div style="color:#F9A825;font-size:14px">${'★'.repeat(rev.rating)}${'☆'.repeat(5-rev.rating)}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:3px;font-style:italic">"${rev.text}"</div>
-      </div>`:`<button class="btn btn-green btn-sm" onclick="openReview('${o.id}')">⭐ Leave a Review</button>`}
+      </div>`:`<button class="btn btn-green btn-sm" onclick="openReview('${o.id}', '${o.orderItemId}')">⭐ Leave a Review</button>`}
     </div>`:'';
   return `
     <div class="order-card">
@@ -121,14 +121,36 @@ function renderOrderCard(o){
     </div>`;
 }
 
+async function loadOrdersFromDB() {
+  const user = FC.getUser();
+
+  try {
+    const res = await fetch('get_my_orders.php?email=' + encodeURIComponent(user.email));
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Unable to load orders.', 'err');
+      return;
+    }
+
+    DB_ORDERS = data.orders;
+    renderLists();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot load orders from database.', 'err');
+  }
+}
+
 function renderLists(){
-  const all=FC.getOrders();
-  const active=all.filter(o=>o.status!=='Delivered');
-  const history=all.filter(o=>o.status==='Delivered');
-  document.getElementById('active-list').innerHTML=active.length?active.map(renderOrderCard).join('')
-    :`<div class="empty-state"><div class="ei">📭</div><h3>No active orders</h3><p>Your active pre-orders will appear here.</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now →</a></div>`;
-  document.getElementById('history-list').innerHTML=history.length?history.map(renderOrderCard).join('')
-    :`<div class="empty-state"><div class="ei">📋</div><h3>No order history</h3><p>Completed orders will appear here.</p></div>`;
+  const all = DB_ORDERS;
+  const active = all.filter(o => o.status !== 'Delivered');
+  const history = all.filter(o => o.status === 'Delivered');
+
+  document.getElementById('active-list').innerHTML = active.length ? active.map(renderOrderCard).join('')
+    : `<div class="empty-state"><div class="ei">📭</div><h3>No active orders</h3><p>Your active pre-orders will appear here.</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now →</a></div>`;
+
+  document.getElementById('history-list').innerHTML = history.length ? history.map(renderOrderCard).join('')
+    : `<div class="empty-state"><div class="ei">📋</div><h3>No order history</h3><p>Completed orders will appear here.</p></div>`;
 }
 
 function setTab(t,btn){
@@ -141,10 +163,10 @@ function setTab(t,btn){
 }
 
 // REVIEW SYSTEM
-let reviewOrderId=null, reviewRating=0;
+let reviewOrderItemId = null;
 
-function openReview(orderId){
-  reviewOrderId=orderId; reviewRating=0;
+function openReview(orderId, orderItemId){
+   reviewOrderItemId = orderItemId;
   const o=FC.getOrders().find(x=>x.id===orderId);
   document.getElementById('review-modal-body').innerHTML=`
     <div style="font-size:13px;color:var(--muted);margin-bottom:1rem">
@@ -171,18 +193,43 @@ function setRating(n){
   [1,2,3,4,5].forEach(i=>document.getElementById('star-'+i)?.classList.toggle('lit',i<=n));
 }
 
-function submitReview(){
+async function submitReview(){
   if(!reviewRating){toast('Please select a star rating.','warn');return;}
+
   const text=document.getElementById('review-text').value.trim();
   if(!text){toast('Please write a short review.','warn');return;}
-  reviews[reviewOrderId]={rating:reviewRating,text,date:new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})};
-  localStorage.setItem('fc_reviews',JSON.stringify(reviews));
-  closeModal('review-modal');
-  toast('⭐ Review submitted! Thank you!');
-  renderLists();
+
+  const user = FC.getUser();
+
+  const formData = new FormData();
+  formData.append('email', user.email);
+  formData.append('order_item_id', reviewOrderItemId);
+  formData.append('rating', reviewRating);
+  formData.append('review_text', text);
+
+  try {
+    const res = await fetch('submit_review.php', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Review failed.', 'err');
+      return;
+    }
+
+    closeModal('review-modal');
+    toast('⭐ Review submitted! Thank you!');
+    loadOrdersFromDB();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot submit review.', 'err');
+  }
 }
 
-renderLists();
+loadOrdersFromDB();
 </script>
 </body>
 </html>
