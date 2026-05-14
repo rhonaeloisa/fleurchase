@@ -601,6 +601,34 @@ async function placeOrder() {
     phone:ph, address:addr+', '+mun, placedAt:new Date().toISOString(),
   };
 
+  const user = FC.getUser();
+
+  const orderForm = new FormData();
+  orderForm.append('user_email', user.email);
+  orderForm.append('order_name', checkoutItems.map(i => i.name).join(', '));
+  orderForm.append('discount_amount', discount);
+  orderForm.append('shipping_fee', fees.total);
+  orderForm.append('total_amount', total);
+  orderForm.append('notes', document.getElementById('co-gift-msg')?.value.trim() || '');
+  orderForm.append('delivery_date', dt);
+  orderForm.append('delivery_type', 'Delivery');
+  orderForm.append('delivery_time', document.getElementById('co-time').value);
+
+  const orderRes = await fetch('place_order.php', {
+    method: 'POST',
+    body: orderForm
+  });
+
+  const orderData = await orderRes.json();
+
+  if (!orderData.success) {
+    toast(orderData.message || 'Unable to save order.', 'err');
+    return;
+  }
+
+  newOrder.dbOrderId = orderData.order_id;
+
+
   const stockForm = new FormData();
     stockForm.append('items', JSON.stringify(checkoutItems));
 
