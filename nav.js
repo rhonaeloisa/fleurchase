@@ -2,10 +2,27 @@
 
 function requireAuth(role) {
   const user = FC.getUser();
-  if (!user) { location.href = 'login.html'; return null; }
-  if (role && user.role !== role) { location.href = role === 'admin' ? 'shop.html' : 'admin.html'; return null; }
+
+  if (!user) {
+    location.replace('login.html');
+    return null;
+  }
+
+  const userRole = String(user.role || '').trim().toLowerCase();
+  const requiredRole = String(role || '').trim().toLowerCase();
+
+  if (requiredRole && userRole !== requiredRole) {
+    FC.clearUser();
+    location.replace('login.html');
+    return null;
+  }
+
+  user.role = userRole;
+  FC.setUser(user);
+
   return user;
 }
+
 function doLogout() { FC.clearUser(); FC.saveCart([]); location.href = 'index.html'; }
 
 let _toastTimer;
