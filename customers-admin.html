@@ -91,16 +91,24 @@ buildTopNav('customers-admin');
 buildAdminSidebar('customers-admin.html');
 
 // Build customer list from orders + seed data
-const SEED_CUSTOMERS = [
-  {id:'c1', name:'Ana Cruz',       email:'ana.cruz@email.com',    phone:'09171234567', loc:'Legazpi City', joined:'Jan 2024'},
-  {id:'c2', name:'Rico Santos',    email:'rico.santos@email.com', phone:'09181234567', loc:'Daraga',       joined:'Feb 2024'},
-  {id:'c3', name:'Joy Reyes',      email:'joy.reyes@email.com',   phone:'09191234567', loc:'Legazpi City', joined:'Mar 2024'},
-  {id:'c4', name:'Mark Tan',       email:'mark.tan@email.com',    phone:'09201234567', loc:'Camalig',      joined:'Jan 2024'},
-  {id:'c5', name:'Luz Villanueva', email:'luz.v@email.com',       phone:'09211234567', loc:'Oas',          joined:'Feb 2024'},
-  {id:'c6', name:'Bea Mercado',    email:'bea.m@email.com',       phone:'09221234567', loc:'Daraga',       joined:'Mar 2024'},
-  {id:'c7', name:'Leo Flores',     email:'leo.f@email.com',       phone:'09231234567', loc:'Tabaco City',  joined:'Jan 2024'},
-  {id:'c8', name:'Mia Reyes',      email:'mia.r@email.com',       phone:'09241234567', loc:'Legazpi City', joined:'Feb 2024'},
-];
+let DB_CUSTOMERS = [];
+
+async function loadCustomers() {
+  try {
+    const res = await fetch("get_customers.php");
+    DB_CUSTOMERS = await res.json();
+
+    renderMetrics();
+    renderTable();
+  } catch (error) {
+    console.error(error);
+    toast("Cannot load customers from database.", "err");
+  }
+}
+
+function buildCustomerData() {
+  return DB_CUSTOMERS;
+}
 
 let activeFilter = 'all';
 
@@ -230,8 +238,7 @@ function exportCustomers() {
   toast('Customer list exported! 📊');
 }
 
-renderMetrics();
-renderTable();
+loadCustomers();
 </script>
 </body>
 </html>
