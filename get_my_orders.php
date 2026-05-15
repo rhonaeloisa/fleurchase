@@ -70,7 +70,7 @@ try {
 
         if ($row["order_item_id"]) {
             $orders[$id]["itemDetails"][] = [
-                "order_item_id" => $row["order_item_id"],
+                "orderItemId" => $row["order_item_id"],
                 "name" => $row["snapshot_name"],
                 "qty" => (int)$row["quantity"],
                 "price" => (float)$row["unit_price"]
