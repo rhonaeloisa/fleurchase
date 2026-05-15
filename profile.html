@@ -99,20 +99,55 @@
       </div>
     </div>
 
-    <!-- ADDRESSES -->
-    <div class="prof-card">
-      <h3>Delivery Addresses</h3>
-      <div class="addr-item default">
-        <div class="addr-item-title">🏠 Home <span class="tag tag-g" style="font-size:9px;padding:1px 6px">Default</span></div>
-        <div class="addr-item-detail" id="addr-home">Brgy. Rizal, Daraga, Albay 4501</div>
+  <!-- ADDRESSES -->
+<div class="prof-card">
+  <h3>Delivery Addresses</h3>
+
+  <div id="address-list"></div>
+
+  <div id="addr-form" style="display:none;margin-top:12px">
+    <input type="hidden" id="addr-id">
+
+    <div class="fg2">
+      <div class="ff">
+        <label>House No.</label>
+        <input id="addr-house" placeholder="House No.">
       </div>
-      <div class="addr-item">
-        <div class="addr-item-title">🏢 Office</div>
-        <div class="addr-item-detail">Legazpi City CBD, Albay 4500</div>
+      <div class="ff">
+        <label>Street</label>
+        <input id="addr-street" placeholder="Street">
       </div>
-      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:6px" onclick="toast('Address management coming soon! 📍')">+ Add Address</button>
     </div>
+
+    <div class="ff">
+      <label>Barangay</label>
+      <input id="addr-barangay" placeholder="Barangay">
+    </div>
+
+    <div class="fg2">
+      <div class="ff">
+        <label>City</label>
+        <input id="addr-city" placeholder="City">
+      </div>
+      <div class="ff">
+        <label>Province</label>
+        <input id="addr-province" placeholder="Province">
+      </div>
+    </div>
+
+    <div class="ff">
+      <label>ZIP Code</label>
+      <input id="addr-zip" placeholder="ZIP Code">
+    </div>
+
+    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:6px" onclick="saveAddress()">Save Address</button>
   </div>
+
+  <button class="btn btn-ghost" id="addr-add-btn" style="width:100%;justify-content:center;margin-top:6px" onclick="showAddAddressForm()">+ Add Address</button>
+</div>
+
+ 
+
 
   <!-- RECENT ORDERS -->
   <div class="prof-card" style="margin-bottom:1.2rem">
@@ -141,10 +176,62 @@
 <script src="data.js"></script>
 <script src="nav.js"></script>
 <script>
-const user = requireAuth('customer');
+
+let user = requireAuth('customer');
 buildTopNav('profile');
 renderFooter('footer-container', false);
 let editMode = false;
+
+async function loadProfileFromDB() {
+  const currentUser = FC.getUser();
+  if (!currentUser || !currentUser.email) return;
+
+  try {
+    const res = await fetch('get_profile_info.php?email=' + encodeURIComponent(currentUser.email));
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Unable to load profile.', 'err');
+      return;
+    }
+
+    const dbUser = data.user;
+    const fullName = `${dbUser.first_name || ''} ${dbUser.last_name || ''}`.trim();
+
+    user = {
+      ...currentUser,
+      email: dbUser.user_email,
+      role: String(dbUser.user_role || '').trim().toLowerCase(),
+      name: fullName || 'Customer',
+      phone: dbUser.contact || '',
+      addresses: data.addresses || (data.address ? [data.address] : [])
+    };
+
+    FC.setUser(user);
+    init();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot fetch profile info.', 'err');
+  }
+}
+
+function toggleAddressForm() {
+  const form = document.getElementById('addr-form');
+  const btn = document.getElementById('addr-toggle-btn');
+
+  const isOpen = form.style.display === 'block';
+  form.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '+ Add / Edit Address' : 'Cancel';
+
+  if (!isOpen && user.address) {
+    document.getElementById('addr-house').value = user.address.house_no || '';
+    document.getElementById('addr-street').value = user.address.street || '';
+    document.getElementById('addr-barangay').value = user.address.barangay || '';
+    document.getElementById('addr-city').value = user.address.city || '';
+    document.getElementById('addr-province').value = user.address.province || '';
+    document.getElementById('addr-zip').value = user.address.zip || '';
+  }
+}
 
 function init() {
   if (!user) return;
@@ -192,6 +279,8 @@ function init() {
         <div class="or-total">${fmtP(o.total)}</div>
       </div>`).join('');
   }
+
+  renderAddresses();
 }
 
 function toggleEdit() {
@@ -201,27 +290,144 @@ function toggleEdit() {
   document.getElementById('edit-btn').textContent = editMode ? '← Cancel' : '✎ Edit';
 }
 
-function saveProfile() {
+async function saveProfile() {
   const fn    = document.getElementById('ef-fn').value.trim();
   const ln    = document.getElementById('ef-ln').value.trim();
   const email = document.getElementById('ef-email').value.trim();
   const phone = document.getElementById('ef-phone').value.trim();
-  if (!fn || !email) { toast('Name and email are required.','err'); return; }
-  if (phone && !/^09\d{9}$/.test(phone)) { toast('Please enter a valid PH mobile number (09XXXXXXXXX).','err'); return; }
-  const updated = { ...user, name: fn + (ln?' '+ln:''), email, phone };
-  FC.setUser(updated);
-  // Refresh display values
-  document.getElementById('prof-disp-name').textContent  = updated.name;
-  document.getElementById('prof-disp-email').textContent = updated.email;
-  document.getElementById('prof-av-initial').textContent = updated.name[0].toUpperCase();
-  document.getElementById('v-name').textContent  = updated.name;
-  document.getElementById('v-email').textContent = updated.email;
-  document.getElementById('v-phone').textContent = updated.phone || '—';
-  toggleEdit();
-  toast('✓ Profile saved!');
+
+    if (!fn || !email) {
+    toast('Name and email are required.', 'err');
+    return;
+  }
+
+  if (phone && !/^09\d{9}$/.test(phone)) {
+    toast('Please enter a valid PH mobile number (09XXXXXXXXX).', 'err');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('old_email', user.email);
+  formData.append('first_name', fn);
+  formData.append('last_name', ln);
+  formData.append('email', email);
+  formData.append('contact', phone);
+
+  try {
+    const res = await fetch('update_profile.php', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Profile update failed.', 'err');
+      return;
+    }
+
+    const updated = {
+      ...user,
+      name: data.user.name,
+      email: data.user.email,
+      phone: data.user.phone
+    };
+
+    user = updated;
+    FC.setUser(updated);
+
+    toggleEdit();
+    toast('Profile saved!');
+    init();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot update profile.', 'err');
+  }
 }
 
-init();
+async function saveAddress() {
+  const formData = new FormData();
+  formData.append('email', user.email);
+  formData.append('address_id', document.getElementById('addr-id').value);
+  formData.append('house_no', document.getElementById('addr-house').value.trim());
+  formData.append('street', document.getElementById('addr-street').value.trim());
+  formData.append('barangay', document.getElementById('addr-barangay').value.trim());
+  formData.append('city', document.getElementById('addr-city').value.trim());
+  formData.append('province', document.getElementById('addr-province').value.trim());
+  formData.append('zip', document.getElementById('addr-zip').value.trim());
+
+  const res = await fetch('save_address.php', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    toast(data.message || 'Address save failed.', 'err');
+    return;
+  }
+
+  toast(data.message || 'Address saved!');
+  document.getElementById('addr-form').style.display = 'none';
+  loadProfileFromDB();
+}
+
+function renderAddresses() {
+  const list = document.getElementById('address-list');
+  if (!list) return;
+
+  const addresses = user.addresses || [];
+
+  if (!addresses.length) {
+    list.innerHTML = `<div class="addr-item"><div class="addr-item-detail">No address saved yet.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = addresses.map(a => {
+    const fullAddress = [a.house_no, a.street, a.barangay, a.city, a.province, a.zip]
+      .filter(Boolean)
+      .join(', ');
+
+    return `
+      <div class="addr-item ${Number(a.is_default) === 1 ? 'default' : ''}">
+        <div class="addr-item-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span>Home ${Number(a.is_default) === 1 ? '<span class="tag tag-g" style="font-size:9px;padding:1px 6px">Default</span>' : ''}</span>
+          <button class="btn btn-ghost btn-sm" onclick="editAddress('${a.address_id}')">Edit</button>
+        </div>
+        <div class="addr-item-detail">${fullAddress}</div>
+      </div>`;
+  }).join('');
+}
+
+
+function showAddAddressForm() {
+  document.getElementById('addr-form').style.display = 'block';
+  document.getElementById('addr-id').value = '';
+  document.getElementById('addr-house').value = '';
+  document.getElementById('addr-street').value = '';
+  document.getElementById('addr-barangay').value = '';
+  document.getElementById('addr-city').value = '';
+  document.getElementById('addr-province').value = '';
+  document.getElementById('addr-zip').value = '';
+}
+
+function editAddress(addressId) {
+  const address = (user.addresses || []).find(a => String(a.address_id) === String(addressId));
+  if (!address) return;
+
+  document.getElementById('addr-form').style.display = 'block';
+  document.getElementById('addr-id').value = address.address_id;
+  document.getElementById('addr-house').value = address.house_no || '';
+  document.getElementById('addr-street').value = address.street || '';
+  document.getElementById('addr-barangay').value = address.barangay || '';
+  document.getElementById('addr-city').value = address.city || '';
+  document.getElementById('addr-province').value = address.province || '';
+  document.getElementById('addr-zip').value = address.zip || '';
+}
+
+
+loadProfileFromDB();
 </script>
 </body>
 </html>
