@@ -179,7 +179,7 @@
 
 let user = requireAuth('customer');
 buildTopNav('profile');
-renderFooter('footer-container', false);
+
 let editMode = false;
 
 async function loadProfileFromDB() {
@@ -428,6 +428,7 @@ function editAddress(addressId) {
 
 
 loadProfileFromDB();
+renderFooter('footer-container', false);
 </script>
 </body>
 </html>
