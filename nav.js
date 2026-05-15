@@ -169,12 +169,43 @@ function renderFooter(containerId, isAdmin) {
 }
 
 function renderPromoBanner(containerId) {
-  const el = document.getElementById(containerId); if(!el) return;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
   const promos = FC.getActivePromos();
   if (!promos.length) return;
-  el.innerHTML = `<div class="promo-banner"><span class="pb-tag">🌸 Live</span>
-    <div class="pb-scroll">${promos.map(p=>`<span>🏷️ <strong>${p.name}:</strong> ${p.desc}</span>`).join('')}</div></div>`;
+
+  const content = promos
+    .map(p => `🏷️ ${p.name}: ${p.desc}`)
+    .join('     •     ');
+
+  el.innerHTML = `
+    <div class="promo-banner">
+      <span class="pb-tag">🌸 Live</span>
+      <div class="pb-scroll" id="promo-moving-text">${content}</div>
+    </div>`;
+
+  const moving = document.getElementById('promo-moving-text');
+  let x = el.offsetWidth;
+
+  function animatePromo() {
+    x -= 2;
+
+    if (x < -moving.scrollWidth) {
+      x = el.offsetWidth;
+    }
+
+    moving.style.transform = `translateX(${x}px)`;
+    requestAnimationFrame(animatePromo);
+  }
+
+  moving.style.display = 'inline-block';
+  moving.style.whiteSpace = 'nowrap';
+  moving.style.willChange = 'transform';
+
+  animatePromo();
 }
+
 
 function fmtP(n) { return '₱' + Math.round(n).toLocaleString(); }
 
