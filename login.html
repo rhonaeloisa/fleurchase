@@ -84,6 +84,7 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
   </div>
 </div>
 <div id="fc-toast" class="toast"></div>
+<script src="data.js"></script>
 <script src="nav.js"></script>
 <script>
 let loginRole = 'customer';
@@ -168,6 +169,7 @@ async function doLogin(event) {
       initial: data.email[0].toUpperCase()
     };
 
+    FC.setUser(user);
 
     setTimeout(() => {
       if (role === 'admin') {
