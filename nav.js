@@ -62,7 +62,7 @@ function buildTopNav(activePage) {
       { id:'shop',     href:'shop.html',     label:'Shop' },
       { id:'customize',href:'customize.html', label:'Customize' },
       { id:'orders',   href:'orders.html',   label:'Orders' },
-      { id:'promos',   href:'promos.html',   label:'Promos' },
+      { id:'promos',   href:'promos.php',    label:'Promos' }, // CHANGED: .html to .php
       { id:'profile',  href:'profile.html',  label:'Profile' },
     ];
     nav.innerHTML = `
@@ -139,7 +139,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Quick Links</h4>
         ${!isAdmin
-          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.html">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.html">My Cart</a>`
+          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.html">My Cart</a>` // CHANGED: promos.html to promos.php
           :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.php">Bouquets</a>`}
       </div>
       <div>
@@ -211,7 +211,6 @@ function renderPromoBanner(containerId) {
 function fmtP(n) { return '₱' + Math.round(n).toLocaleString(); }
 
 // ── IMAGE HELPERS ─────────────────────────────────────────
-// Returns an <img> tag if src exists, otherwise a clean SVG placeholder
 function imgPlaceholder(size=40) {
   const s = size;
   return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
@@ -221,8 +220,7 @@ function imgPlaceholder(size=40) {
     <rect x="${s*.46}" y="${s*.55}" width="${s*.08}" height="${s*.18}" rx="${s*.02}" fill="#C8BFB0"/>
   </svg>`;
 }
-// Returns an <img> if obj.img exists, else the SVG placeholder
-// cls/style are optional extra attributes on the <img>
+
 function productImg(obj, size=40, extraStyle='') {
   if (obj && obj.img) {
     return `<img src="${obj.img}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:6px;display:block;${extraStyle}" alt="${obj.name||''}"/>`;
