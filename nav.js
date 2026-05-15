@@ -181,30 +181,31 @@ function renderPromoBanner(containerId) {
 
   el.innerHTML = `
     <div class="promo-banner">
-      <span class="pb-tag">🌸 Live</span>
-      <div class="pb-scroll" id="promo-moving-text">${content}</div>
+      <div class="pb-mask">
+        <div class="pb-scroll" id="promo-moving-text">${content}</div>
+      </div>
     </div>`;
 
+  const mask = el.querySelector('.pb-mask');
   const moving = document.getElementById('promo-moving-text');
-  let x = el.offsetWidth;
+
+  let x = mask.offsetWidth;
 
   function animatePromo() {
-    x -= 2;
+    x -= 3;
 
     if (x < -moving.scrollWidth) {
-      x = el.offsetWidth;
+      x = mask.offsetWidth;
     }
 
     moving.style.transform = `translateX(${x}px)`;
     requestAnimationFrame(animatePromo);
   }
 
-  moving.style.display = 'inline-block';
-  moving.style.whiteSpace = 'nowrap';
-  moving.style.willChange = 'transform';
-
+  moving.style.transform = `translateX(${x}px)`;
   animatePromo();
 }
+
 
 
 function fmtP(n) { return '₱' + Math.round(n).toLocaleString(); }
