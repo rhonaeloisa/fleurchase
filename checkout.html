@@ -62,6 +62,8 @@
 </style>
 </head>
 <body>
+let checkoutAddresses = [];
+let selectedAddressId = null;
 <div id="top-nav" class="app-nav"></div>
 <div class="main-area no-sidebar">
 <div class="co-wrap">
@@ -86,12 +88,39 @@
 
       <!-- DELIVERY -->
       <div class="form-sec">
-        <div class="form-sec-title">📍 Delivery Details</div>
+      <div class="form-sec-title">📍 Delivery Details</div>
+
+      <div class="ff">
+        <label>Saved address</label>
+        <select id="co-address-select" onchange="selectCheckoutAddress()">
+          <option value="">Loading addresses...</option>
+        </select>
+      </div>
+
+      <div class="addr-item default" id="co-address-preview" style="margin-bottom:10px">
+        <div class="addr-item-title">
+          Selected Address <span class="tag tag-g" id="co-address-default-tag" style="font-size:9px;padding:1px 6px;display:none">Default</span>
+        </div>
+        <div class="addr-item-detail" id="co-address-text">No address selected.</div>
+      </div>
+
+      <button class="btn btn-ghost" id="co-edit-address-btn" style="width:100%;justify-content:center;margin-bottom:12px" onclick="toggleCheckoutAddressEdit()">
+        Edit Address
+      </button>
+
+      <div id="co-address-fields" style="display:none">
         <div class="fg2">
           <div class="ff"><label>First name</label><input id="co-fn" placeholder="Maria"/></div>
           <div class="ff"><label>Last name</label><input id="co-ln" placeholder="Santos"/></div>
         </div>
-        <div class="ff"><label>Street / Barangay address</label><input id="co-addr" placeholder="Street, Barangay"/></div>
+
+        <div class="fg2">
+          <div class="ff"><label>House No.</label><input id="co-house" placeholder="House No."/></div>
+          <div class="ff"><label>Street</label><input id="co-street" placeholder="Street"/></div>
+        </div>
+
+        <div class="ff"><label>Barangay</label><input id="co-barangay" placeholder="Barangay"/></div>
+
         <div class="fg2">
           <div class="ff">
             <label>Municipality (Albay)</label>
@@ -111,11 +140,19 @@
               <option value="Other in Albay">Other in Albay (+₱150)</option>
             </select>
           </div>
+
+          <div class="ff"><label>Province</label><input id="co-province" placeholder="Province"/></div>
+        </div>
+
+        <div class="fg2">
+          <div class="ff"><label>ZIP Code</label><input id="co-zip" placeholder="ZIP Code"/></div>
           <div class="ff"><label>Contact number</label><input id="co-ph" placeholder="09XX XXX XXXX" maxlength="11"/></div>
         </div>
-        <div class="sn-box sn-free" id="sn-free">✅ <strong>Free delivery</strong> — Legazpi City & Daraga.</div>
-        <div class="sn-box sn-paid" id="sn-paid">🚚 Extra shipping applies outside Legazpi / Daraga.</div>
       </div>
+
+      <div class="sn-box sn-free" id="sn-free">✅ <strong>Free delivery</strong> — Legazpi City & Daraga.</div>
+      <div class="sn-box sn-paid" id="sn-paid">🚚 Extra shipping applies outside Legazpi / Daraga.</div>
+    </div>
 
       <!-- SCHEDULE -->
       <div class="form-sec">
@@ -200,8 +237,8 @@
       </div>
       <div style="background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.1rem;margin-top:1rem;font-size:12px;color:var(--muted);line-height:1.7">
         <strong style="color:var(--ink);display:block;margin-bottom:.3rem">📍 Delivery Fees</strong>
-        🟢 <strong style="color:var(--g3)">FREE</strong> — Legazpi City & Daraga<br>
-        🟡 Extra fee — other Albay areas
+        🟢 <strong style="color:var(--g3)">FREE: </strong>Legazpi City & Daraga<br>
+        🟡 Extra fee: Other Albay areas
       </div>
     </div>
   </div>
@@ -281,6 +318,7 @@ checkoutItems.forEach(item => {
 let payOpt = 1, receiptBase64 = null, receiptFileName = '';
 let addonCat = 'all';
 let promoAutoApplied = false;
+let checkoutAddressEditOpen = false;
 
 // Add-on categories — flowers and fillers excluded (those are in customize page)
 const ADDON_CATS = [
@@ -423,6 +461,17 @@ function tryAutoPromo() {
   if (best) { checkoutPromo = best; promoAutoApplied = true; }
 }
 
+function toggleCheckoutAddressEdit() {
+  checkoutAddressEditOpen = !checkoutAddressEditOpen;
+
+  document.getElementById('co-address-fields').style.display =
+    checkoutAddressEditOpen ? 'block' : 'none';
+
+  document.getElementById('co-edit-address-btn').textContent =
+    checkoutAddressEditOpen ? 'Hide Address Fields' : 'Edit Address';
+}
+
+
 // ── PRICE SUMMARY ─────────────────────────────────────────
 function updateSummary() {
   // Try auto-promo if none set
@@ -497,6 +546,99 @@ function updateGiftMsgPreview() {
   }
 }
 
+async function loadCheckoutProfile() {
+  const user = FC.getUser();
+  if (!user || !user.email) return;
+
+  try {
+    const res = await fetch('get_profile_info.php?email=' + encodeURIComponent(user.email));
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Unable to load delivery info.', 'err');
+      return;
+    }
+
+    const dbUser = data.user;
+    checkoutAddresses = data.addresses || [];
+
+    document.getElementById('co-fn').value = dbUser.first_name || '';
+    document.getElementById('co-ln').value = dbUser.last_name || '';
+    document.getElementById('co-ph').value = dbUser.contact || '';
+
+    renderCheckoutAddressOptions();
+
+    const defaultAddress = checkoutAddresses.find(a => Number(a.is_default) === 1) || checkoutAddresses[0];
+    if (defaultAddress) {
+      selectedAddressId = defaultAddress.address_id;
+      document.getElementById('co-address-select').value = String(defaultAddress.address_id);
+      fillCheckoutAddress(defaultAddress);
+    }
+  } catch (error) {
+    console.error(error);
+    toast('Cannot load delivery addresses.', 'err');
+  }
+}
+
+function renderCheckoutAddressOptions() {
+  const select = document.getElementById('co-address-select');
+
+  if (!checkoutAddresses.length) {
+    select.innerHTML = `<option value="">No saved address. Enter address below.</option>`;
+    return;
+  }
+
+  select.innerHTML = checkoutAddresses.map(a => {
+    const label = [a.house_no, a.street, a.barangay, a.city, a.province, a.zip]
+      .filter(Boolean)
+      .join(', ');
+
+    return `<option value="${a.address_id}">${Number(a.is_default) === 1 ? 'Default - ' : ''}${label}</option>`;
+  }).join('');
+}
+
+function selectCheckoutAddress() {
+  const id = document.getElementById('co-address-select').value;
+  selectedAddressId = id || null;
+
+  const address = checkoutAddresses.find(a => String(a.address_id) === String(id));
+  if (address) {
+    fillCheckoutAddress(address);
+  }
+}
+
+function fillCheckoutAddress(a) {
+  document.getElementById('co-house').value = a.house_no || '';
+  document.getElementById('co-street').value = a.street || '';
+  document.getElementById('co-barangay').value = a.barangay || '';
+
+  const citySelect = document.getElementById('co-mun');
+  const city = a.city || '';
+  const hasCityOption = [...citySelect.options].some(opt => opt.value === city);
+  citySelect.value = hasCityOption ? city : 'Other in Albay';
+
+  document.getElementById('co-province').value = a.province || 'Albay';
+  document.getElementById('co-zip').value = a.zip || '';
+
+  const fullAddress = [
+    a.house_no,
+    a.street,
+    a.barangay,
+    a.city,
+    a.province,
+    a.zip
+  ].filter(Boolean).join(', ');
+
+  document.getElementById('co-address-text').textContent = fullAddress || 'No address selected.';
+  document.getElementById('co-address-default-tag').style.display =
+    Number(a.is_default) === 1 ? 'inline-block' : 'none';
+
+  updateShipping();
+}
+
+
+
+
 // ── PAYMENT ───────────────────────────────────────────────
 function selPay(n) {
   payOpt=n;
@@ -549,15 +691,32 @@ function handleDrop(ev) {
 function preOrderCheck() {
   const fn=document.getElementById('co-fn').value.trim();
   const ln=document.getElementById('co-ln').value.trim();
-  const addr=document.getElementById('co-addr').value.trim();
-  const mun=document.getElementById('co-mun').value;
-  const ph=document.getElementById('co-ph').value.trim();
+  const house = document.getElementById('co-house').value.trim();
+  const street = document.getElementById('co-street').value.trim();
+  const barangay = document.getElementById('co-barangay').value.trim();
+  const mun = document.getElementById('co-mun').value.trim();
+  const province = document.getElementById('co-province').value.trim();
+  const zip = document.getElementById('co-zip').value.trim();
+  const ph = document.getElementById('co-ph').value.trim();
+
+  const addr = [house, street, barangay].filter(Boolean).join(', ');
   const dt=document.getElementById('co-date').value;
-  if(!fn||!ln||!addr||!mun||!ph||!dt){toast('Please fill in all delivery details.','err');return;}
-  if(!/^09\d{9}$/.test(ph)){toast('Please enter a valid 11-digit PH mobile number.','err');return;}
-  if(!receiptBase64){toast('Please upload your GCash payment receipt.','err');return;}
-  if(!checkoutItems.length){toast('No items in order.','err');return;}
-  // All validation passed — show no-refund policy
+  
+  if (!/^09\d{9}$/.test(ph)) {
+    toast('Please enter a valid 11-digit PH mobile number.', 'err');
+    return;
+  }
+
+  if (!receiptBase64) {
+    toast('Please upload your GCash payment receipt.', 'err');
+    return;
+  }
+
+  if (!checkoutItems.length) {
+    toast('No items in order.', 'err');
+    return;
+  }
+
   openModal('refund-modal');
 }
 
@@ -570,8 +729,17 @@ function confirmAndPlaceOrder() {
 async function placeOrder() {
   const fn=document.getElementById('co-fn').value.trim();
   const ln=document.getElementById('co-ln').value.trim();
-  const addr=document.getElementById('co-addr').value.trim();
-  const mun=document.getElementById('co-mun').value;
+  const house = document.getElementById('co-house').value.trim();
+  const street = document.getElementById('co-street').value.trim();
+  const barangay = document.getElementById('co-barangay').value.trim();
+  const mun = document.getElementById('co-mun').value.trim();
+  const province = document.getElementById('co-province').value.trim();
+  const zip = document.getElementById('co-zip').value.trim();
+
+  const addr = [house, street, barangay, mun, province, zip]
+    .filter(Boolean)
+    .join(', ');
+
   const ph=document.getElementById('co-ph').value.trim();
   const dt=document.getElementById('co-date').value;
 
@@ -613,6 +781,14 @@ async function placeOrder() {
   orderForm.append('delivery_date', dt);
   orderForm.append('delivery_type', 'Delivery');
   orderForm.append('delivery_time', document.getElementById('co-time').value);
+  orderForm.append('address_id', selectedAddressId || '');
+  orderForm.append('house_no', house);
+  orderForm.append('street', street);
+  orderForm.append('barangay', barangay);
+  orderForm.append('city', mun);
+  orderForm.append('province', province);
+  orderForm.append('zip', zip);
+  orderForm.append('contact', ph);
 
   const orderRes = await fetch('place_order.php', {
     method: 'POST',
@@ -674,6 +850,8 @@ renderAddonTabs();
 renderAddons();
 selPay(1);
 updateSummary();
+loadCheckoutProfile();
+
 
 if(checkoutPromo) toast('🏷️ Promo applied: '+checkoutPromo.name);
 </script>
