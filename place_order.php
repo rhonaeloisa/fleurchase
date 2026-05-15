@@ -35,9 +35,10 @@ try {
     $deliveryDate = $_POST["delivery_date"] ?? "";
     $deliveryType = $_POST["delivery_type"] ?? "Delivery";
     $deliveryTime = toMysqlTime($_POST["delivery_time"] ?? "");
+    $addressId = (int)($_POST["address_id"] ?? 0);
 
-    if ($email === "" || $orderName === "" || $deliveryDate === "" || !$deliveryTime) {
-        echo json_encode(["success" => false, "message" => "Missing order details"]);
+    if ($email === "" || $orderName === "" || $deliveryDate === "" || !$deliveryTime || $addressId <= 0) {
+        echo json_encode(["success" => false, "message" => "Missing order or delivery address details"]);
         exit;
     }
 
@@ -52,9 +53,22 @@ try {
     }
 
     $userId = (int)$user["user_id"];
+
+    $addrStmt = $conn->prepare("SELECT address_id FROM address WHERE address_id = ? AND user_id = ? LIMIT 1");
+    $addrStmt->bind_param("ii", $addressId, $userId);
+    $addrStmt->execute();
+    $address = $addrStmt->get_result()->fetch_assoc();
+
+    if (!$address) {
+        echo json_encode(["success" => false, "message" => "Selected address not found"]);
+        exit;
+    }
+
     $promoId = null;
     $userPromoId = null;
     $status = "Pending";
+
+    $conn->begin_transaction();
 
     $sql = "INSERT INTO `order`
         (user_id, promo_id, user_promo_id, order_name, order_date, discount_amount, shipping_fee, total_amount, status, notes, delivery_date, delivery_type, delivery_time)
@@ -78,13 +92,38 @@ try {
     );
 
     $stmt->execute();
+    $orderId = $conn->insert_id;
+
+    $shipmentStatus = "Pending";
+    $rateId = null;
+
+    $shipSql = "INSERT INTO shipment
+        (address_id, order_id, rate_id, status, fee)
+        VALUES (?, ?, ?, ?, ?)";
+
+    $shipStmt = $conn->prepare($shipSql);
+    $shipStmt->bind_param(
+        "iiisd",
+        $addressId,
+        $orderId,
+        $rateId,
+        $shipmentStatus,
+        $shipping
+    );
+    $shipStmt->execute();
+
+    $conn->commit();
 
     echo json_encode([
         "success" => true,
         "message" => "Order saved",
-        "order_id" => $conn->insert_id
+        "order_id" => $orderId
     ]);
 } catch (Throwable $e) {
+    if (isset($conn)) {
+        $conn->rollback();
+    }
+
     http_response_code(500);
     echo json_encode([
         "success" => false,
