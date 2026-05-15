@@ -14,7 +14,8 @@ try {
                 is_custom,
                 image,
                 status,
-                category
+                category, 
+                stock
             FROM bouquet
             WHERE status = 'Available' OR status = 'active' OR status IS NULL
             ORDER BY bouquet_id DESC";
@@ -42,7 +43,7 @@ try {
         "type" => "bouquet",
         "rating" => 5,
         "reviews" => 0,
-        "stock" => 99,
+        "stock" => (int)$row["stock"],
         "badge" => $row["is_custom"] ? "Custom" : "Ready"
     ];
 }
