@@ -1,8 +1,8 @@
 <?php
+// 1. DATABASE CONNECTION & FETCHING
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-// 1. DATABASE CONNECTION & FETCHING (Done at the very top of the page server-side)
-require_once 'db_connection.php'; // Change to your actual connection file name if different
+require_once 'db_connection.php'; 
 
 $sql = "SELECT * FROM promos";
 $result = $conn->query($sql);
@@ -86,8 +86,8 @@ $conn->close();
 
 <div class="p-page">
   <div class="ptabs">
-    <button class="ptab active" id="ptab-active"  onclick="switchTab('active',this)">🏷️ Active Promos</button>
-    <button class="ptab"        id="ptab-sale"    onclick="switchTab('sale',this)">🔖 On Sale</button>
+    <button class="ptab active" id="ptab-active"   onclick="switchTab('active',this)">🏷️ Active Promos</button>
+    <button class="ptab"        id="ptab-sale"     onclick="switchTab('sale',this)">🔖 On Sale</button>
     <button class="ptab"        id="ptab-upcoming" onclick="switchTab('upcoming',this)">📅 Upcoming</button>
   </div>
 
@@ -129,6 +129,7 @@ $conn->close();
 <div id="footer-container"></div>
 </div>
 <div id="fc-toast" class="toast"></div>
+
 <script src="data.js"></script>
 <script src="nav.js"></script>
 <script>
@@ -136,9 +137,64 @@ requireAuth('customer');
 buildTopNav('promos');
 renderFooter('footer-container', false);
 
-// 2. PASSING DATA INTO JAVASCRIPT: Safely injects the array fetched above directly into JS
+// Injected database array for coupon cards
 const loadedPromos = <?php echo json_encode($db_promos); ?>;
 
+// ============================================================
+// LOCALIZED PROMO VALIDATION ENGINE (Decoupled from data.js)
+// ============================================================
+function getLocalActivePromos() {
+  return loadedPromos.filter(p => p.status === 'active');
+}
+
+function applyLocalPromo(promoCode, subtotal) {
+  const pr = loadedPromos.find(p => p.code.toUpperCase() === promoCode.toUpperCase() && p.status === 'active');
+  if (!pr) return { discount: 0, label: '' };
+  
+  let disc = 0;
+  if (pr.discount_type === 'percent') {
+    disc = Math.round(subtotal * pr.discount_value / 100);
+  } else if (pr.discount_type === 'fixed') {
+    disc = Math.min(pr.discount_value, subtotal);
+  }
+  return { discount: disc, label: pr.promo_name };
+}
+
+function validateLocalPromo(promoCode, subtotal, cartItems) {
+  const pr = loadedPromos.find(p => p.code.toLowerCase() === promoCode.toLowerCase());
+  
+  if (!pr) return { ok: false, discount: 0, label: '', reason: 'Promo code not found.' };
+  if (pr.status !== 'active') return { ok: false, discount: 0, label: '', reason: 'This promo is no longer active.' };
+  
+  const today = new Date(); 
+  today.setHours(0,0,0,0);
+  
+  if (pr.start_date) { 
+    const s = new Date(pr.start_date); 
+    if (today < s) return { ok: false, discount: 0, label: '', reason: 'This promo starts on ' + pr.start_date + '.' }; 
+  }
+  if (pr.end_date) { 
+    const e = new Date(pr.end_date);   
+    if (today > e) return { ok: false, discount: 0, label: '', reason: 'This promo expired on ' + pr.end_date + '.' }; 
+  }
+  
+  if (pr.min_order_amount && subtotal < pr.min_order_amount) {
+    return { ok: false, discount: 0, label: '', reason: 'Minimum order of ₱' + pr.min_order_amount + ' required.' };
+  }
+  
+  let disc = 0;
+  if (pr.discount_type === 'percent') {
+    disc = Math.round(subtotal * pr.discount_value / 100);
+  } else if (pr.discount_type === 'fixed') {
+    disc = Math.min(pr.discount_value || 0, subtotal);
+  }
+  
+  return { ok: true, discount: disc, label: pr.promo_name, reason: '', promo: pr };
+}
+
+// ============================================================
+// INTERFACE CONTROLLERS & RENDERS
+// ============================================================
 function switchTab(t, btn) {
   ['active','sale','upcoming'].forEach(n => {
     document.getElementById('tab-' + n).style.display = n === t ? 'block' : 'none';
@@ -153,7 +209,7 @@ function copyCode(code) {
 }
 
 function renderActivePromos() {
-  const promos = loadedPromos.filter(p => p.status === 'active');
+  const promos = getLocalActivePromos();
   const el = document.getElementById('active-promo-grid');
   if (!promos.length) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🏷️</div><h3>No active promos right now</h3><p>Check back soon — we run promos for every season!</p></div>`;
@@ -211,48 +267,14 @@ function renderUpcomingPromos() {
 }
 
 function renderSaleItems() {
-  const products = FC.getProducts().filter(p => p.category === 'sale' || (p.badge && p.badge.toLowerCase().includes('sale')));
   const el = document.getElementById('sale-items-grid');
-  if (!products.length) {
-    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No sale items right now</h3><p>We update sale prices regularly based on freshness!</p></div>`;
-    return;
-  }
-  el.innerHTML = products.map(p => {
-    const savePct = p.oldPrice ? Math.round((1 - p.price/p.oldPrice) * 100) : null;
-    return `
-    <div class="sale-card">
-      <div class="sc-img" style="background:${p.bg||'var(--soft)'}">
-        <span>${p.icon}</span>
-        <span class="sc-sale-tag">SALE</span>
-      </div>
-      <div class="sc-body">
-        <div class="sc-name">${p.name}</div>
-        <div class="sc-desc">${(p.desc||'').slice(0,42)}${(p.desc||'').length>42?'...':''}</div>
-        <div class="sc-price-row">
-          <span class="sc-price">${fmtP(p.price)}</span>
-          ${p.oldPrice ? `<span class="sc-old">${fmtP(p.oldPrice)}</span>` : ''}
-          ${savePct ? `<span class="sc-pct">-${savePct}%</span>` : ''}
-        </div>
-        <button class="btn btn-pink btn-sm" style="width:100%;justify-content:center;margin-top:8px" onclick="quickAdd('${p.id}','${p.name.replace(/'/g,"\\'")}','${p.icon}',${p.price})">+ Add to Cart</button>
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No sale items right now</h3><p>We update sale prices regularly based on freshness!</p></div>`;
 }
 
-function quickAdd(id, name, icon, price) {
-  const p = FC.getProducts().find(x => x.id === id); if (!p || p.stock < 1) { toast('Out of stock!','err'); return; }
-  const cart = FC.getCart();
-  const ex = cart.find(i => i.cartId === id);
-  if (ex) ex.qty++;
-  else cart.push({ cartId:id, productId:id, name, icon, type:p.type||'bouquet', price, qty:1, stems:0, sub:p.desc||'', checked:true });
-  FC.saveCart(cart); updateCartBadge();
-  toast(icon + ' "' + name + '" added to cart!');
-}
-
-// EXECUTE RENDERS IMMEDIATELY
+// INITIALIZATION
 renderActivePromos();
 renderUpcomingPromos();
-renderSaleItems();
+renderSaleItems(); 
 </script>
 </body>
 </html>
