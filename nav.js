@@ -138,7 +138,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Quick Links</h4>
         ${!isAdmin
-          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.php">My Cart</a>` // CHANGED: cart.html shifted to cart.php here
+          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.php">My Cart</a>`
           :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.php">Bouquets</a>`}
       </div>
       <div>
