@@ -247,7 +247,7 @@ function openDetail(id) {
         <div class="dm-grid2">
           <div class="dm-field"><label>Full Name</label><span>${o.customer||'—'}</span></div>
           <div class="dm-field"><label>Phone Number</label><span>${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);text-decoration:none;font-weight:600">${o.phone}</a>`:'—'}</span></div>
-          <div class="dm-field" style="grid-column:1/-1"><label>Delivery Address</label><span>${o.address||o.loc||'—'}</span></div>
+          <div class="dm-field" style="grid-column:1/-1"><label>Delivery Address</label><span>${o.full_address||'—'}</span></div>
         </div>
       </div>
 
@@ -255,7 +255,7 @@ function openDetail(id) {
       <div class="dm-section">
         <div class="dm-section-title">📍 Delivery Details</div>
         <div class="dm-grid3">
-          <div class="dm-field"><label>Municipality</label><span>${o.loc||'—'}</span></div>
+          <div class="dm-field"><label>Municipality</label><span>${o.city||'—'}</span></div>
           <div class="dm-field"><label>Delivery Date</label><span>${o.delivDate||'—'}</span></div>
           <div class="dm-field"><label>Time Slot</label><span>${o.delivTime||'—'}</span></div>
         </div>

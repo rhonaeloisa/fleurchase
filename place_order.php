@@ -112,6 +112,23 @@ try {
     );
     $shipStmt->execute();
 
+    $paymentSql = "INSERT INTO payment(
+        payment_id, order_id, amount, payment_date, payment_type, reference_numer, img_recceipt, status)
+        VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?)";
+
+    $paymentStmt = $conn->prepare($paymentSql);
+    $paymentStmt->bind_param(
+        "iisssss",
+        $paymentId,
+        $orderId,
+        $total,
+        $paymentType,
+        $referenceNumber,
+        $imgReceipt,
+        $paymentStatus
+    );
+    
+
     $conn->commit();
 
     echo json_encode([

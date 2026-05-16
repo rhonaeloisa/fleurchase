@@ -808,7 +808,7 @@ function renderFillers(){
         <strong class="filler-name">${f.name}</strong>
         <small class="filler-price">₱${f.price}/stem</small>
         <div class="fo-ctrl">
-          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeFillerQty('${f.id}',-1)">">−</button>
+          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeFillerQty('${f.id}',-1)">−</button>
           <span class="fo-qty">${qty}</span>
           <button class="fo-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
         </div>
@@ -850,16 +850,16 @@ function renderAddons(){
       <div class="fo-info"> 
         <strong>${a.name}</strong>
         <small>₱${a.price}</small>
-        ${sel ? `
-          <div class="fo-ctrl" onclick="event.stopPropagation()">
-            <button class="fo-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
-            <span class="fo-qty">${qty}</span>
-            <button class="fo-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
-          </div>` : ''}
+        <div class="fo-ctrl">
+          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeAddonQty('${a.id}',-1)">−</button>
+          <span class="fo-qty">${qty}</span>
+          <button class="fo-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
+        </div>
       </div>
     </div>`;
   }).join('') || `<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
 }
+
 
 function toggleAddon(id){
   const a = DB_CUSTOM_PRODUCTS.find(x => x.id === id && x.type === 'addon');
