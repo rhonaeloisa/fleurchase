@@ -381,8 +381,9 @@ function getAddModalBody() {
       <div class="ff" style="margin-bottom:1rem">
         <label>PRODUCT TYPE *</label>
         <select name="product_type" required>
-          <option value="flower">Main Flower</option>
+          <option value="flower">Flower</option>
           <option value="filler">Filler</option>
+          <option value="addon">Add on</option>
         </select>
       </div>
 
@@ -394,12 +395,12 @@ function getAddModalBody() {
       <div class="fg2">
         <div class="ff">
           <label>STOCK *</label>
-          <input name="stock" type="number" min="0" required>
+          <input name="stock" placeholder="e.g. 50" type="number" min="0" required>
         </div>
 
         <div class="ff">
           <label>PRICE *</label>
-          <input name="price" type="number" min="1" step="0.01" required>
+          <input name="price" placeholder="e.g. 25.99" type="number" min="1" step="0.01" required>
         </div>
       </div>
 
@@ -464,8 +465,9 @@ function getEditModalBody(p) {
       <div class="ff" style="margin-bottom:1rem">
         <label>PRODUCT TYPE *</label>
         <select name="product_type" required>
-          <option value="flower" ${p.product_type === 'flower' ? 'selected' : ''}>Main Flower</option>
+          <option value="flower" ${p.product_type === 'flower' ? 'selected' : ''}>Flower</option>
           <option value="filler" ${p.product_type === 'filler' ? 'selected' : ''}>Filler</option>
+          <option value="addon" ${p.product_type === 'addon' ? 'selected' : ''}>Add on</option>
         </select>
       </div>
 
