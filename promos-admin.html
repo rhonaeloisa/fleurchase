@@ -224,6 +224,7 @@ function getModalBody(promo) {
   const p = promo || {};
   const allProds = FC.getProducts();
   return `
+    <div class="ff"><label>Promo code *</label><input id="pm-code" value="${p.code||''}" placeholder="e.g. BLOOM20" oninput="this.value=this.value.toUpperCase()"/></div>
     <div class="ff"><label>Promo name *</label><input id="pm-name" value="${p.name||''}" placeholder="e.g. Valentine's Special 20% Off"/></div>
     <div class="ff"><label>Description</label><textarea id="pm-desc" style="border:1.5px solid var(--line);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;width:100%;resize:none;height:60px;outline:none;background:var(--soft)">${p.desc||''}</textarea></div>
     <div class="fg2">
@@ -297,6 +298,7 @@ function openEditModal(id) {
 
 async function savePromo() {
   const name = document.getElementById('pm-name').value.trim();
+  const code = document.getElementById('pm-code').value.trim().toUpperCase();
   const type = document.getElementById('pm-type').value;
   const value = parseFloat(document.getElementById('pm-val').value);
   const startDate = document.getElementById('pm-start').value;
@@ -305,12 +307,10 @@ async function savePromo() {
   const desc = document.getElementById('pm-desc').value.trim();
   const minOrder = parseFloat(document.getElementById('pm-minorder').value) || 0;
 
-  if (!name || isNaN(value) || !startDate || !endDate) {
+  if (!code || !name || isNaN(value) || !startDate || !endDate) {
     toast('Please fill in all required fields.', 'err');
     return;
   }
-
-  const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
 
   const formData = new FormData();
   formData.append('promo_id', editingPromoId || '');
