@@ -241,9 +241,24 @@ async function changeQty(i, delta) {
     });
     const res = await response.json();
     if (res.success) {
+      // 1. Update the quantities inside the active viewing array scope
       targetItem.qty += delta;
       document.getElementById('qty-' + i).textContent = targetItem.qty;
       document.getElementById('price-' + i).textContent = fmtP(targetItem.price * targetItem.qty);
+      
+      // FIXED: Sync the newly incremented quantities back into local storage context
+      const updatedLocal = cartItemsArray.map(item => ({
+        cart_item_id: item.cart_item_id,
+        cartId: String(item.bouquet_id),
+        productId: item.bouquet_id,
+        name: item.name,
+        img: item.img || null,
+        price: Number(item.price),
+        qty: item.qty,
+        checked: item.checked
+      }));
+      FC.saveCart(updatedLocal); // Commits the clean dataset boundaries to browser storage
+
       updateSummary();
       if (!manualPromoUsed) autoApplyPromo();
     }
@@ -289,15 +304,28 @@ async function removeItem(i) {
     });
     const res = await response.json();
     if(res.success) {
-      cartItemsArray.splice(i, 1);
-      renderCart();
+      cartItemsArray.splice(i, 1); // Drops it from active array scope
+      
+      // FIXED: Sync the newly updated array data back into local storage context
+      const updatedLocal = cartItemsArray.map(item => ({
+        cart_item_id: item.cart_item_id,
+        cartId: String(item.bouquet_id),
+        productId: item.bouquet_id,
+        name: item.name,
+        img: item.img || null,
+        price: Number(item.price),
+        qty: item.qty,
+        checked: item.checked
+      }));
+      FC.saveCart(updatedLocal); 
+
+      renderCart(); // Re-renders the display elements
       toast('Item dropped from database record storage.');
     }
   } catch(err) {
     console.error(err);
   }
 }
-
 // ── BACKEND SYNC: PURGE WHOLE CART COMPARTMENT ───────────────
 async function clearCart() {
   if (!confirm('Remove all items from your database cart context?')) return;
@@ -453,6 +481,17 @@ function proceedCheckout() {
   location.href = 'checkout.html';
 }
 
+const syncedLocalItems = cartItemsArray.map(item => ({
+  cartId: String(item.bouquet_id),
+  productId: item.bouquet_id,
+  name: item.name,
+  img: item.img || null,
+  price: Number(item.price),
+  qty: item.qty,
+  checked: item.checked
+}));
+
+FC.saveCart(syncedLocalItems); 
 renderCart();
 </script>
 </body>
