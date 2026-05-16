@@ -394,9 +394,9 @@ function addToCart(productId, qty = 1, stems = 0) {
   }
 
   if (Number(p.stock || 0) <= 0) {
-    toast('This product is out of stock.', 'err');
-    return;
-  }
+      toast('This product is out of stock.', 'err');
+      return;
+    }
 
   const cart = FC.getCart();
   const cartId = stems > 0 ? p.id + '_stem' : String(p.id);
