@@ -668,6 +668,32 @@ requireAuth('customer');
 buildTopNav('customize');
 renderFooter('footer-container', false);
 
+let DB_CUSTOM_PRODUCTS = [];
+
+async function loadCustomProducts(){
+  try{
+    const res = await fetch('get_product.php');
+    const data = await res.json();
+
+    if(!data.success){
+      toast(data.message || 'Unable to load products', 'error');
+      return;
+    }
+
+    DB_CUSTOM_PRODUCTS = data.products;
+    renderSizes();
+    renderFlowers();
+    renderFillers();
+    renderAddonCats();
+    renderAddons();
+    renderColors();
+    updateSummary();
+  }catch(err){
+    console.error('Error loading products:', err);
+    toast('Cannot load custom products from database', 'error');
+  }
+}
+
 const COLORS=[
   {n:'Blush Pink',c:'#FFE4EC'},{n:'Sage Green',c:'#D4EDD7'},{n:'Lavender',c:'#E8D9F0'},
   {n:'Cream',c:'#FFF5DC'},{n:'Rose Red',c:'#FECDD3'},{n:'Sky Blue',c:'#D0ECF8'},{n:'White',c:'#F8F8F8'},
@@ -721,7 +747,7 @@ function setSize(label){
 // ── FLOWERS ────────────────────────────────────────────────
 function renderFlowers(){
   // 1. GET ONLY FLOWERS (This hides Fern Leaves/Fillers from this section)
-  const flowers = FC.getProducts().filter(p => p.type === 'flower');
+  const flowers = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'flower');
   
   const used = Object.values(flowerCounts).reduce((s, v) => s + v, 0);
   const atMax = used >= selSize.maxStems;
@@ -732,7 +758,7 @@ function renderFlowers(){
     const remDis = cnt === 0 ? 'disabled' : '';
 
     // Fix Image Path
-    const imgPath = f.img ? (f.img.startsWith('data:') ? f.img : `images/${f.img}`) : 'images/default.jpg';
+    const imgPath = f.img || 'images/default.jpg';
 
     return `
       <div class="fo ${cnt > 0 ? 'sel' : ''} ${atMax && cnt === 0 ? 'maxed-no-sel' : ''}">
@@ -767,13 +793,13 @@ function removeFlower(id){
 // ── FILLERS ────────────────────────────────────────────────
 function renderFillers(){
   // 1. GET ONLY FILLERS from your Inventory
-  const fillers = FC.getProducts().filter(p => p.type === 'filler');
+  const fillers = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'filler');
   
   const html = fillers.map(f => {
     const qty = fillerCounts[f.id] || 0;
     
     // Fix Image Path logic to match flowers
-    const imgPath = f.img ? (f.img.startsWith('data:') ? f.img : `images/${f.img}`) : 'images/default.jpg';
+    const imgPath = f.img || 'images/default.jpg';
 
     return `
     <div class="fo ${qty > 0 ? 'sel' : ''}">
@@ -808,7 +834,7 @@ function renderAddonCats(){
 function setAddonCat(cat){activeCat=cat;renderAddonCats();renderAddons();}
 
 function renderAddons(){
-  const storeAddons = FC.getAddons();
+  const storeAddons = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'addon');
   const list = activeCat === 'all' ? storeAddons : storeAddons.filter(a => a.category === activeCat);
   
   document.getElementById('addons-grid').innerHTML = list.map(a => {
@@ -816,7 +842,7 @@ function renderAddons(){
     const qty = sel ? (selectedAddons[a.id].qty || 1) : 0;
     
     // Fix Image Path for Extras
-    const imgPath = a.img ? (a.img.startsWith('data:') ? a.img : `images/${a.img}`) : 'images/default.jpg';
+    const imgPath = f.img || 'images/default.jpg';
 
     return `
     <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
@@ -1002,7 +1028,7 @@ function addCustomToCart(buyNow=false){
   }
 }
 
-renderSizes();renderFlowers();renderFillers();renderAddonCats();renderAddons();renderColors();updateSummary();
+loadCustomProducts()
 </script>
 </body>
 </html>
