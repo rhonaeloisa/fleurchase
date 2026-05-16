@@ -119,10 +119,23 @@ buildAdminSidebar('orders-admin.html');
 const STATUS_CLASS = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w',Cancelled:'tag-p'};
 const PAY_ICON     = {'GCash 50% Deposit':'💚','Full GCash Payment':'💚','Cash on Delivery':'💵','Maya 50% Deposit':'📱'};
 
+let DB_ORDERS = [];
+
+async function loadOrders() {
+  try {
+    const res = await fetch("get_orders.php");
+    DB_ORDERS = await res.json();
+    renderOrders();
+  } catch (error) {
+    console.error(error);
+    toast("Cannot load orders from database.", "err");
+  }
+}
+
 // ── ORDERS TABLE ────────────────────────────────────────────────────────────
 function renderOrders() {
   const filter = document.getElementById('ord-filter').value;
-  const orders = FC.getOrders();
+  const orders = DB_ORDERS;
   const list = filter === 'all' ? orders : orders.filter(o => o.status === filter);
   document.getElementById('ord-count').textContent = list.length + ' order' + (list.length !== 1 ? 's' : '');
 
@@ -165,9 +178,11 @@ function renderOrders() {
   }).join('') || `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">No orders found</td></tr>`;
 }
 
+
+
 // ── VIEW DETAILED ORDER ──────────────────────────────────────────────────────
 function openDetail(id) {
-  const o = FC.getOrders().find(x => x.id === id);
+  const o = DB_ORDERS.find(x => x.id === id);
   if (!o) return;
 
   const payStatusLabel = o.payStatus==='verified'?'✅ Verified'
@@ -324,7 +339,7 @@ function openDetail(id) {
 
 // ── VIEW RECEIPT (quick modal) ───────────────────────────────────────────────
 function viewReceipt(id) {
-  const o = FC.getOrders().find(x => x.id === id);
+  const o = DB_ORDERS.find(x => x.id === id);
   const receiptSrc = localStorage.getItem('fc_receipt_' + id)
     || (o && o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
   if (!receiptSrc) { toast('No receipt image found.','err'); return; }
@@ -339,7 +354,7 @@ function viewReceipt(id) {
 
 // ── VALIDATE PAYMENT ─────────────────────────────────────────────────────────
 function openValidate(id) {
-  const o = FC.getOrders().find(x => x.id === id);
+  const o = DB_ORDERS.find(x => x.id === id);
   if (!o) return;
   const receiptSrc = localStorage.getItem('fc_receipt_' + id)
     || (o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
@@ -367,39 +382,93 @@ function openValidate(id) {
   openModal('validate-modal');
 }
 
-function approveOrder(id) {
-  const orders = FC.getOrders();
-  const o = orders.find(x => x.id === id);
-  if (!o) return;
-  o.payStatus = 'verified';
-  o.status = 'Processing';
-  o.refNum = document.getElementById('ref-num')?.value || '';
-  FC.deductStock(
-    (o.itemDetails||[]).map(i=>({...i,qty:i.qty||1})),
-    (o.addonDetails||[]).map(a=>({addonId:a.addonId,name:a.name,qty:a.qty||1}))
-  );
-  FC.saveOrders(orders);
-  closeModal('validate-modal');
-  toast('✓ Order '+id+' approved! Stock deducted.');
-  renderOrders();
+async function approveOrder(id) {
+  const refNum = document.getElementById('ref-num')?.value || '';
+
+  try {
+    const res = await fetch("approve_order.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `order_id=${encodeURIComponent(id)}&ref_num=${encodeURIComponent(refNum)}`
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal('validate-modal');
+      toast('✓ Order approved!');
+      loadOrders();
+    } else {
+      toast(data.message || 'Approval failed', 'err');
+    }
+
+  } catch (error) {
+    console.error(error);
+    toast('Server error', 'err');
+  }
 }
 
-function rejectOrder(id) {
-  const orders = FC.getOrders();
-  const o = orders.find(x => x.id === id);
-  if (!o) return;
-  o.payStatus = 'rejected';
-  o.status = 'Cancelled';
-  FC.saveOrders(orders);
-  closeModal('validate-modal');
-  toast('Order '+id+' rejected.','err');
-  renderOrders();
+async function rejectOrder(id) {
+  try {
+    const res = await fetch("reject_order.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `order_id=${encodeURIComponent(id)}`
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal('validate-modal');
+      toast('Order rejected');
+      loadOrders();
+    } else {
+      toast(data.message || 'Reject failed', 'err');
+    }
+
+  } catch (error) {
+    console.error(error);
+    toast('Server error', 'err');
+  }
 }
 
 // ── UPDATE STATUS ─────────────────────────────────────────────────────────────
+async function updateStatus(id) {
+  const newStatus = document.getElementById('new-status').value;
+
+  try {
+    const res = await fetch("update_order_status.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `order_id=${encodeURIComponent(id)}&status=${encodeURIComponent(newStatus)}`
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal('update-modal');
+      toast('Status updated');
+      loadOrders();
+    } else {
+      toast(data.message || 'Update failed', 'err');
+    }
+
+  } catch (error) {
+    console.error(error);
+    toast('Server error', 'err');
+  }
+}
+
 function openUpdate(id) {
-  const o = FC.getOrders().find(x => x.id === id);
+  const o = DB_ORDERS.find(x => x.id === id);
   if (!o) return;
+
   document.getElementById('um-body').innerHTML = `
     <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">${o.id} · ${o.customer||'—'}</p>
     <div class="ff"><label>New Status</label>
@@ -414,18 +483,7 @@ function openUpdate(id) {
   openModal('update-modal');
 }
 
-function updateStatus(id) {
-  const newStatus = document.getElementById('new-status').value;
-  const orders = FC.getOrders();
-  const o = orders.find(x => x.id === id);
-  if (o) o.status = newStatus;
-  FC.saveOrders(orders);
-  closeModal('update-modal');
-  toast('Status updated to: '+newStatus);
-  renderOrders();
-}
-
-renderOrders();
+loadOrders();
 </script>
 </body>
 </html>
