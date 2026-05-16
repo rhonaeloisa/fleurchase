@@ -842,7 +842,7 @@ function renderAddons(){
     const qty = sel ? (selectedAddons[a.id].qty || 1) : 0;
     
     // Fix Image Path for Extras
-    const imgPath = f.img || 'images/default.jpg';
+    const imgPath = a.img || 'images/default.jpg';
 
     return `
     <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
@@ -862,11 +862,16 @@ function renderAddons(){
 }
 
 function toggleAddon(id){
-  const a=FC.getAddons().find(x=>x.id===id); if(!a) return;
+  const a = DB_CUSTOM_PRODUCTS.find(x => x.id === id && x.type === 'addon');
+  if(!a) return;
+  
   if(selectedAddons[id]) delete selectedAddons[id];
-  else selectedAddons[id]={...a,qty:1};
-  renderAddons();updateSummary();
+  else selectedAddons[id] = {...a, qty: 1};
+  
+  renderAddons();
+  updateSummary();
 }
+
 function changeAddonQty(id, delta) {
   if (!selectedAddons[id]) return;
   
@@ -891,7 +896,18 @@ function renderColors(){
     `<div class="cdot ${selColor.n===c.n?'sel':''}" style="background:${c.c}" title="${c.n}" onclick="pickColor(${i})"></div>`
   ).join('');
 }
-function pickColor(i){selColor=COLORS[i];document.getElementById('color-lbl').textContent='Selected: '+selColor.n;renderColors();updateSummary();}
+
+function pickColor(i){
+  selColor = COLORS[i];
+  document.getElementById('color-lbl').textContent = 'Selected: ' + selColor.n;
+  
+  // Apply color to preview wrap
+  const previewWrap = document.getElementById('bq-preview-wrap') || document.querySelector('.bouquet-preview');
+  if(previewWrap) previewWrap.style.backgroundColor = selColor.c;
+  
+  renderColors();
+  updateSummary();
+}
 
 // ── SUMMARY ────────────────────────────────────────────────
 function updateSummary(){
