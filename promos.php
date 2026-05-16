@@ -1,33 +1,3 @@
-<?php
-// 1. DATABASE CONNECTION & FETCHING
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-require_once 'db_connection.php'; 
-
-$sql = "SELECT * FROM promos";
-$result = $conn->query($sql);
-
-$db_promos = [];
-
-if ($result && $result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $db_promos[] = [
-            'promo_id'            => intval($row['promo_id']),
-            'code'                => $row['code'],
-            'promo_name'          => $row['promo_name'],
-            'description'         => $row['description'],
-            'discount_type'       => $row['discount_type'], 
-            'discount_value'      => floatval($row['discount_value']),
-            'start_date'          => $row['start_date'],
-            'end_date'            => $row['end_date'],
-            'min_order_amount'    => floatval($row['min_order_amount']),
-            'status'              => $row['status'],
-            'usage_limit_per_user'=> intval($row['usage_limit_per_user'])
-        ];
-    }
-}
-$conn->close();
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,7 +108,40 @@ buildTopNav('promos');
 renderFooter('footer-container', false);
 
 // Injected database array for coupon cards
-const loadedPromos = <?php echo json_encode($db_promos); ?>;
+let loadedPromos = [];
+
+async function loadPromosFromDB() {
+  try {
+    const res = await fetch('get_promos.php');
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Unable to load promos.', 'err');
+      return;
+    }
+
+    loadedPromos = data.promos.map(p => ({
+      ...p,
+      code: p.code || '',
+      promo_name: p.promo_name || p.name || '',
+      description: p.description || p.desc || '',
+      discount_type: p.discount_type || p.type || '',
+      discount_value: Number(p.discount_value ?? p.value ?? 0),
+      start_date: p.start_date || p.startDate || '',
+      end_date: p.end_date || p.endDate || '',
+      min_order_amount: Number(p.min_order_amount ?? p.minOrder ?? 0),
+      status: String(p.status || '').trim().toLowerCase()
+    }));
+
+    renderActivePromos();
+    renderUpcomingPromos();
+    renderSaleItems();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot fetch promos from database.', 'err');
+  }
+}
+
 
 // ============================================================
 // LOCALIZED PROMO VALIDATION ENGINE (Decoupled from data.js)
@@ -272,9 +275,7 @@ function renderSaleItems() {
 }
 
 // INITIALIZATION
-renderActivePromos();
-renderUpcomingPromos();
-renderSaleItems(); 
+loadPromosFromDB();
 </script>
 </body>
 </html>
