@@ -353,7 +353,7 @@ function renderProducts(cat){
 
           <button
             class="add-btn"
-            ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart(${p.bouquet_id || p.id}, ${p.price})"`}
+            ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart(${p.id}, ${p.price})"`}
             title="${outOfStock ? 'Out of stock' : 'Add to cart'}">
             ${outOfStock ? '×' : '+'}
           </button>

@@ -1,3 +1,82 @@
+<?php
+// 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once 'db_connection.php'; // Matches your exact filename perfectly
+
+// Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
+
+// LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
+$current_cart_id = 0;
+$cart_lookup_stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
+$cart_lookup_stmt->bind_param("i", $current_user_id);
+$cart_lookup_stmt->execute();
+$cart_lookup_res = $cart_lookup_stmt->get_result();
+
+if ($cart_lookup_res && $cart_lookup_res->num_rows > 0) {
+    $cart_lookup_row = $cart_lookup_res->fetch_assoc();
+    $current_cart_id = intval($cart_lookup_row['cart_id']);
+}
+$cart_lookup_stmt->close();
+
+// SQL Query joining cart_item with the bouquet catalog table matching our live user's cart container index
+$sql = "SELECT ci.*, b.name AS bouquet_name, b.description AS bouquet_desc, b.image AS bouquet_img 
+        FROM cart_item ci
+        LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
+        WHERE ci.cart_id = $current_cart_id";
+$result = $conn->query($sql);
+$db_cart_items = [];
+
+if ($result && $result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        // Build image paths with matching folder prefix assignments safely
+        $imagePath = $row["bouquet_img"];
+        if ($imagePath && !str_starts_with($imagePath, "images/") && !str_starts_with($imagePath, "uploads/") && !str_starts_with($imagePath, "http")) {
+            $imagePath = "images/" . $imagePath;
+        }
+
+        $db_cart_items[] = [
+            'cart_item_id' => intval($row['cart_item_id']),
+            'cart_id'      => intval($row['cart_id']),
+            'bouquet_id'   => intval($row['bouquet_id']),
+            'qty'          => intval($row['quantity']),
+            'price'        => floatval($row['unit_price']),
+            'name'         => $row['bouquet_name'] ?? 'Premium Flower Arrangement',
+            'sub'          => $row['bouquet_desc'] ?? 'Handcrafted local bouquet choice.',
+            'img'          => $imagePath, // Passed image string down context properties boundary
+            'checked'      => true 
+        ];
+    }
+}
+
+// Fetch active vouchers from the database to power the checkout summary calculation components
+$promo_sql = "SELECT * FROM promos WHERE status = 'active'";
+$promo_result = $conn->query($promo_sql);
+$db_active_promos = [];
+
+if ($promo_result && $promo_result->num_rows > 0) {
+    while($row = $promo_result->fetch_assoc()) {
+        $db_active_promos[] = [
+            'promo_id'         => intval($row['promo_id']),
+            'code'             => $row['code'],
+            'name'             => $row['promo_name'],
+            'description'      => $row['description'],
+            'type'             => $row['discount_type'],
+            'value'            => floatval($row['discount_value']),
+            'min_order_amount' => floatval($row['min_order_amount']),
+            'start_date'       => $row['start_date'],
+            'end_date'         => $row['end_date']
+        ];
+    }
+}
+
+$conn->close();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,12 +98,10 @@
 .ci-price{font-size:14px;font-weight:700;color:var(--g3);flex-shrink:0;min-width:70px;text-align:right}
 .ci-del{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .2s;flex-shrink:0}
 .ci-del:hover{color:var(--p3);background:var(--p9)}
-/* WORKING QTY BUTTONS — inline onclick, no event binding */
 .qty-row{display:flex;align-items:center;gap:6px;margin-top:8px}
 .qbtn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--soft);cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;color:var(--ink);flex-shrink:0;user-select:none;-webkit-user-select:none}
 .qbtn:hover{background:var(--g8);border-color:var(--g5)}.qbtn:active{background:var(--g7)}
 .qval{font-size:14px;font-weight:700;min-width:30px;text-align:center;color:var(--ink)}
-/* ORDER SUMMARY */
 .oc{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;position:sticky;top:calc(var(--nh)+16px)}
 .oc h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:1rem}
 .oc-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:5px 0}
@@ -51,17 +128,15 @@
   </div>
 
   <div class="cart-layout">
-    <!-- LEFT: Items -->
     <div>
       <div class="cart-header-row">
-        <input type="checkbox" class="fc-checkbox" id="select-all" onchange="toggleSelectAll(this.checked)"/>
+        <input type="checkbox" class="fc-checkbox" id="select-all" checked onchange="toggleSelectAll(this.checked)"/>
         <label for="select-all" style="cursor:pointer;color:var(--ink);font-weight:600">Select All</label>
         <span style="margin-left:auto;font-size:12px;color:var(--muted)" id="sel-summary">0 items selected</span>
       </div>
       <div id="cart-items"></div>
     </div>
 
-    <!-- RIGHT: Summary -->
     <div class="oc">
       <h3>Order Summary</h3>
       <div class="oc-row"><span>Items selected</span><span id="os-count">0</span></div>
@@ -93,34 +168,37 @@
 <div id="footer-container"></div>
 </div>
 <div id="fc-toast" class="toast"></div>
-<script src="data.js"></script><script src="nav.js"></script>
+
+<script src="data.js"></script>
+<script src="nav.js"></script>
 <script>
 requireAuth('customer');
 buildTopNav('cart');
 renderFooter('footer-container', false);
+
+// Inject server-side database records straight into operational runtime memory scope
+let currentCartId = <?php echo $current_cart_id; ?>;
+let cartItemsArray = <?php echo json_encode($db_cart_items); ?>;
+let availablePromos = <?php echo json_encode($db_active_promos); ?>;
 
 let appliedPromo = null;
 let manualPromoUsed = false;
 
 // ── RENDER CART ─────────────────────────────────────────────
 function renderCart() {
-  const cart = FC.getCart();
   const el = document.getElementById('cart-items');
 
-  if (!cart.length) {
+  if (!cartItemsArray.length) {
     el.innerHTML = `<div class="empty-state"><div class="ei">🌸</div><h3>Your cart is empty</h3><p>Browse our shop and add some beautiful flowers!</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now →</a></div>`;
     updateSummary();
     return;
   }
 
-  el.innerHTML = cart.map((item, i) => {
-    const imgHtml = item.img
-      ? `<img src="${item.img}" alt="${item.name}"/>`
+  el.innerHTML = cartItemsArray.map((item, i) => {
+    const imgHtml = item.img 
+      ? `<img src="${item.img}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
       : imgPlaceholder(48);
-    const addonsLine = (item.addonDetails && item.addonDetails.length)
-      ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">Extras: ${item.addonDetails.map(a=>a.name).join(', ')}</div>` : '';
-    const flowerLine = item.type==='flower'
-      ? `<div style="font-size:10px;color:var(--g3);margin-top:2px">🌸 ${fmtP(item.price)}/stem</div>` : '';
+
     return `
     <div class="ci-wrap ${item.checked?'selected':''}" id="ciw-${i}">
       <div class="ci">
@@ -129,17 +207,15 @@ function renderCart() {
         <div class="ci-info">
           <div class="ci-name">${item.name}</div>
           <div class="ci-sub">${item.sub||''}</div>
-          ${flowerLine}${addonsLine}
           <div class="qty-row">
             <button class="qbtn" onclick="changeQty(${i},-1)" title="Decrease">−</button>
             <span class="qval" id="qty-${i}">${item.qty}</span>
             <button class="qbtn" onclick="changeQty(${i},1)" title="Increase">+</button>
-            <span style="font-size:11px;color:var(--muted)">${item.type==='flower'?'stems':'pcs'}</span>
+            <span style="font-size:11px;color:var(--muted)">pcs</span>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
           <div class="ci-price" id="price-${i}">${fmtP(item.price*item.qty)}</div>
-          ${(item.addonDetails||[]).length?`<div style="font-size:10px;color:var(--muted)">+${fmtP((item.addonDetails||[]).reduce((s,a)=>s+(a.price||0),0))} extras</div>`:''}
         </div>
         <button class="ci-del" onclick="removeItem(${i})" title="Remove">✕</button>
       </div>
@@ -151,28 +227,35 @@ function renderCart() {
   if (!manualPromoUsed) autoApplyPromo();
 }
 
-// ── QTY — WORKING inline onclick ─────────────────────────
-function changeQty(i, delta) {
-  const cart = FC.getCart();
-  if (!cart[i]) return;
-  cart[i].qty = Math.max(1, (cart[i].qty || 1) + delta);
-  FC.saveCart(cart);
-  // Update DOM without full re-render
-  const qEl = document.getElementById('qty-' + i);
-  if (qEl) qEl.textContent = cart[i].qty;
-  const pEl = document.getElementById('price-' + i);
-  if (pEl) pEl.textContent = fmtP(cart[i].price * cart[i].qty);
-  updateCartBadge();
-  updateSummary();
-  if (!manualPromoUsed) autoApplyPromo();
+// ── BACKEND SYNC: ALTER REQUISITION COUNT ───────────────────
+async function changeQty(i, delta) {
+  if (!cartItemsArray[i]) return;
+  const targetItem = cartItemsArray[i];
+  if (targetItem.qty === 1 && delta === -1) return;
+
+  try {
+    const response = await fetch('cart_actions.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'change_qty', cart_item_id: targetItem.cart_item_id, delta: delta })
+    });
+    const res = await response.json();
+    if (res.success) {
+      targetItem.qty += delta;
+      document.getElementById('qty-' + i).textContent = targetItem.qty;
+      document.getElementById('price-' + i).textContent = fmtP(targetItem.price * targetItem.qty);
+      updateSummary();
+      if (!manualPromoUsed) autoApplyPromo();
+    }
+  } catch(err) {
+    console.error("Critical communications malfunction with action endpoint pipeline:", err);
+  }
 }
 
 // ── SELECTION ─────────────────────────────────────────────
 function toggleItem(i, checked) {
-  const cart = FC.getCart();
-  if (!cart[i]) return;
-  cart[i].checked = checked;
-  FC.saveCart(cart);
+  if (!cartItemsArray[i]) return;
+  cartItemsArray[i].checked = checked;
   document.getElementById('ciw-'+i)?.classList.toggle('selected', checked);
   updateSummary();
   syncSelectAll();
@@ -180,51 +263,68 @@ function toggleItem(i, checked) {
 }
 
 function toggleSelectAll(checked) {
-  const cart = FC.getCart();
-  cart.forEach(item => item.checked = checked);
-  FC.saveCart(cart);
+  cartItemsArray.forEach(item => item.checked = checked);
   renderCart();
 }
 
 function syncSelectAll() {
-  const cart = FC.getCart();
   const sa = document.getElementById('select-all');
   if (!sa) return;
-  const all = cart.length>0 && cart.every(i=>i.checked);
-  const none = cart.every(i=>!i.checked);
+  const all = cartItemsArray.length>0 && cartItemsArray.every(i=>i.checked);
+  const none = cartItemsArray.every(i=>!i.checked);
   sa.checked = all;
   sa.indeterminate = !all && !none;
-  const sel = cart.filter(i=>i.checked);
-  document.getElementById('sel-summary').textContent = sel.length+' of '+cart.length+' item'+(cart.length!==1?'s':'')+' selected';
+  const sel = cartItemsArray.filter(i=>i.checked);
+  document.getElementById('sel-summary').textContent = sel.length+' of '+cartItemsArray.length+' item'+(cartItemsArray.length!==1?'s':'')+' selected';
 }
 
-// ── REMOVE / CLEAR ────────────────────────────────────────
-function removeItem(i) {
-  const cart = FC.getCart();
-  cart.splice(i, 1);
-  FC.saveCart(cart);
-  updateCartBadge();
-  renderCart();
-  toast('Item removed.');
+// ── BACKEND SYNC: DISCARD SINGLE INSTANCE ROW ────────────────
+async function removeItem(i) {
+  if (!cartItemsArray[i]) return;
+  try {
+    const response = await fetch('cart_actions.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove_item', cart_item_id: cartItemsArray[i].cart_item_id })
+    });
+    const res = await response.json();
+    if(res.success) {
+      cartItemsArray.splice(i, 1);
+      renderCart();
+      toast('Item dropped from database record storage.');
+    }
+  } catch(err) {
+    console.error(err);
+  }
 }
 
-function clearCart() {
-  if (!confirm('Remove all items from your cart?')) return;
-  FC.saveCart([]);
-  updateCartBadge();
-  renderCart();
-  toast('Cart cleared.');
+// ── BACKEND SYNC: PURGE WHOLE CART COMPARTMENT ───────────────
+async function clearCart() {
+  if (!confirm('Remove all items from your database cart context?')) return;
+  try {
+    const response = await fetch('cart_actions.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear_all', cart_id: currentCartId })
+    });
+    const res = await response.json();
+    if(res.success) {
+      cartItemsArray = [];
+      renderCart();
+      toast('Database cart storage cleared.');
+    }
+  } catch(err) {
+    console.error(err);
+  }
 }
 
-// ── SUMMARY ───────────────────────────────────────────────
+// ── LOCAL MATHEMATICAL CHECKOUT CALCULATIONS ───────────────
 function getSelectedSub() {
-  const selected = FC.getCart().filter(i=>i.checked);
-  return selected.reduce((s,i)=>s+i.price*i.qty+((i.addonDetails||[]).reduce((a,ad)=>a+(ad.price||0),0)),0);
+  return cartItemsArray.filter(i=>i.checked).reduce((s,i)=>s+i.price*i.qty,0);
 }
 
 function updateSummary() {
-  const cart = FC.getCart();
-  const selected = cart.filter(i=>i.checked);
+  const selected = cartItemsArray.filter(i=>i.checked);
   const count = selected.length;
   const sub = getSelectedSub();
 
@@ -247,6 +347,10 @@ function updateSummary() {
 
   document.getElementById('os-total').textContent = fmtP(finalSub);
 
+  // Overwrite header navigation badge total quantities to sync with dynamic db arrays row sizes layout loops
+  const currentDbCount = cartItemsArray.reduce((total, item) => total + item.qty, 0);
+  document.querySelectorAll('.cart-count').forEach(el => el.textContent = currentDbCount);
+
   const depBox = document.getElementById('os-deposit');
   if (count > 0) {
     depBox.style.display = 'block';
@@ -259,36 +363,53 @@ function updateSummary() {
     : count+' item'+(count!==1?'s':'')+' will be checked out';
 }
 
-// ── AUTO-APPLY BEST PROMO ─────────────────────────────────
+// ── LOCAL SQL CODES EVALUATION ENGINE ───────────────────────
+function validateLocalPromo(promoCode, subtotal) {
+  const pr = availablePromos.find(p => p.code.toLowerCase() === promoCode.toLowerCase());
+  
+  if (!pr) return { ok: false, discount: 0, reason: 'Promo code not found.' };
+  
+  const today = new Date(); 
+  today.setHours(0,0,0,0);
+  
+  if (pr.start_date) { 
+    const s = new Date(pr.start_date); 
+    if (today < s) return { ok: false, discount: 0, reason: 'This promo is not active yet.' }; 
+  }
+  if (pr.end_date) { 
+    const e = new Date(pr.end_date);   
+    if (today > e) return { ok: false, discount: 0, reason: 'This promo has expired.' }; 
+  }
+  if (pr.min_order_amount && subtotal < pr.min_order_amount) {
+    return { ok: false, discount: 0, reason: 'Minimum order of ₱' + pr.min_order_amount + ' required.' };
+  }
+  
+  let disc = 0;
+  if (pr.type === 'percent') {
+    disc = Math.round(subtotal * pr.value / 100);
+  } else if (pr.type === 'fixed') {
+    disc = Math.min(pr.value || 0, subtotal);
+  }
+  
+  return { ok: true, discount: disc, promo: pr };
+}
+
 function autoApplyPromo() {
-  const cart = FC.getCart();
-  const selected = cart.filter(i=>i.checked);
+  const selected = cartItemsArray.filter(i=>i.checked);
   if (!selected.length) { appliedPromo = null; updateSummary(); return; }
   const sub = getSelectedSub();
 
-  const promos = FC.getPromos().filter(p=>p.status==='active');
   let best = null, bestDisc = 0;
-  promos.forEach(p => {
-    const r = FC.validatePromo(p.id, sub, selected);
+  availablePromos.forEach(p => {
+    const r = validateLocalPromo(p.code, sub);
     if (r.ok && r.discount > bestDisc) { bestDisc = r.discount; best = r.promo; }
   });
-  // If no % discount found, try any eligible
-  if (!best) {
-    promos.forEach(p => {
-      const r = FC.validatePromo(p.id, sub, selected);
-      if (r.ok && !best) best = r.promo;
-    });
-  }
 
   const noticeEl = document.getElementById('auto-promo');
   if (best) {
     appliedPromo = best;
     noticeEl.style.display = 'block';
-    const disc = bestDisc > 0 ? ' — save '+fmtP(bestDisc) : '';
-    noticeEl.innerHTML = `🏷️ <strong>${best.name}</strong> auto-applied!${disc}`;
-    // Clear manual promo result if auto took over
-    const resEl = document.getElementById('promo-result');
-    if (resEl && !manualPromoUsed) resEl.textContent = '';
+    noticeEl.innerHTML = `🏷️ <strong>${best.name}</strong> auto-applied!`;
   } else {
     appliedPromo = null;
     noticeEl.style.display = 'none';
@@ -296,22 +417,22 @@ function autoApplyPromo() {
   updateSummary();
 }
 
-// ── MANUAL PROMO CODE ─────────────────────────────────────
 function applyPromoCode() {
   const code = document.getElementById('promo-code').value.trim().toUpperCase();
   if (!code) { toast('Please enter a promo code.','warn'); return; }
-  const cart = FC.getCart();
-  const selected = cart.filter(i=>i.checked);
+  const selected = cartItemsArray.filter(i=>i.checked);
   if (!selected.length) { toast('Select items first.','warn'); return; }
+  
   const sub = getSelectedSub();
   const resEl = document.getElementById('promo-result');
-  const result = FC.validatePromo(code, sub, selected);
+  const result = validateLocalPromo(code, sub);
+  
   if (result.ok) {
     manualPromoUsed = true;
     appliedPromo = result.promo;
     document.getElementById('auto-promo').style.display = 'none';
     resEl.className = 'promo-result promo-ok';
-    resEl.innerHTML = '✓ <strong>'+result.label+'</strong> applied!'+(result.discount>0?' Save '+fmtP(result.discount)+'.':'');
+    resEl.innerHTML = '✓ <strong>'+result.promo.name+'</strong> applied!';
     toast('🏷️ Promo applied!');
     updateSummary();
   } else {
@@ -325,8 +446,7 @@ function applyPromoCode() {
 
 // ── PROCEED TO CHECKOUT ───────────────────────────────────
 function proceedCheckout() {
-  const cart = FC.getCart();
-  const selected = cart.filter(i=>i.checked);
+  const selected = cartItemsArray.filter(i=>i.checked);
   if (!selected.length) { toast('Please select at least one item.','warn'); return; }
   sessionStorage.setItem('fc_checkout_items', JSON.stringify(selected));
   sessionStorage.setItem('fc_checkout_promo', appliedPromo ? JSON.stringify(appliedPromo) : '');
