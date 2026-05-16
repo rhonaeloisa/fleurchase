@@ -10,6 +10,9 @@ VALID_ADMIN_PASSWORD = "admin123"
 INVALID_EMAIL = "wrong@email.com"
 INVALID_PASSWORD = "wrongpass"
 
+VALID_CUSTOMER_EMAIL = "ayis.lobarbio@gmail.com"
+VALID_CUSTOMER_PASSWORD = "@ayis123"
+
 SCREENSHOT_DIR = "screenshots"
 
 
@@ -30,7 +33,6 @@ def has_php_error(text):
 
     lower_text = text.lower()
     return any(pattern in lower_text for pattern in php_error_patterns)
-
 
 
 def setup_folder():
@@ -59,13 +61,13 @@ def test_successful_admin_login():
 
         page.wait_for_url("**/admin.html", timeout=5000)
 
-        page.screenshot(path=f"{SCREENSHOT_DIR}/passed_valid_login.png", full_page=True)
+        page.screenshot(
+            path=f"{SCREENSHOT_DIR}/passed_valid_login.png", full_page=True)
 
         assert "admin.html" in page.url.lower()
         assert not has_php_error(page.content())
 
         browser.close()
-
 
 
 def test_failed_login_invalid_credentials():
@@ -79,7 +81,8 @@ def test_failed_login_invalid_credentials():
 
         page.wait_for_timeout(1000)
 
-        page.screenshot(path=f"{SCREENSHOT_DIR}/passed_invalid_login.png", full_page=True)
+        page.screenshot(
+            path=f"{SCREENSHOT_DIR}/passed_invalid_login.png", full_page=True)
 
         assert "login.html" in page.url.lower()
 
@@ -90,6 +93,25 @@ def test_failed_login_invalid_credentials():
 
         browser.close()
 
+
+def test_successful_customer_login():
+    setup_folder()
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, slow_mo=700)
+        page = browser.new_page()
+
+        login(page, VALID_CUSTOMER_EMAIL, VALID_CUSTOMER_PASSWORD)
+
+        page.wait_for_url("**/shop.html", timeout=5000)
+
+        page.screenshot(
+            path=f"{SCREENSHOT_DIR}/passed_valid_login.png", full_page=True)
+
+        assert "shop.html" in page.url.lower()
+        assert not has_php_error(page.content())
+
+        browser.close()
 
 
 def test_no_php_errors_on_login_page():
@@ -102,9 +124,11 @@ def test_no_php_errors_on_login_page():
         page.goto(BASE_URL)
         page.wait_for_timeout(1000)
 
-        page.screenshot(path=f"{SCREENSHOT_DIR}/passed_no_php_errors.png", full_page=True)
+        page.screenshot(
+            path=f"{SCREENSHOT_DIR}/passed_no_php_errors.png", full_page=True)
 
         html = page.content()
-        assert not has_php_error(html), "PHP warning/fatal error detected on login page"
+        assert not has_php_error(
+            html), "PHP warning/fatal error detected on login page"
 
         browser.close()
