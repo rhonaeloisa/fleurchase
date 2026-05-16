@@ -67,9 +67,10 @@ buildTopNav('promos-admin');
 buildAdminSidebar('promos-admin.html');
 
 let editingPromoId = null;
+let DB_PROMOS = [];
 
 function renderPromos() {
-  const promos = FC.getPromos();
+  const promos = DB_PROMOS;
   const active = promos.filter(p => p.status === 'active');
   const inactive = promos.filter(p => p.status !== 'active');
 
@@ -111,6 +112,25 @@ function renderPromos() {
   renderSaleProducts();
 }
 
+async function loadPromosFromDB() {
+  try {
+    const res = await fetch('get_promos.php');
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Failed to load promos.', 'err');
+      return;
+    }
+
+    DB_PROMOS = data.promos;
+    renderPromos();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot load promos from database.', 'err');
+  }
+}
+
+
 function renderSaleProducts() {
   const prods = FC.getProducts().filter(p => p.oldPrice);
   document.getElementById('sale-tbody').innerHTML = prods.length ? prods.map(p => `
@@ -126,22 +146,70 @@ function renderSaleProducts() {
     </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted)">No products on sale</td></tr>';
 }
 
-function togglePromo(id) {
-  const promos = FC.getPromos();
-  const p = promos.find(x => x.id === id);
-  if (p) { p.status = p.status === 'active' ? 'inactive' : 'active'; }
-  FC.savePromos(promos);
-  toast(p.status === 'active' ? '✓ Promo activated!' : 'Promo deactivated.');
-  renderPromos();
+async function togglePromo(id) {
+  const p = DB_PROMOS.find(x => String(x.id) === String(id));
+  if (!p) return;
+
+  p.status = p.status === 'active' ? 'inactive' : 'active';
+  editingPromoId = p.id;
+
+  const formData = new FormData();
+  formData.append('promo_id', p.id);
+  formData.append('code', p.code || p.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_'));
+  formData.append('promo_name', p.name);
+  formData.append('description', p.desc || '');
+  formData.append('discount_type', p.type);
+  formData.append('discount_value', p.value);
+  formData.append('start_date', p.startDate);
+  formData.append('end_date', p.endDate);
+  formData.append('min_order_amount', p.minOrder || 0);
+  formData.append('status', p.status);
+  formData.append('usage_limit_per_user', p.usageLimit || 1);
+
+  const res = await fetch('save_promo.php', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    toast(data.message || 'Failed to update promo.', 'err');
+    return;
+  }
+
+  toast(p.status === 'active' ? 'Promo activated!' : 'Promo deactivated.');
+  loadPromosFromDB();
 }
 
-function deletePromo(id) {
+
+async function deletePromo(id) {
   if (!confirm('Delete this promo?')) return;
-  const promos = FC.getPromos().filter(p => p.id !== id);
-  FC.savePromos(promos);
-  toast('Promo deleted.', 'err');
-  renderPromos();
+
+  const formData = new FormData();
+  formData.append('promo_id', id);
+
+  try {
+    const res = await fetch('delete_promo.php', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Delete failed.', 'err');
+      return;
+    }
+
+    toast('Promo deleted.', 'err');
+    loadPromosFromDB();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot delete promo.', 'err');
+  }
 }
+
 
 function removeSale(pid) {
   const prods = FC.getProducts();
@@ -218,7 +286,7 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-  const p = FC.getPromos().find(x => x.id === id);
+  const p = DB_PROMOS.find(x => String(x.id) === String(id));
   if (!p) return;
   editingPromoId = id;
   document.getElementById('pm-title').textContent = 'Edit: ' + p.name;
@@ -227,35 +295,59 @@ function openEditModal(id) {
   previewDisc();
 }
 
-function savePromo() {
+async function savePromo() {
   const name = document.getElementById('pm-name').value.trim();
   const type = document.getElementById('pm-type').value;
   const value = parseFloat(document.getElementById('pm-val').value);
   const startDate = document.getElementById('pm-start').value;
   const endDate = document.getElementById('pm-end').value;
-  const category = document.getElementById('pm-cat').value;
   const status = document.getElementById('pm-status').value;
   const desc = document.getElementById('pm-desc').value.trim();
-  if (!name || isNaN(value) || !startDate || !endDate) { toast('Please fill in all required fields.', 'err'); return; }
+  const minOrder = parseFloat(document.getElementById('pm-minorder').value) || 0;
 
-  const promos = FC.getPromos();
-  const data = { name, type, value, startDate, endDate, category, status, desc, products: [],
-    minOrder: parseFloat(document.getElementById('pm-minorder').value) || 0 };
-
-  if (editingPromoId) {
-    const idx = promos.findIndex(p => p.id === editingPromoId);
-    if (idx !== -1) promos[idx] = { ...promos[idx], ...data };
-    toast('✓ Promo updated!');
-  } else {
-    promos.push({ id: 'pr' + Date.now(), ...data });
-    toast('✓ Promo added!');
+  if (!name || isNaN(value) || !startDate || !endDate) {
+    toast('Please fill in all required fields.', 'err');
+    return;
   }
-  FC.savePromos(promos);
-  closeModal('promo-modal');
-  renderPromos();
+
+  const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+
+  const formData = new FormData();
+  formData.append('promo_id', editingPromoId || '');
+  formData.append('code', code);
+  formData.append('promo_name', name);
+  formData.append('description', desc);
+  formData.append('discount_type', type);
+  formData.append('discount_value', value);
+  formData.append('start_date', startDate);
+  formData.append('end_date', endDate);
+  formData.append('min_order_amount', minOrder);
+  formData.append('status', status);
+  formData.append('usage_limit_per_user', 1);
+
+  try {
+    const res = await fetch('save_promo.php', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Failed to save promo.', 'err');
+      return;
+    }
+
+    toast(data.message);
+    closeModal('promo-modal');
+    loadPromosFromDB();
+  } catch (error) {
+    console.error(error);
+    toast('Cannot save promo.', 'err');
+  }
 }
 
-renderPromos();
+loadPromosFromDB();
 </script>
 </body>
 </html>
