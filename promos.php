@@ -135,11 +135,62 @@ async function loadPromosFromDB() {
 
     renderActivePromos();
     renderUpcomingPromos();
+    showPromoInput();
     renderSaleItems();
   } catch (error) {
     console.error(error);
     toast('Cannot fetch promos from database.', 'err');
   }
+}
+
+// Show promo input box once promos load
+function showPromoInput() {
+  document.getElementById('promo-input-section').style.display = 'block';
+}
+
+function handleApplyPromo() {
+  const code = document.getElementById('pi-code').value.trim();
+  const feedback = document.getElementById('pi-feedback');
+  const discRow  = document.getElementById('pi-discount-row');
+
+  if (!code) {
+    feedback.style.display = 'block';
+    feedback.style.color = 'var(--p3)';
+    feedback.textContent = '⚠️ Please enter a promo code.';
+    return;
+  }
+
+  // Use the existing validateLocalPromo — pass 0 as subtotal on this page
+  // (actual subtotal validation happens in the cart)
+  const result = validateLocalPromo(code, 0);
+
+  if (!result.ok) {
+    feedback.style.display = 'block';
+    feedback.style.color = 'var(--p3)';
+    feedback.textContent = '❌ ' + result.reason;
+    discRow.style.display = 'none';
+    return;
+  }
+
+  feedback.style.display = 'block';
+  feedback.style.color = 'var(--g3)';
+  feedback.textContent = '✅ "' + result.label + '" is a valid promo!';
+  document.getElementById('pi-discount-label').textContent = result.label;
+  document.getElementById('pi-discount-amount').textContent =
+    result.promo.discount_type === 'percent'
+      ? result.promo.discount_value + '% OFF'
+      : '₱' + result.promo.discount_value + ' OFF';
+  discRow.style.display = 'flex';
+  document.getElementById('pi-code').disabled = true;
+  document.getElementById('pi-apply-btn').disabled = true;
+}
+
+function removeAppliedPromo() {
+  document.getElementById('pi-code').value = '';
+  document.getElementById('pi-code').disabled = false;
+  document.getElementById('pi-apply-btn').disabled = false;
+  document.getElementById('pi-feedback').style.display = 'none';
+  document.getElementById('pi-discount-row').style.display = 'none';
 }
 
 
@@ -235,10 +286,24 @@ function renderActivePromos() {
         <span>${minOrderText}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="pc-code" onclick="copyCode('${p.code.toUpperCase()}')" title="Click to copy">${p.code.toUpperCase()} 📋</div>
+        <div class="pc-code" onclick="copyCode('${p.code.toUpperCase()}')" title="Click to copy">
+          ${p.code.toUpperCase()} 📋
+        </div>
+        <div id="tab-active">
+        <div class="promo-grid" id="active-promo-grid"></div>
+
+        <!-- PROMO CODE INPUT -->
+        <div class="promo-input-box">
+          <input type="text" id="promoCodeInput" placeholder="Enter promo code">
+          <button onclick="applyPromoCode()">Apply</button>
+        </div>
+
+        <div class="info-box">
         <a class="btn btn-pink btn-sm" href="shop.html" style="text-decoration:none">Shop Now →</a>
       </div>
     </div>`;
+
+    
   }).join('');
 }
 
