@@ -1,79 +1,122 @@
-<?php
-// 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+  <?php
+  // 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
+  if (session_status() === PHP_SESSION_NONE) {
+      session_start();
+  }
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-require_once 'db_connection.php'; // Matches your exact filename perfectly
+  error_reporting(E_ALL);
+  ini_set('display_errors', 1);
+  require_once 'db_connection.php'; // Matches your exact filename perfectly
 
-// Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
-$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
+  // Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
+  $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
 
-// LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
-$current_cart_id = 0;
-$cart_lookup_stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
-$cart_lookup_stmt->bind_param("i", $current_user_id);
-$cart_lookup_stmt->execute();
-$cart_lookup_res = $cart_lookup_stmt->get_result();
+  // LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
+  $current_cart_id = 0;
+  $cart_lookup_stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
+  $cart_lookup_stmt->bind_param("i", $current_user_id);
+  $cart_lookup_stmt->execute();
+  $cart_lookup_res = $cart_lookup_stmt->get_result();
 
-if ($cart_lookup_res && $cart_lookup_res->num_rows > 0) {
-    $cart_lookup_row = $cart_lookup_res->fetch_assoc();
-    $current_cart_id = intval($cart_lookup_row['cart_id']);
-}
-$cart_lookup_stmt->close();
+  if ($cart_lookup_res && $cart_lookup_res->num_rows > 0) {
+      $cart_lookup_row = $cart_lookup_res->fetch_assoc();
+      $current_cart_id = intval($cart_lookup_row['cart_id']);
+  }
+  $cart_lookup_stmt->close();
 
-// SQL Query joining cart_item with the bouquet catalog table matching our live user's cart container index
-$sql = "SELECT ci.*, b.name AS bouquet_name, b.description AS bouquet_desc, b.image AS bouquet_img 
-        FROM cart_item ci
-        LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
-        WHERE ci.cart_id = $current_cart_id";
-$result = $conn->query($sql);
-$db_cart_items = [];
+  // SQL Query joining cart_item with the bouquet catalog table matching our live user's cart container index
+  $sql = "
+      SELECT ci.*, 
+            b.name AS bouquet_name, 
+            b.description AS bouquet_desc, 
+            b.image AS bouquet_img
+      FROM cart_item ci
+      LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
+      WHERE ci.cart_id = ?
+      ORDER BY ci.cart_item_id DESC
+  ";
 
-if ($result && $result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        // Build image paths with matching folder prefix assignments safely
-        $imagePath = $row["bouquet_img"];
-        if ($imagePath && !str_starts_with($imagePath, "images/") && !str_starts_with($imagePath, "uploads/") && !str_starts_with($imagePath, "http")) {
-            $imagePath = "images/" . $imagePath;
-        }
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("i", $current_cart_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
 
-        $db_cart_items[] = [
-            'cart_item_id' => intval($row['cart_item_id']),
-            'cart_id'      => intval($row['cart_id']),
-            'bouquet_id'   => intval($row['bouquet_id']),
-            'qty'          => intval($row['quantity']),
-            'price'        => floatval($row['unit_price']),
-            'name'         => $row['bouquet_name'] ?? 'Premium Flower Arrangement',
-            'sub'          => $row['bouquet_desc'] ?? 'Handcrafted local bouquet choice.',
-            'img'          => $imagePath, // Passed image string down context properties boundary
-            'checked'      => true 
-        ];
+
+  $db_cart_items = [];
+
+  $db_cart_items = [];
+
+  $db_cart_items = [];
+
+while($row = $result->fetch_assoc()) {
+    $isCustom = !empty($row['is_custom']) && $row['is_custom'] == 1;
+    $customData = null;
+    
+    if ($isCustom && !empty($row['custom_data'])) {
+        $customData = json_decode($row['custom_data'], true);
     }
-}
 
-// Fetch active vouchers from the database to power the checkout summary calculation components
-$promo_sql = "SELECT * FROM promos WHERE status = 'active'";
-$promo_result = $conn->query($promo_sql);
-$db_active_promos = [];
+    if ($isCustom && $customData) {
+        // ====================== CUSTOM BOUQUET ======================
+        $name = "Custom Bouquet (" . ($customData['size'] ?? 'Medium') . ")";
 
-if ($promo_result && $promo_result->num_rows > 0) {
-    while($row = $promo_result->fetch_assoc()) {
-        $db_active_promos[] = [
-            'promo_id'         => intval($row['promo_id']),
-            'code'             => $row['code'],
-            'name'             => $row['promo_name'],
-            'description'      => $row['description'],
-            'type'             => $row['discount_type'],
-            'value'            => floatval($row['discount_value']),
-            'min_order_amount' => floatval($row['min_order_amount']),
-            'start_date'       => $row['start_date'],
-            'end_date'         => $row['end_date']
-        ];
+        $sub = ($customData['stems'] ?? 0) . " stems • " . 
+               ($customData['color'] ?? 'No color') . "<br>" .
+               ($customData['flowers'] ?? 'Mixed flowers');
+
+        // Use saved total price (Best approach)
+        $price = floatval($row['unit_price']);
+
+        $imagePath = "images/default.jpg"; 
+    } 
+    else {
+        // ====================== NORMAL BOUQUET ======================
+        $name = $row['bouquet_name'] ?? 'Premium Flower Arrangement';
+        $sub  = $row['bouquet_desc'] ?? 'Handcrafted local bouquet choice.';
+        $price = floatval($row['unit_price']);
+        $imagePath = $row['bouquet_img'] ?? '';
     }
+
+    // Image path correction
+    if ($imagePath && !str_starts_with($imagePath, "images/") && !str_starts_with($imagePath, "uploads/") && !str_starts_with($imagePath, "http")) {
+        $imagePath = "images/" . $imagePath;
+    }
+
+    $db_cart_items[] = [
+        'cart_item_id' => intval($row['cart_item_id']),
+        'cart_id'      => intval($row['cart_id']),
+        'bouquet_id'   => intval($row['bouquet_id'] ?? 0),
+        'qty'          => intval($row['quantity']),
+        'price'        => $price,           // ← This is what shows the total
+        'name'         => $name,
+        'sub'          => $sub,
+        'img'          => $imagePath,
+        'checked'      => true,
+        'is_custom'    => $isCustom,
+        'custom_data'  => $customData
+    ];
 }
+
+  // Fetch active vouchers from the database to power the checkout summary calculation components
+  $promo_sql = "SELECT * FROM promos WHERE status = 'active'";
+  $promo_result = $conn->query($promo_sql);
+  $db_active_promos = [];
+
+  if ($promo_result && $promo_result->num_rows > 0) {
+      while($row = $promo_result->fetch_assoc()) {
+          $db_active_promos[] = [
+              'promo_id'         => intval($row['promo_id']),
+              'code'             => $row['code'],
+              'name'             => $row['promo_name'],
+              'description'      => $row['description'],
+              'type'             => $row['discount_type'],
+              'value'            => floatval($row['discount_value']),
+              'min_order_amount' => floatval($row['min_order_amount']),
+              'start_date'       => $row['start_date'],
+              'end_date'         => $row['end_date']
+          ];
+      }
+  }
 
 $conn->close();
 ?>
@@ -199,27 +242,33 @@ function renderCart() {
       ? `<img src="${item.img}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
       : imgPlaceholder(48);
 
-    return `
-    <div class="ci-wrap ${item.checked?'selected':''}" id="ciw-${i}">
-      <div class="ci">
-        <input type="checkbox" class="fc-checkbox" id="chk-${i}" ${item.checked?'checked':''} onchange="toggleItem(${i},this.checked)"/>
-        <div class="ci-img">${imgHtml}</div>
-        <div class="ci-info">
-          <div class="ci-name">${item.name}</div>
-          <div class="ci-sub">${item.sub||''}</div>
-          <div class="qty-row">
-            <button class="qbtn" onclick="changeQty(${i},-1)" title="Decrease">−</button>
-            <span class="qval" id="qty-${i}">${item.qty}</span>
-            <button class="qbtn" onclick="changeQty(${i},1)" title="Increase">+</button>
-            <span style="font-size:11px;color:var(--muted)">pcs</span>
+   return `
+  <div class="ci-wrap ${item.checked?'selected':''}" id="ciw-${i}">
+    <div class="ci">
+      <input type="checkbox" class="fc-checkbox" id="chk-${i}" ${item.checked?'checked':''} onchange="toggleItem(${i},this.checked)"/>
+      <div class="ci-img">${imgHtml}</div>
+      <div class="ci-info">
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-sub" style="line-height:1.4">${item.sub||''}</div>
+          ${item.is_custom ? `<div style="font-size:12px; color:var(--p3); margin-top:4px;">✦ Custom Arrangement</div>` : ''}
+        ${item.is_custom ? `
+          <div style="font-size:11px;color:var(--p3);margin-top:4px;">
+            ✨ Custom Arrangement
           </div>
+        ` : ''}
+        <div class="qty-row">
+          <button class="qbtn" onclick="changeQty(${i},-1)">−</button>
+          <span class="qval" id="qty-${i}">${item.qty}</span>
+          <button class="qbtn" onclick="changeQty(${i},1)">+</button>
+          <span style="font-size:11px;color:var(--muted)">pcs</span>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
-          <div class="ci-price" id="price-${i}">${fmtP(item.price*item.qty)}</div>
-        </div>
-        <button class="ci-del" onclick="removeItem(${i})" title="Remove">✕</button>
       </div>
-    </div>`;
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+        <div class="ci-price" id="price-${i}">${fmtP(item.price*item.qty)}</div>
+      </div>
+      <button class="ci-del" onclick="removeItem(${i})">✕</button>
+    </div>
+  </div>`;
   }).join('');
 
   updateSummary();
