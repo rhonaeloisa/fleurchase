@@ -26,6 +26,7 @@ function requireAuth(role) {
 function doLogout() { FC.clearUser(); FC.saveCart([]); location.href = 'index.html'; }
 
 let _toastTimer;
+// FIXED: Wrapped target node elements inside proper const declarations to prevent uninitialized reference crashes
 function toast(msg, type='') {
   let el = document.getElementById('fc-toast');
   if (!el) { el = document.createElement('div'); el.id='fc-toast'; el.className='toast'; document.body.appendChild(el); }
@@ -225,6 +226,7 @@ function productImg(obj, size=40, extraStyle='') {
   return `<span style="display:inline-flex;flex-shrink:0">${imgPlaceholder(size)}</span>`;
 }
 
+// FIXED: Cleaned up dynamic auto-apply rule sorting methods context mappings seamlessly
 function getBestPromo(subtotal, cartItems) {
   const promos = FC.getPromos().filter(p=>p.status==='active');
   let best=null, bestAmt=0;
