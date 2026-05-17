@@ -154,7 +154,7 @@ function renderOrders() {
     return `
     <tr>
       <td style="font-weight:700;font-size:12px">${o.id}</td>
-      <td>${o.customer||'—'}<br><span style="font-size:11px;color:var(--muted)">${o.loc||'—'}</span></td>
+      <td>${o.customer||'—'}<br><span style="font-size:11px;color:var(--muted)"></span></td>
       <td style="font-size:12px">
         ${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);font-weight:600;text-decoration:none">${o.phone}</a>`:'<span style="color:var(--muted)">—</span>'}
       </td>
