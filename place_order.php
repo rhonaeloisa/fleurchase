@@ -113,7 +113,7 @@ try {
     $shipStmt->execute();
 
     $paymentSql = "INSERT INTO payment(
-        payment_id, order_id, amount, payment_date, payment_type, reference_numer, img_recceipt, status)
+        payment_id, order_id, amount, payment_date, payment_type, reference_number, img_recceipt, status)
         VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?)";
 
     $paymentStmt = $conn->prepare($paymentSql);
