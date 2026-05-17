@@ -260,7 +260,8 @@
             <div class="upload-ok" id="up-ok"></div>
           </div>
           <img id="receipt-preview" class="receipt-preview" alt="Receipt preview"/>
-        </div>
+          
+          </div>
       </div>
 
       <button class="btn btn-green" style="width:100%;justify-content:center;padding:14px;font-size:15px;border-radius:14px;margin-bottom:.5rem" onclick="preOrderCheck()">Confirm Pre-Order</button>
@@ -286,8 +287,8 @@
       </div>
       <div style="background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.1rem;margin-top:1rem;font-size:12px;color:var(--muted);line-height:1.7">
         <strong style="color:var(--ink);display:block;margin-bottom:.3rem">📍 Delivery Fees</strong>
-        🟢 <strong style="color:var(--g3)">FREE: </strong>Legazpi City & Daraga<br>
-        🟡 Extra fee: Other Albay areas
+        <strong style="color:var(--g3)">FREE: </strong>Legazpi City & Daraga<br>
+        Extra fee: Other Albay areas
       </div>
     </div>
   </div>
@@ -385,15 +386,18 @@ async function loadCheckoutAddons() {
     const data = await res.json();
 
     DB_ADDONS = (data.products || [])
-      .map(p => ({
-        id: p.id ?? p.product_id,
-        name: p.name ?? p.product_name,
-        price: Number(p.price || 0),
-        type: p.type ?? p.product_type,
-        category: p.category || 'extras',
-        img: p.img ?? (p.product_image ? 'images/' + p.product_image : 'images/default.png'),
-        stock: Number(p.stock || 0)
-      }))
+      .map(p => {
+        const resolvedId = p.product_id ?? p.id;
+        return {
+          id: resolvedId ? String(resolvedId) : '',
+          name: p.product_name ?? p.name,
+          price: Number(p.price || 0),
+          type: p.product_type ?? p.type,
+          category: p.category || 'extras',
+          img: p.img ?? (p.product_image ? 'images/' + p.product_image : 'images/default.png'),
+          stock: Number(p.stock ?? 0)
+        };
+      })
       .filter(p => p.type === 'addon' && p.stock > 0);
 
     renderAddons();
@@ -443,8 +447,8 @@ function renderCoItems() {
 function coQty(i, delta) {
   if (!checkoutItems[i]) return;
   checkoutItems[i].qty = Math.max(1, (checkoutItems[i].qty||1) + delta);
-  const qEl = document.getElementById('cqv-'+i); if(qEl) qEl.textContent = checkoutItems[i].qty;
-  const pEl = document.getElementById('cip-'+i); if(pEl) pEl.textContent = fmtP(checkoutItems[i].price*checkoutItems[i].qty);
+  const qEl = document.getElementById(`cqv-${i}`); if(qEl) qEl.textContent = checkoutItems[i].qty;
+  const pEl = document.getElementById(`cip-${i}`); if(pEl) pEl.textContent = fmtP(checkoutItems[i].price*checkoutItems[i].qty);
   renderAsideItems();
   updateSummary();
 }
@@ -469,9 +473,10 @@ function setAddonCat(cat) { addonCat = cat; renderAddonTabs(); renderAddons(); }
 function renderAddons() {
   const all = getAllAddons();
   const list = addonCat==='all' ? all : all.filter(a=>a.category===addonCat);
+  
   document.getElementById('addon-grid').innerHTML = list.map(a => {
-    const sel = !!selectedAddons[a.id];
-    const qty = sel ? (selectedAddons[a.id].qty||1) : 1;
+    const sel = !!selectedAddons[String(a.id)];
+    const qty = sel ? (selectedAddons[String(a.id)].qty||1) : 1;
     const imgContent = a.img ? `<img src="${a.img}" style="width:28px;height:28px;object-fit:cover;border-radius:4px"/>` : imgPlaceholder(28);
     const qtyRow = sel ? `
       <div class="fqrow" onclick="event.stopPropagation()">
@@ -494,19 +499,22 @@ function renderAddons() {
 
 function toggleAddon(id) {
   const all = getAllAddons();
-  const a = all.find(x=>x.id===id);
+  const a = all.find(x=>String(x.id)===String(id));
   if (!a) return;
   if (a.stock === 0) return;
-  if (selectedAddons[id]) delete selectedAddons[id];
-  else selectedAddons[id] = { ...a, qty: 1 };
+  
+  const strId = String(id);
+  if (selectedAddons[strId]) delete selectedAddons[strId];
+  else selectedAddons[strId] = { ...a, qty: 1 };
   renderAddons();
   updateSummary();
 }
 
 function changeAddonQty(id, delta) {
-  if (!selectedAddons[id]) return;
-  selectedAddons[id].qty = Math.max(1, (selectedAddons[id].qty||1) + delta);
-  const el = document.getElementById('fqv-'+id); if(el) el.textContent = selectedAddons[id].qty;
+  const strId = String(id);
+  if (!selectedAddons[strId]) return;
+  selectedAddons[strId].qty = Math.max(1, (selectedAddons[strId].qty||1) + delta);
+  const el = document.getElementById('fqv-'+id); if(el) el.textContent = selectedAddons[strId].qty;
   updateSummary();
 }
 
@@ -555,7 +563,6 @@ function updateSummary() {
   document.getElementById('as-addons').textContent = fmtP(addonTotal);
   document.getElementById('as-svc').textContent = fmtP(svcFee);
   
-  // FIXED: Delivery text block calculates total shipping natively
   document.getElementById('as-del').textContent = mun ? (fees.total===0?'FREE':fmtP(fees.total)) : 'TBD';
   document.getElementById('as-total').textContent = fmtP(total);
 
@@ -566,17 +573,11 @@ function updateSummary() {
     document.getElementById('as-disc').textContent = '−'+fmtP(discount);
   } else discRow.style.display='none';
 
-  // FIXED: Disabled extra shipping line layout block explicitly
   const extraRow = document.getElementById('as-extra-row');
-  if (extraRow) {
-    extraRow.style.display = 'none';
-  }
+  if (extraRow) { extraRow.style.display = 'none'; }
 
-  // FIXED: Removed the dynamic lower promo green badge generator loop block
   const promoBadge = document.getElementById('promo-badge');
-  if (promoBadge) {
-    promoBadge.style.display = 'none';
-  }
+  if (promoBadge) { promoBadge.style.display = 'none'; }
 
   const notes = {
     1: `Pay ${fmtP(deposit)} now via GCash · ${fmtP(total-deposit)} balance on delivery`,
@@ -641,8 +642,7 @@ async function loadCheckoutProfile() {
   }
 }
 
-// ── 🛠️ RELATIONAL CARDS & INLINE CRUD ARCHITECTURE ──
-
+// ── RELATIONAL CARDS & INLINE CRUD ARCHITECTURE ──
 function renderCheckoutAddressOptions() {
   const container = document.getElementById('co-address-cards-grid');
   if (!container) return;
@@ -809,7 +809,6 @@ function initInlineNewAddressCard() {
       </div>
     </div>`;
   container.appendChild(div);
-  // FIXED: Disabled viewport scroll movements to completely stop jumps upon layout opening triggers
 }
 
 async function saveInlineNewAddress() {
@@ -865,7 +864,6 @@ async function saveInlineNewAddress() {
 
 function selectCheckoutAddressCard(id) {
   if (editingAddressId === id) return;
-  
   selectedAddressId = id;
   const address = checkoutAddresses.find(a => Number(a.address_id) === Number(id));
   if (address) fillCheckoutAddress(address);
@@ -878,12 +876,10 @@ function fillCheckoutAddress(a) {
   document.getElementById('co-barangay').value = a.barangay || '';
   
   const citySelect = document.getElementById('co-mun');
-  const city = (a.city || '').trim();
-  citySelect.value = city;
+  citySelect.value = (a.city || '').trim();
 
   document.getElementById('co-province').value = a.province || 'Albay';
   document.getElementById('co-zip').value = a.zip || '';
-
   updateShipping();
 }
 
@@ -911,7 +907,6 @@ function handleFile(inp) {
     try{sessionStorage.setItem('fc_pending_receipt',receiptBase64);sessionStorage.setItem('fc_pending_receipt_name',file.name);}catch(e){}
     toast('📸 Receipt uploaded!');
   };
-  reader.onerror=()=>toast('Could not read file.','err');
   reader.readAsDataURL(file);
 }
 function handleDrop(ev) {
@@ -925,39 +920,14 @@ function handleDrop(ev) {
   try {
     const saved = sessionStorage.getItem('fc_pending_receipt');
     const name = sessionStorage.getItem('fc_pending_receipt_name');
-    
     const ok = document.getElementById('up-ok');
     const prev = document.getElementById('receipt-preview');
-    const fileInput = document.getElementById('rf');
-
     if(saved && saved.startsWith('data:image')){
-      receiptBase64 = saved;
-      receiptFileName = name || 'receipt';
-      if(ok){
-        ok.style.display = 'block';
-        ok.textContent = '✓ Receipt ready: ' + receiptFileName;
-        ok.style.color = 'var(--g3)';
-      }
-      if(prev){
-        prev.src = saved;
-        prev.style.display = 'block';
-      }
-    } else {
-      receiptBase64 = null;
-      receiptFileName = '';
-      if(ok) {
-        ok.textContent = '';
-        ok.style.display = 'none';
-      }
-      if(prev) {
-        prev.src = '';
-        prev.style.display = 'none';
-      }
-      if(fileInput) {
-        fileInput.value = '';
-      }
+      receiptBase64 = saved; receiptFileName = name || 'receipt';
+      if(ok){ ok.style.display = 'block'; ok.textContent = '✓ Receipt ready: ' + receiptFileName; ok.style.color = 'var(--g3)'; }
+      if(prev){ prev.src = saved; prev.style.display = 'block'; }
     }
-  }catch(e){ console.error("Session image recovery failure:", e); }
+  }catch(e){}
 })();
 
 // ── PRE-ORDER CHECK (shows no-refund policy) ─────────────
@@ -970,30 +940,20 @@ function preOrderCheck() {
   const ph = document.getElementById('co-ph').value.trim();
   
   if (!fn || !ln || !street || !barangay) {
-    toast('✕ Missing order or delivery address details', 'warn');
-    return;
+    toast('✕ Missing order or delivery address details', 'warn'); return;
   }
-
   if (mun === "" || mun.includes("No saved address")) {
-    toast('✕ Please select a valid Municipality for shipping calculations.', 'warn');
-    return;
+    toast('✕ Please select a valid Municipality for shipping calculations.', 'warn'); return;
   }
-
   if (!/^09\d{9}$/.test(ph)) {
-    toast('Please enter a valid 11-digit PH mobile number.', 'err');
-    return;
+    toast('Please enter a valid 11-digit PH mobile number.', 'err'); return;
   }
-
   if (!receiptBase64) {
-    toast('Please upload your GCash payment receipt.', 'err');
-    return;
+    toast('Please upload your GCash payment receipt.', 'err'); return;
   }
-
   if (!checkoutItems.length) {
-    toast('No items in order.', 'err');
-    return;
+    toast('No items in order.', 'err'); return;
   }
-
   openModal('refund-modal');
 }
 
@@ -1015,12 +975,6 @@ async function placeOrder() {
   const ph=document.getElementById('co-ph').value.trim();
   const dt=document.getElementById('co-date').value;
 
-  if (!fn || !ln || !street || !barangay || mun === "" || mun.includes("No saved address")) {
-    toast('✕ Missing order or delivery address details', 'warn');
-    return;
-  }
-
-  const addr = [house, street, barangay, mun, province, zip].filter(Boolean).join(', ');
   const fees=FC.calcShipping(mun);
   const sub=checkoutItems.reduce((s,i)=>s+i.price*i.qty,0);
   const addonTotal=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
@@ -1046,11 +1000,10 @@ async function placeOrder() {
     payMethod:payLabels[payOpt], payStatus:'uploaded', status:'Pending',
     total, sub, addonTotal, discount, shippingFee:fees.total,
     promo:checkoutPromo?.name||null, receiptFile:receiptFileName,
-    phone:ph, address:addr, placedAt:new Date().toISOString(),
+    phone:ph, address:[house, street, barangay, mun, province, zip].filter(Boolean).join(', '), placedAt:new Date().toISOString(),
   };
 
   const user = FC.getUser();
-
   const orderForm = new FormData();
   orderForm.append('user_email', user.email);
   orderForm.append('order_name', checkoutItems.map(i => i.name).join(', '));
@@ -1063,12 +1016,16 @@ async function placeOrder() {
   orderForm.append('delivery_time', document.getElementById('co-time').value);
   orderForm.append('items', JSON.stringify(checkoutItems));
   orderForm.append('payment_type', payLabels[payOpt]);
-  orderForm.append('reference_number', document.getElementById('gcash-ref')?.value.trim() || '');
   orderForm.append('img_receipt', receiptFileName || '');
   orderForm.append('receipt_base64', receiptBase64 || '');
+  
+  // FIXED: Explicitly removed the gcash-ref field parsing value logic block to match layout updates
+  
+  const targetPromoId = checkoutPromo ? (checkoutPromo.promo_id || checkoutPromo.id || '') : '';
+  orderForm.append('promo_id', targetPromoId);
+
   const validAddressId = (selectedAddressId && !String(selectedAddressId).includes("No saved address")) ? selectedAddressId : '';
   orderForm.append('address_id', validAddressId);
-  
   orderForm.append('house_no', house);
   orderForm.append('street', street);
   orderForm.append('barangay', barangay);
@@ -1078,22 +1035,20 @@ async function placeOrder() {
   orderForm.append('contact', ph);
 
   try {
-    const orderRes = await fetch('place_order.php', {
-      method: 'POST',
-      body: orderForm
-    });
-
+    const orderRes = await fetch('place_order.php', { method: 'POST', body: orderForm });
     const rawText = await orderRes.text();
     console.log('PLACE ORDER RAW RESPONSE:', rawText);
 
     let orderData;
-
     try {
       orderData = JSON.parse(rawText);
     } catch (e) {
-      toast('Server returned invalid response. Check console.', 'err');
-      console.error('Invalid JSON from place_order.php:', rawText);
-      return;
+      toast('Server returned invalid response. Check console.', 'err'); return;
+    }
+
+    if (!orderData.success) {
+      alert("✕ SQL TRANSACTION FAILED:\n" + orderData.message);
+      toast(orderData.message, 'err'); return; 
     }
 
     newOrder.dbOrderId = orderData.order_id;
@@ -1102,66 +1057,27 @@ async function placeOrder() {
     stockForm.append('items', JSON.stringify(checkoutItems));
     stockForm.append('addons', JSON.stringify(Object.values(selectedAddons)));
 
-    const stockRes = await fetch('decrement_stock.php', {
-      method: 'POST',
-      body: stockForm
-    });
-
+    const stockRes = await fetch('decrement_stock.php', { method: 'POST', body: stockForm });
     const stockData = await stockRes.json();
 
     if (!stockData.success) {
-      toast(stockData.message || 'Unable to update stock.', 'err');
-      return;
+      alert("✕ STOCK UPDATE FAILED:\n" + stockData.message);
+      toast(stockData.message || 'Unable to update stock.', 'err'); return;
     }
 
     try{ localStorage.setItem('fc_receipt_'+oid, receiptBase64); } catch(e){}
 
-    const cartItemIds = checkoutItems
-      .map(i => i.cart_item_id)
-      .filter(id => id !== undefined && id !== null && id !== '');
-
+    const cartItemIds = checkoutItems.map(i => i.cart_item_id).filter(id => id !== undefined && id !== null && id !== '');
     if (cartItemIds.length) {
-      const removeRes = await fetch('cart_actions.php', {
+      await fetch('cart_actions.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'remove_checked',
-          cart_item_ids: cartItemIds
-        })
+        body: JSON.stringify({ action: 'remove_checked', cart_item_ids: cartItemIds })
       });
-
-      const removeData = await removeRes.json();
-
-      if (!removeData.success) {
-        toast(removeData.error || 'Order placed, but cart was not cleared.', 'warn');
-      }
     }
 
-    const orders=FC.getOrders();
-    orders.unshift(newOrder);
-    FC.saveOrders(orders);
-
+    const orders=FC.getOrders(); orders.unshift(newOrder); FC.saveOrders(orders);
     FC.saveCart(FC.getCart().filter(c=>!c.checked));
-
-    receiptBase64 = null;
-    receiptFileName = '';
-    
-    const receiptPreviewEl = document.getElementById('receipt-preview');
-    if (receiptPreviewEl) {
-      receiptPreviewEl.src = '';
-      receiptPreviewEl.style.display = 'none';
-    }
-    
-    const uploadOkEl = document.getElementById('up-ok');
-    if (uploadOkEl) {
-      uploadOkEl.textContent = '';
-      uploadOkEl.style.display = 'none';
-    }
-    
-    const fileInputEl = document.getElementById('rf');
-    if (fileInputEl) {
-      fileInputEl.value = '';
-    }
 
     sessionStorage.removeItem('fc_checkout_items');
     sessionStorage.removeItem('fc_checkout_promo');
@@ -1172,8 +1088,7 @@ async function placeOrder() {
     setTimeout(()=>location.href='orders.html', 1500);
     
   } catch(err) {
-    console.error(err);
-    toast('✕ Connection to server failed.', 'err');
+    console.error(err); toast('✕ Connection to server failed.', 'err');
   }
 }
 
@@ -1182,13 +1097,7 @@ const minDate=new Date(); minDate.setDate(minDate.getDate()+2);
 document.getElementById('co-date').min=minDate.toISOString().split('T')[0];
 document.getElementById('co-date').value=minDate.toISOString().split('T')[0];
 
-renderCoItems();
-renderAddonTabs();
-loadCheckoutAddons();
-selPay(1);
-updateSummary();
-loadCheckoutProfile();
-
+renderCoItems(); renderAddonTabs(); loadCheckoutAddons(); selPay(1); updateSummary(); loadCheckoutProfile();
 if(checkoutPromo) toast('🏷️ Promo applied: '+checkoutPromo.name);
 </script>
 </body>
