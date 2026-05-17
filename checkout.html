@@ -59,6 +59,17 @@
 .as-pay-note{font-size:12px;color:var(--g2);padding:8px;background:var(--g9);border-radius:var(--r);margin-top:8px;line-height:1.6}
 .promo-badge{background:var(--g9);border:1px solid var(--g6);border-radius:var(--r);padding:7px 10px;font-size:12px;color:var(--g2);margin-top:8px;display:none}
 @media(max-width:760px){.co-layout{grid-template-columns:1fr}.aside-sum{position:static}}
+
+.addr-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.addr-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
 </style>
 </head>
 <body>
@@ -104,9 +115,25 @@ let selectedAddressId = null;
         <div class="addr-item-detail" id="co-address-text">No address selected.</div>
       </div>
 
-      <button class="btn btn-ghost" id="co-edit-address-btn" style="width:100%;justify-content:center;margin-bottom:12px" onclick="toggleCheckoutAddressEdit()">
+      <div class="addr-actions">
+      <button class="btn btn-ghost" id="co-edit-address-btn" onclick="editCheckoutAddress()">
         Edit Address
       </button>
+
+      <button class="btn btn-ghost" id="co-add-address-btn" onclick="addCheckoutAddress()">
+        + Add Address
+      </button>
+    </div>
+
+    <div class="addr-actions" id="co-save-actions" style="display:none">
+      <button class="btn btn-ghost" onclick="cancelCheckoutAddressEdit()">
+        Cancel
+      </button>
+
+      <button class="btn btn-green" onclick="saveCheckoutAddress()">
+        Save Address
+      </button>
+    </div>
 
       <div id="co-address-fields" style="display:none">
         <div class="fg2">
@@ -544,6 +571,97 @@ function updateGiftMsgPreview() {
       row.style.display = 'none';
     }
   }
+}
+
+let checkoutAddressMode = null; // edit or add
+
+function editCheckoutAddress() {
+  checkoutAddressMode = 'edit';
+
+  document.getElementById('co-address-fields').style.display = 'block';
+  document.getElementById('co-edit-address-btn').parentElement.style.display = 'none';
+  document.getElementById('co-save-actions').style.display = 'flex';
+}
+
+function addCheckoutAddress() {
+  checkoutAddressMode = 'add';
+
+  selectedAddressId = null;
+
+  document.getElementById('co-address-fields').style.display = 'block';
+  document.getElementById('co-edit-address-btn').parentElement.style.display = 'none';
+  document.getElementById('co-save-actions').style.display = 'flex';
+
+  document.getElementById('co-fn').value = '';
+  document.getElementById('co-ln').value = '';
+  document.getElementById('co-house').value = '';
+  document.getElementById('co-street').value = '';
+  document.getElementById('co-barangay').value = '';
+  document.getElementById('co-mun').value = '';
+  document.getElementById('co-province').value = '';
+  document.getElementById('co-zip').value = '';
+  document.getElementById('co-ph').value = '';
+}
+
+function cancelCheckoutAddressEdit() {
+  checkoutAddressMode = null;
+
+  document.getElementById('co-address-fields').style.display = 'none';
+  document.getElementById('co-edit-address-btn').parentElement.style.display = 'flex';
+  document.getElementById('co-save-actions').style.display = 'none';
+
+  selectCheckoutAddress();
+}
+
+async function saveCheckoutAddress() {
+  const payload = {
+    address_id: checkoutAddressMode === 'edit' ? selectedAddressId : '',
+    first_name: document.getElementById('co-fn').value.trim(),
+    last_name: document.getElementById('co-ln').value.trim(),
+    house_no: document.getElementById('co-house').value.trim(),
+    street: document.getElementById('co-street').value.trim(),
+    barangay: document.getElementById('co-barangay').value.trim(),
+    city: document.getElementById('co-mun').value.trim(),
+    province: document.getElementById('co-province').value.trim(),
+    zip: document.getElementById('co-zip').value.trim(),
+    contact: document.getElementById('co-ph').value.trim(),
+    mode: checkoutAddressMode
+  };
+
+  if (!payload.first_name || !payload.last_name || !payload.house_no || !payload.street || !payload.barangay || !payload.city || !payload.province || !payload.zip || !payload.contact) {
+    toast('Please complete all address fields.', 'warn');
+    return;
+  }
+
+  if (!/^09\d{9}$/.test(payload.contact)) {
+    toast('Please enter a valid 11-digit PH mobile number.', 'err');
+    return;
+  }
+
+  const res = await fetch('save_checkout_address.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    toast(data.message || 'Unable to save address.', 'err');
+    return;
+  }
+
+  toast('Address saved.', 'success');
+
+  checkoutAddressMode = null;
+  selectedAddressId = data.address_id || selectedAddressId;
+
+  document.getElementById('co-address-fields').style.display = 'none';
+  document.getElementById('co-edit-address-btn').parentElement.style.display = 'flex';
+  document.getElementById('co-save-actions').style.display = 'none';
+
+  await loadCheckoutProfile();
+  updateSummary();
 }
 
 async function loadCheckoutProfile() {
