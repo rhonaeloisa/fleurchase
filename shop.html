@@ -511,6 +511,26 @@ async function addProductToDatabaseCart(bouquetId, unitPrice) {
     toast('✕ Connection to server failed.', 'warn');
   }
 }
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+loadCartCount();
+
 </script>
 </body>
 </html>
