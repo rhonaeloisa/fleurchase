@@ -181,6 +181,71 @@ a.btn-green:focus {
 .bc-count-label{font-size:12px;color:var(--muted)}
 .bc-empty-card{display:none;grid-column:1/-1;text-align:center;padding:3rem 2rem}
 .bc-empty-list{display:none}
+
+#saleModalOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+/* Modal */
+#saleModal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.modal-content input {
+  width: 80%;
+  padding: 8px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.modal-actions {
+  margin-top: 15px;
+}
+
+.btn-apply {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  margin-right: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-apply:hover { background: #218838; }
+.btn-cancel:hover { background: #c82333; }
 </style>
 </head>
 <body>
@@ -335,9 +400,10 @@ a.btn-green:focus {
                 type="button"
                 title="Mark as sale"
                 aria-label="Mark as sale"
-                onclick="markAsSale('<?php echo $id; ?>')">
+                onclick="openSaleModal('<?php echo $id; ?>')">
           <i class="ti ti-tag" aria-hidden="true"></i>
         </button>
+        
 
         <button class="bc-act edit"
         type="button"
@@ -480,7 +546,7 @@ a.btn-green:focus {
             <button class="tbl-act view" aria-label="View inventory" onclick="openInventoryProd('<?php echo $id; ?>')">
               <i class="ti ti-box" aria-hidden="true"></i> Inventory
             </button>
-            <button class="tbl-act sale" aria-label="Mark as sale" onclick="markAsSale('<?php echo $id; ?>')">
+            <button class="tbl-act sale" aria-label="Mark as sale" onclick="openSaleModal('<?php echo $id; ?>')">
               <i class="ti ti-tag" aria-hidden="true"></i> Sale
             </button>
             <button class="tbl-act edit" aria-label="Edit" onclick="openEditProd('<?php echo $id; ?>')">
@@ -542,6 +608,21 @@ a.btn-green:focus {
     </div>
   </div>
 </div>
+<!-- Modal Overlay -->
+<div id="saleModalOverlay" style="display:none;"></div>
+
+<!-- Modal -->
+<div id="saleModal" style="display:none;">
+  <div class="modal-content">
+    <h3>Apply Discount</h3>
+    <label for="discount">Enter discount % (10–70):</label>
+    <input type="number" id="discount" min="10" max="70" step="1">
+    <div class="modal-actions">
+      <button class="btn-apply" onclick="applySale()">Apply</button>
+      <button class="btn-cancel" onclick="closeSaleModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <div id="fc-toast" class="toast"></div>
 
@@ -560,6 +641,37 @@ let deletingId = null;
 let deleteType = null;
 let bcActiveFilter = 'all';
 let bcCurrentView  = 'cards';
+let currentBouquetId = null;
+
+function openSaleModal(id) {
+  currentBouquetId = id;
+  document.getElementById('saleModal').style.display = 'block';
+  document.getElementById('saleModalOverlay').style.display = 'block';
+}
+
+function closeSaleModal() {
+  document.getElementById('saleModal').style.display = 'none';
+  document.getElementById('saleModalOverlay').style.display = 'none';
+  document.getElementById('discount').value = '';
+  currentBouquetId = null;
+}
+
+function applySale() {
+  const discount = parseInt(document.getElementById('discount').value, 10);
+  if (isNaN(discount) || discount < 10 || discount > 70) {
+    alert("Discount must be between 10% and 70%.");
+    return;
+  }
+
+  fetch('db/market_sale.php?id=' + encodeURIComponent(currentBouquetId) + '&discount=' + discount)
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { 
+        toast('Marked as sale!'); location.reload(); }
+      else toast(d.error || 'Something went wrong.', 'err');
+    })
+    .catch(() => alert('Could not reach server.'));
+}
 
 function setView(v, btn) {
   bcCurrentView = v;
