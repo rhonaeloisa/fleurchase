@@ -1,3 +1,5 @@
+cart.php
+
 <?php
 // 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
 if (session_status() === PHP_SESSION_NONE) {
