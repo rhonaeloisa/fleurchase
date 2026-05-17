@@ -652,7 +652,7 @@
       <div class="sum-row"><span class="sum-k">Service fee</span><span class="sum-v" id="s-svc">₱50</span></div>
       <div class="sum-total"><span>Total</span><span id="s-total">₱50</span></div>
       <div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-green" style="justify-content:center;padding:12px" onclick="addCustomToCart()">Add to Cart</button>
+        <button class="btn btn-green" style="justify-content:center;padding:12px" onclick="addCustomToCart(false)">Add to Cart</button>
         <button class="btn btn-pink" style="justify-content:center;padding:12px" onclick="addCustomToCart(true)">Buy Now</button>
       </div>
       <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">Pre-order · Min. 48 hrs advance<br>Select at least the minimum stems to proceed</p>
@@ -675,12 +675,15 @@ async function loadCustomProducts(){
     const res = await fetch('get_product.php');
     const data = await res.json();
 
-    if(!data.success){
-      toast(data.message || 'Unable to load products', 'error');
-      return;
-    }
+    DB_CUSTOM_PRODUCTS = data.products.map(p => ({
+      id: p.id ?? p.product_id,
+      name: p.name ?? p.product_name,
+      price: Number(p.price || 0),
+      type: p.type ?? p.product_type,
+      img: p.img ?? (p.product_image ? 'images/' + p.product_image : 'images/default.png'),
+      stock: Number(p.stock || 0)
+      }));
 
-    DB_CUSTOM_PRODUCTS = data.products;
     renderSizes();
     renderFlowers();
     renderFillers();
@@ -688,7 +691,7 @@ async function loadCustomProducts(){
     renderAddons();
     renderColors();
     updateSummary();
-  }catch(err){
+  } catch(err) {
     console.error('Error loading products:', err);
     toast('Cannot load custom products from database', 'error');
   }
@@ -758,11 +761,11 @@ function renderFlowers(){
     const remDis = cnt === 0 ? 'disabled' : '';
 
     // Fix Image Path
-    const imgPath = f.img || 'images/default.jpg';
+    const imgPath = f.img || 'images/default.png';
 
     return `
       <div class="fo ${cnt > 0 ? 'sel' : ''} ${atMax && cnt === 0 ? 'maxed-no-sel' : ''}">
-        <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
+        <img src="${imgPath}" onerror="this.src='images/default.png'"/>
         <div class="fo-info"> 
           <strong>${f.name}</strong>
           <small>₱${f.price}/stem</small>
@@ -799,11 +802,11 @@ function renderFillers(){
     const qty = fillerCounts[f.id] || 0;
     
     // Fix Image Path logic to match flowers
-    const imgPath = f.img || 'images/default.jpg';
+    const imgPath = f.img || 'images/default.png';
 
     return `
     <div class="fo ${qty > 0 ? 'sel' : ''}">
-      <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
+      <img src="${imgPath}" onerror="this.src='images/default.png'"/>
       <div class="fo-info"> 
         <strong class="filler-name">${f.name}</strong>
         <small class="filler-price">₱${f.price}/stem</small>
@@ -833,59 +836,77 @@ function renderAddonCats(){
 }
 function setAddonCat(cat){activeCat=cat;renderAddonCats();renderAddons();}
 
-function renderAddons(){
+function renderAddons() {
   const storeAddons = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'addon');
-  const list = activeCat === 'all' ? storeAddons : storeAddons.filter(a => a.category === activeCat);
-  
+  const list = activeCat === 'all'
+    ? storeAddons
+    : storeAddons.filter(a => a.category === activeCat);
+
   document.getElementById('addons-grid').innerHTML = list.map(a => {
     const sel = !!selectedAddons[a.id];
     const qty = sel ? (selectedAddons[a.id].qty || 1) : 0;
-    
-    // Fix Image Path for Extras
-    const imgPath = a.img || 'images/default.jpg';
+    const imgPath = a.img || 'images/default.png';
 
     return `
-    <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
-      <img src="${imgPath}" onerror="this.src='images/default.jpg'"/>
-      <div class="fo-info"> 
-        <strong>${a.name}</strong>
-        <small>₱${a.price}</small>
-        <div class="fo-ctrl">
-          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeAddonQty('${a.id}',-1)">−</button>
-          <span class="fo-qty">${qty}</span>
-          <button class="fo-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
+      <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
+        <img src="${imgPath}" onerror="this.src='images/default.png'"/>
+        <div class="fo-info"> 
+          <strong>${a.name}</strong>
+          <small>₱${a.price}</small>
+          <div class="fo-ctrl">
+            <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''}
+              onclick="event.stopPropagation(); changeAddonQty('${a.id}', -1)">
+              −
+            </button>
+            <span class="fo-qty">${qty}</span>
+            <button class="fo-btn"
+              onclick="event.stopPropagation(); changeAddonQty('${a.id}', 1)">
+              +
+            </button>
+          </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
   }).join('') || `<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
 }
 
 
-function toggleAddon(id){
-  const a = DB_CUSTOM_PRODUCTS.find(x => x.id === id && x.type === 'addon');
-  if(!a) return;
-  
-  if(selectedAddons[id]) delete selectedAddons[id];
-  else selectedAddons[id] = {...a, qty: 1};
-  
+function toggleAddon(id) {
+  const a = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'addon'
+  );
+
+  if (!a) return;
+
+  if (selectedAddons[id]) {
+    delete selectedAddons[id];
+  } else {
+    selectedAddons[id] = { ...a, qty: 1 };
+  }
+
   renderAddons();
   updateSummary();
 }
 
 function changeAddonQty(id, delta) {
-  if (!selectedAddons[id]) return;
-  
-  // Change Math.max(1, ...) to Math.max(0, ...)
-  const newQty = Math.max(0, (selectedAddons[id].qty || 1) + delta);
-  
-  if (newQty === 0) {
-    // If it hits 0, remove it from the selected list
-    delete selectedAddons[id];
+  const addon = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'addon'
+  );
+
+  if (!addon) return;
+
+  if (!selectedAddons[id]) {
+    if (delta < 1) return;
+    selectedAddons[id] = { ...addon, qty: 1 };
   } else {
-    // Otherwise, just update the number
-    selectedAddons[id].qty = newQty;
+    const newQty = Math.max(0, (selectedAddons[id].qty || 1) + delta);
+
+    if (newQty === 0) {
+      delete selectedAddons[id];
+    } else {
+      selectedAddons[id].qty = newQty;
+    }
   }
-  
+
   renderAddons();
   updateSummary();
 }
@@ -911,13 +932,27 @@ function pickColor(i){
 
 // ── SUMMARY ────────────────────────────────────────────────
 function updateSummary(){
-  const products=FC.getProducts();
+  const products = DB_CUSTOM_PRODUCTS;
   const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
   const used=sel.reduce((s,[,v])=>s+v,0);
 
   // Pricing: all dynamic
-  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
-  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
+  const flwCost = Object.entries(flowerCounts).reduce((s, [id, cnt]) => {
+  const p = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'flower'
+  );
+
+  return s + (p ? Number(p.price) * Number(cnt) : 0);
+}, 0);
+
+  const fillerCost = Object.entries(fillerCounts).reduce((s, [id, cnt]) => {
+  const p = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'filler'
+  );
+
+  return s + (p ? Number(p.price) * Number(cnt) : 0);
+}, 0);
+
   const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
   const svcFee=FC.SERVICE_FEE;
   const total=flwCost+fillerCost+extrasCost+svcFee;
@@ -946,17 +981,38 @@ function updateSummary(){
   document.getElementById('s-flw').textContent=fmtP(flwCost);
   document.getElementById('s-svc').textContent=fmtP(svcFee);
   document.getElementById('s-total').textContent=fmtP(total);
-  document.getElementById('s-flowers').textContent=sel.length
-    ?sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ')
-    :'None selected';
+  document.getElementById('s-flowers').textContent = sel.length
+  ? sel.map(([id, cnt]) => {
+      const p = DB_CUSTOM_PRODUCTS.find(x =>
+        String(x.id) === String(id) && x.type === 'flower'
+      );
+
+      return (p ? p.name : 'Unknown flower') + (cnt > 1 ? ' ×' + cnt : '');
+    }).join(', ')
+  : 'None selected';
 
   // Fillers row
-  const fRow=document.getElementById('row-fillers');
-  if(fillerCost>0){
-    fRow.style.display='flex';
-    const names=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,q])=>{const f=FILLERS.find(x=>x.id===id);return(f?.name||id)+(q>1?' ×'+q:'');}).join(', ');
-    document.getElementById('s-fillers').textContent=fmtP(fillerCost)+(names?' ('+names+')':'');
-  } else fRow.style.display='none';
+  const fRow = document.getElementById('row-fillers');
+
+  if (fillerCost > 0) {
+    fRow.style.display = 'flex';
+
+    const names = Object.entries(fillerCounts)
+      .filter(([, q]) => q > 0)
+      .map(([id, q]) => {
+        const f = DB_CUSTOM_PRODUCTS.find(x =>
+          String(x.id) === String(id) && x.type === 'filler'
+        );
+
+        return (f ? f.name : 'Unknown filler') + (q > 1 ? ' ×' + q : '');
+      })
+      .join(', ');
+
+    document.getElementById('s-fillers').textContent =
+      fmtP(fillerCost) + (names ? ' (' + names + ')' : '');
+  } else {
+    fRow.style.display = 'none';
+  }
 
   // Extras row
   const eRow=document.getElementById('row-extras');
@@ -982,69 +1038,133 @@ function updateSummary(){
 }
 
 // ── ADD TO CART ────────────────────────────────────────────
-function addCustomToCart(buyNow=false){
-  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
-  // Validate against min stems
-  if(used<selSize.minStems){
-    toast('Please add at least '+selSize.minStems+' stems for a '+selSize.label+' bouquet (currently '+used+')','warn');
-    return;
-  }
-  // Validate against max stems (shouldn't be possible via UI, but safety check)
-  if(used>selSize.maxStems){
-    toast('Too many stems. '+selSize.label+' bouquet allows max '+selSize.maxStems+' stems','warn');
-    return;
-  }
+async function addCustomToCart(buyNow = false) {
+    const used = Object.values(flowerCounts).reduce((s, v) => s + v, 0);
 
-  const products=FC.getProducts();
-  const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
-  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
-  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
-  const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
-  const svcFee=FC.SERVICE_FEE;
-  const total=flwCost+fillerCost+extrasCost+svcFee;
+    if (used < selSize.minStems) {
+        toast(`Please add at least ${selSize.minStems} stems`, 'warn');
+        return;
+    }
+    if (used > selSize.maxStems) {
+        toast(`Maximum ${selSize.maxStems} stems allowed`, 'warn');
+        return;
+    }
 
-  const flowerList=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ');
+    // ====================== FIXED CALCULATION ======================
+    let flwCost = 0;
+    let flowerDescParts = [];
 
-  // Combine fillers + store add-ons into addonDetails
-  const fillerDetails=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,qty])=>{
-    const f=FILLERS.find(x=>x.id===id);
-    return {addonId:f.id, name:f.name, img:null, price:f.price, qty};
-  });
-  const addonDetails=[
-    ...fillerDetails,
-    ...Object.values(selectedAddons).map(a=>({addonId:a.id,name:a.name,img:a.img||null,price:a.price,qty:a.qty||1}))
-  ];
+    Object.entries(flowerCounts).forEach(([id, cnt]) => {
+        const product = DB_CUSTOM_PRODUCTS.find(p =>
+          String(p.id) === String(id) && p.type === 'flower'
+        );
+        
+        if (product) {
+            flwCost += Number(product.price) * Number(cnt);
+            flowerDescParts.push(`${product.name} ×${cnt}`);
+        } else {
+            flowerDescParts.push(`Unknown (${id}) ×${cnt}`);
+        }
+    });
 
-  // Build flower description for admin visibility
-  const flowerDesc=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+' ×'+cnt;}).join(', ');
+      const fillerCost = Object.entries(fillerCounts).reduce((sum, [id, qty]) => {
+        const f = DB_CUSTOM_PRODUCTS.find(x =>
+          String(x.id) === String(id) && x.type === 'filler'
+        );
 
-  const item={
-    cartId:'custom-'+Date.now(),
-    productId:'custom-'+selSize.label.toLowerCase(),
-    name:'Custom Bouquet ('+selSize.label+')',
-    icon:null, img:null,
-    price:total, qty:1, type:'bouquet',
-    sub:selSize.label+' · '+used+' stems · '+selColor.n+' wrapping · svc fee ₱'+svcFee,
-    checked:true,
-    flowers:flowerDesc,  // detailed flower list for admin
-    flowerDesc,           // explicit for order detail display
-    addonDetails,
-    note:document.getElementById('bouquet-note').value,
-    isCustom:true,
-    stems:used,
-    svcFee,
-  };
+        return sum + (f ? Number(f.price) * Number(qty) : 0);
+      }, 0);
 
-  const cart=FC.getCart(); cart.push(item); FC.saveCart(cart); updateCartBadge();
-  toast('Custom bouquet added to cart!');
-  if(buyNow){
-    sessionStorage.setItem('fc_checkout_items',JSON.stringify([item]));
-    sessionStorage.setItem('fc_checkout_promo','');
-    location.href='checkout.html';
+    const extrasCost = Object.values(selectedAddons).reduce((sum, a) => {
+        return sum + Number(a.price || 0) * Number(a.qty || 1);
+    }, 0);
+
+    const svcFee = Number(FC.SERVICE_FEE) || 50;
+    const total = flwCost + fillerCost + extrasCost + svcFee;
+
+    const flowerDesc = flowerDescParts.join(', ');
+
+    const customData = {
+        size: selSize.label,
+        stems: used,
+        color: selColor.n,
+        flowers: flowerDesc,
+        flowerCounts: flowerCounts,
+        fillerCounts: fillerCounts,
+        selectedAddons: selectedAddons,
+        note: document.getElementById('bouquet-note')?.value || '',
+        flwCost: flwCost,
+        total: total
+    };
+
+    const payload = {
+        unit_price: total,
+        is_custom: 1,
+        custom_data: customData
+    };
+
+    console.log("✅ FINAL PAYLOAD:", { total, flwCost, flowerDesc, payload });
+
+    try {
+        const response = await fetch('add_to_cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+        console.log("Response:", text);
+        const result = JSON.parse(text);
+
+        if (result.success) {
+    toast('Custom bouquet added successfully!', 'success');
+
+    if (typeof result.cart_count !== 'undefined') {
+        document.querySelectorAll('.cart-count').forEach(el => {
+            el.textContent = result.cart_count;
+        });
+
+        localStorage.setItem('fc_cart_count', String(result.cart_count));
+    }
+
+    if (buyNow) {
+        setTimeout(() => {
+            location.href = 'checkout.html';
+        }, 700);
+    } else {
+        setTimeout(() => {
+            location.reload();
+        }, 700);
+    }
+    } else {
+        toast(result.error || 'Failed to add to cart', 'error');
+    }
+        
+    } catch (err) {
+        console.error(err);
+        toast('Error - Check console (F12)', 'error');
+    }
+}
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
   }
 }
 
-loadCustomProducts()
+loadCustomProducts();
+loadCartCount();
 </script>
 </body>
 </html>
