@@ -107,13 +107,20 @@ try {
   $bouquet_id = mysqli_insert_id($conn);
   mysqli_stmt_close($stmt);
 
-  /* 2. Insert each product into bouquet_product */
+  /* 2. Insert each product into bouquet_product + deduct stock */
   if (!empty($products)) {
     $sql2 = "INSERT INTO bouquet_product
                (bouquet_id, product_id, quantity, is_addons)
              VALUES (?, ?, ?, ?)";
     $stmt2 = mysqli_prepare($conn, $sql2);
     if (!$stmt2) throw new Exception('Prepare failed (bouquet_product): ' . mysqli_error($conn));
+
+    // Deduct stock safely — WHERE stock >= ? prevents going negative
+    $sql3 = "UPDATE product
+             SET stock = stock - ?
+             WHERE product_id = ? AND stock >= ?";
+    $stmt3 = mysqli_prepare($conn, $sql3);
+    if (!$stmt3) throw new Exception('Prepare failed (stock deduction): ' . mysqli_error($conn));
 
     foreach ($products as $p) {
       $pid      = intval($p['product_id']);
@@ -122,10 +129,24 @@ try {
 
       if ($pid <= 0 || $qty <= 0) continue; // skip bad rows
 
+      $total_deduct = $qty * $stock;
+      
+      /* Insert bouquet_product row */
       mysqli_stmt_bind_param($stmt2, 'iiii', $bouquet_id, $pid, $qty, $is_addon);
       if (!mysqli_stmt_execute($stmt2)) throw new Exception('Insert bouquet_product failed: ' . mysqli_stmt_error($stmt2));
+
+      /* Deduct stock from product */
+      mysqli_stmt_bind_param($stmt3, 'iii', $total_deduct, $pid, $total_deduct);
+      if (!mysqli_stmt_execute($stmt3)) throw new Exception('Stock deduction failed: ' . mysqli_stmt_error($stmt3));
+
+      /* If no row was updated, the product had insufficient stock */
+      if (mysqli_stmt_affected_rows($stmt3) === 0) {
+        throw new Exception("Insufficient stock for product ID $pid. Please check available quantities.");
+      }
     }
+
     mysqli_stmt_close($stmt2);
+    mysqli_stmt_close($stmt3);
   }
 
   mysqli_commit($conn);
