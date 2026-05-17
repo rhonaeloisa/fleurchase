@@ -315,7 +315,13 @@ async function loadProductsFromDB() {
 
 function renderProducts(cat){
   const prods = DB_PRODUCTS;
-  const list=cat==='all'?prods:prods.filter(p=>p.category===cat);
+  const list = (cat === 'all' ? prods : prods.filter(p => p.category === cat))
+  .slice()
+  .sort((a, b) => {
+    const aOut = Number(a.stock || 0) <= 0 ? 1 : 0;
+    const bOut = Number(b.stock || 0) <= 0 ? 1 : 0;
+    return aOut - bOut;
+  });
   document.getElementById('count-lbl').textContent=list.length+' product'+(list.length!==1?'s':'');
   const g=document.getElementById('shop-grid');
   if(!list.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No products found</h3><p>Check back soon!</p></div>`;return;}
