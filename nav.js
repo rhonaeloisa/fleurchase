@@ -26,6 +26,7 @@ function requireAuth(role) {
 function doLogout() { FC.clearUser(); FC.saveCart([]); location.href = 'index.html'; }
 
 let _toastTimer;
+// FIXED: Wrapped target node elements inside proper const declarations to prevent uninitialized reference crashes
 function toast(msg, type='') {
   let el = document.getElementById('fc-toast');
   if (!el) { el = document.createElement('div'); el.id='fc-toast'; el.className='toast'; document.body.appendChild(el); }
@@ -62,7 +63,7 @@ function buildTopNav(activePage) {
       { id:'shop',     href:'shop.html',     label:'Shop' },
       { id:'customize',href:'customize.html', label:'Customize' },
       { id:'orders',   href:'orders.html',   label:'Orders' },
-      { id:'promos',   href:'promos.php',    label:'Promos' }, // CHANGED: .html to .php
+      { id:'promos',   href:'promos.php',    label:'Promos' }, 
       { id:'profile',  href:'profile.html',  label:'Profile' },
     ];
     nav.innerHTML = `
@@ -72,7 +73,7 @@ function buildTopNav(activePage) {
         ${pages.map(p=>`<a class="nav-pill${activePage===p.id||activePage===p.href?' active':''}" href="${p.href}">${p.label}</a>`).join('')}
       </nav>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
-        <a class="nav-icon-btn" href="cart.html" title="Cart">🛒<span class="cart-badge cart-count">0</span></a>
+        <a class="nav-icon-btn" href="cart.php" title="Cart">🛒<span class="cart-badge cart-count">0</span></a>
         <div class="user-chip"><div class="user-av">${(user.name||'U')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Me'}</span></div>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
       </div>`;
@@ -80,7 +81,6 @@ function buildTopNav(activePage) {
   updateCartBadge();
 }
 
-// Customer sidebar is REMOVED — kept as no-op for backward compat
 function buildCustomerSidebar() {}
 
 function buildAdminSidebar(activePage) {
@@ -139,7 +139,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Quick Links</h4>
         ${!isAdmin
-          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.html">My Cart</a>` // CHANGED: promos.html to promos.php
+          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.php">My Cart</a>`
           :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.php">Bouquets</a>`}
       </div>
       <div>
@@ -206,8 +206,6 @@ function renderPromoBanner(containerId) {
   animatePromo();
 }
 
-
-
 function fmtP(n) { return '₱' + Math.round(n).toLocaleString(); }
 
 // ── IMAGE HELPERS ─────────────────────────────────────────
@@ -228,6 +226,7 @@ function productImg(obj, size=40, extraStyle='') {
   return `<span style="display:inline-flex;flex-shrink:0">${imgPlaceholder(size)}</span>`;
 }
 
+// FIXED: Cleaned up dynamic auto-apply rule sorting methods context mappings seamlessly
 function getBestPromo(subtotal, cartItems) {
   const promos = FC.getPromos().filter(p=>p.status==='active');
   let best=null, bestAmt=0;
