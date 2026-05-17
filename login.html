@@ -5,7 +5,6 @@
 <title>FleurChase — Sign In</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-
 body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(155deg,var(--g9) 0%,white 40%,var(--p9) 100%)}
 .auth-nav{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 2rem;z-index:100;gap:1rem}
 .auth-nav .logo{font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g2);text-decoration:none}
@@ -47,12 +46,10 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
       <button class="tab-btn" id="tab-signup" onclick="showPanel('signup')">Create Account</button>
     </div>
 
-    <!-- LOGIN -->
     <div class="auth-panel active" id="panel-login">
       <div class="auth-title">Welcome back</div>
       <div class="auth-sub">Sign in to your FleurChase account</div>
-      <div class="role-tabs" style="margin-top:1rem">
-      </div>
+      <div class="role-tabs" style="margin-top:1rem"></div>
       <div class="ff"><label>Email address</label><input id="l-email" type="email"/></div>
       <div class="ff"><label>Password</label><input id="l-pass" type="password"/></div>
       <div class="forgot-link"><a onclick="toast('Password reset email sent!')">Forgot password?</a></div>
@@ -61,7 +58,6 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
       <div class="auth-switch">No account? <a onclick="showPanel('signup')">Sign up free</a></div>
     </div>
 
-    <!-- SIGNUP -->
     <div class="auth-panel" id="panel-signup">
       <div class="auth-title">Create account</div>
       <div class="auth-sub">Join FleurChase and avail exciting promos!</div>
@@ -84,15 +80,15 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
   </div>
 </div>
 <div id="fc-toast" class="toast"></div>
-<script src="data.js"></script>
-<script src="nav.js"></script>
+
+<script src="data.js"></script> <script src="nav.js"></script>
 <script>
 let loginRole = 'customer';
 const urlP = new URLSearchParams(window.location.search);
 if (urlP.get('tab') === 'signup') showPanel('signup');
-// Auto-redirect if already logged in
+
 const existingUser = FC.getUser();
-if (existingUser) location.href = existingUser.role === 'admin' ? 'admin.html' : 'shop.html';
+if (existingUser) location.href = String(existingUser.role).toLowerCase() === 'admin' ? 'admin.html' : 'shop.html';
 
 function showPanel(p) {
   ['login','signup'].forEach(n => {
@@ -100,11 +96,7 @@ function showPanel(p) {
     document.getElementById('tab-'+n)?.classList.toggle('active', n===p);
   });
 }
-function setRole(r) {
-  loginRole = r;
-  document.getElementById('lr-cust')?.classList.toggle('active', r==='customer');
-  document.getElementById('lr-admin')?.classList.toggle('active', r==='admin');
-}
+
 function checkPW(v) {
   const bars = [1,2,3,4].map(i => document.getElementById('pb'+i));
   const lbl = document.getElementById('pw-lbl');
@@ -160,19 +152,21 @@ async function doLogin(event) {
 
     toast('Login successful!', 'success');
 
-    const role = String(data.role || '').trim().toLowerCase();
+    const normalizedRole = String(data.role || '').trim().toLowerCase();
 
+    // Constructing standard state footprint parameters to match nav validation queries
     const user = {
       email: data.email,
-      role: data.role,
-      name: data.role === 'admin' ? 'Admin' : 'Customer',
+      role: normalizedRole,
+      name: normalizedRole === 'admin' ? 'Admin' : 'Customer',
       initial: data.email[0].toUpperCase()
     };
 
+    // FIXED: Committing user object variables into structural storage context
     FC.setUser(user);
 
     setTimeout(() => {
-      if (role === 'admin') {
+      if (normalizedRole === 'admin') {
         window.location.href = 'admin.html';
       } else {
         window.location.href = 'shop.html';
@@ -236,7 +230,7 @@ async function doSignup() {
 
     const user = {
       email: data.email,
-      role: data.role,
+      role: String(data.role || 'customer').trim().toLowerCase(),
       name: fn + ' ' + ln,
       initial: fn[0].toUpperCase()
     };
@@ -251,7 +245,6 @@ async function doSignup() {
     toast('Cannot reach signup.php. Check file path/server.', 'err');
   }
 }
-
 </script>
 </body>
 </html>

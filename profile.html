@@ -5,6 +5,20 @@
 <title>FleurChase — My Profile</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
+
+#footer-container {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+#footer-container {
+  margin-bottom: -30px;
+}
+
+.site-footer {
+  margin-bottom: 0px;
+}
 .prof-hero{background:linear-gradient(135deg,var(--g9) 0%,white 50%,var(--p9) 100%);border-radius:var(--rl);border:1px solid var(--line);padding:2rem;display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem;position:relative;overflow:hidden}
 .prof-hero::after{content:'🌸';position:absolute;font-size:110px;opacity:.05;right:1rem;bottom:-.5rem;pointer-events:none}
 .prof-av-wrap{position:relative;flex-shrink:0}
@@ -46,12 +60,22 @@
   <div class="page-title">My <span style="color:var(--p3);font-style:italic">Profile</span></div>
   <div class="page-sub">Manage your account information and delivery addresses</div>
 
-  <!-- HERO -->
   <div class="prof-hero">
-    <div class="prof-av-wrap">
-      <div class="prof-av" id="prof-av-initial">M</div>
-      <div class="cam-btn" onclick="toast('Photo upload coming soon!')">📷</div>
-    </div>
+  <div class="prof-av-wrap">
+    <div class="prof-av" id="prof-av-initial">M</div>
+
+    <label class="cam-btn" for="profile-photo-input" title="Upload profile photo">
+      📷
+    </label>
+
+    <input
+      type="file"
+      id="profile-photo-input"
+      accept="image/*"
+      style="display:none"
+      onchange="uploadProfilePhoto(event)"
+    />
+  </div>
     <div style="flex:1">
       <div class="prof-name" id="prof-disp-name">Loading...</div>
       <div class="prof-email" id="prof-disp-email">—</div>
@@ -159,20 +183,23 @@
   </div>
 
   <!-- ACTIONS -->
+    <!-- ACTIONS -->
   <div class="prof-card">
     <h3>Account Actions</h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">📍 My Orders</a>
-      <a class="btn btn-ghost btn-sm" href="cart.html"   style="text-decoration:none">🛒 My Cart</a>
+      <a class="btn btn-ghost btn-sm" href="cart.html" style="text-decoration:none">🛒 My Cart</a>
       <button class="btn btn-ghost btn-sm" onclick="toast('Password reset email sent! Check your inbox.')">🔒 Change Password</button>
       <button class="btn btn-ghost btn-sm" onclick="toast('Notification preferences saved! 🔔')">🔔 Notifications</button>
       <button class="btn btn-ghost btn-sm" style="color:var(--p3);border-color:var(--p5)" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 </div>
+
 <div id="footer-container"></div>
-</div>
+
 <div id="fc-toast" class="toast"></div>
+
 <script src="data.js"></script>
 <script src="nav.js"></script>
 <script>
@@ -345,6 +372,46 @@ async function saveProfile() {
   }
 }
 
+function uploadProfilePhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    toast('Please upload an image file.', 'err');
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const imageUrl = e.target.result;
+    const avatar = document.getElementById('prof-av-initial');
+
+    avatar.textContent = '';
+    avatar.style.backgroundImage = `url('${imageUrl}')`;
+    avatar.style.backgroundSize = 'cover';
+    avatar.style.backgroundPosition = 'center';
+
+    localStorage.setItem('fc_profile_photo', imageUrl);
+    toast('Profile photo updated!', 'success');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function loadProfilePhoto() {
+  const savedPhoto = localStorage.getItem('fc_profile_photo');
+  if (!savedPhoto) return;
+
+  const avatar = document.getElementById('prof-av-initial');
+  avatar.textContent = '';
+  avatar.style.backgroundImage = `url('${savedPhoto}')`;
+  avatar.style.backgroundSize = 'cover';
+  avatar.style.backgroundPosition = 'center';
+}
+
+loadProfilePhoto();
+
 async function saveAddress() {
   const formData = new FormData();
   formData.append('email', user.email);
@@ -426,7 +493,24 @@ function editAddress(addressId) {
   document.getElementById('addr-zip').value = address.zip || '';
 }
 
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
 
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+loadCartCount();
 loadProfileFromDB();
 renderFooter('footer-container', false);
 </script>

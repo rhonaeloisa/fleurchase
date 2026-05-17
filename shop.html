@@ -473,57 +473,39 @@ async function addProductToDatabaseCart(bouquetId, unitPrice) {
     
     const res = await response.json();
     
-    if (res && res.success) {
-      // Keep your local cart array synchronized safely
-      try {
-        const cart = (typeof FC !== 'undefined' && typeof FC.getCart === 'function') ? FC.getCart() : [];
-        const p = (typeof DB_PRODUCTS !== 'undefined') ? DB_PRODUCTS.find(x => String(x.id) === String(bouquetId)) : null;
+    if (res.success) {
+      toast('Added to your cart!');
+      
+      // FIX: Also save it to local memory so your original navbar badge reads it!
+      const p = DB_PRODUCTS.find(x => String(x.id) === String(bouquetId));
+      if (p) {
+        const cart = FC.getCart();
+        const existingItem = cart.find(i => String(i.productId) === String(bouquetId));
         
-        if (p) {
-          const existingItem = cart.find(i => String(i.productId) === String(bouquetId));
-          if (existingItem) {
-            existingItem.qty += 1;
-          } else {
-            cart.push({
-              cartId: String(bouquetId),
-              productId: p.id,
-              name: p.name,
-              img: p.img || null,
-              price: Number(p.price),
-              qty: 1,
-              checked: true
-            });
-          }
-          if (typeof FC !== 'undefined' && typeof FC.saveCart === 'function') {
-            FC.saveCart(cart);
-          }
+        if (existingItem) {
+          existingItem.qty += 1;
+        } else {
+          cart.push({
+            cartId: String(bouquetId),
+            productId: p.id,
+            name: p.name,
+            img: p.img || null,
+            price: Number(p.price),
+            qty: 1,
+            checked: true
+          });
         }
-      } catch (localErr) {
-        console.warn("Local storage sync bypassed: ", localErr);
+        FC.saveCart(cart); // Commits to local memory scope
       }
 
-      // Explicitly trigger your updated toast element directly to display success
-      if (typeof toast === 'function') {
-        toast('Added to your cart!', 'success');
-      } else {
-        alert('Added to your cart!');
-      }
-
-      // Safe evaluation guards for background navigation badges
-      try {
-        if (typeof updateCartBadge === 'function') updateCartBadge();
-        if (typeof loadCartCount === 'function') loadCartCount();
-      } catch (badgeErr) {
-        console.warn("Badge UI update bypassed: ", badgeErr);
-      }
-
+      // Triggers your original fast badge counter engine!
+      if (typeof updateCartBadge === 'function') updateCartBadge(); 
     } else {
-      const errorMsg = res && res.error ? res.error : 'Unknown validation error';
-      if (typeof toast === 'function') toast('✕ Failed to add item: ' + errorMsg, 'warn');
+      toast('✕ Failed to add item: ' + res.error, 'warn');
     }
   } catch (err) {
-    console.error("Caught server exception thread context:", err);
-    // Bypassed background string locks so successful inserts never show false alerts
+    console.error(err);
+    toast('✕ Connection to server failed.', 'warn');
   }
 }
 

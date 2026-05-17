@@ -2,52 +2,46 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
 
 require_once 'db_connection.php';
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-try {
-    // Resolve dynamic account identifier profile context or fall back safely to 14
-    $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14;
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14;
 
-    $total_count = 0;
+$cart_count = 0;
 
-    // STEP 1: Find the target user's active cart record container
-    $cart_query = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
-    $cart_query->bind_param("i", $current_user_id);
-    $cart_query->execute();
-    $cart_res = $cart_query->get_result()->fetch_assoc();
-    $cart_query->close();
+$stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
+$stmt->bind_param("i", $current_user_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    if ($cart_res) {
-        $cart_id = intval($cart_res['cart_id']);
+if ($result && $result->num_rows > 0) {
+    $cart_id = intval($result->fetch_assoc()['cart_id']);
 
-        // STEP 2: Calculate the mathematical SUM of all items inside the cart_item table lines
-        $count_query = $conn->prepare("SELECT SUM(quantity) AS total_items FROM cart_item WHERE cart_id = ?");
-        $count_query->bind_param("i", $cart_id);
-        $count_query->execute();
-        $count_res = $count_query->get_result()->fetch_assoc();
-        $count_query->close();
+    $count_stmt = $conn->prepare("
+        SELECT COALESCE(SUM(quantity), 0) AS cart_count
+        FROM cart_item
+        WHERE cart_id = ?
+    ");
+    $count_stmt->bind_param("i", $cart_id);
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result();
 
-        if ($count_res && $count_res['total_items'] !== null) {
-            $total_count = intval($count_res['total_items']);
-        }
+    if ($count_result && $row = $count_result->fetch_assoc()) {
+        $cart_count = intval($row['cart_count']);
     }
 
-    echo json_encode([
-        'success' => true,
-        'cart_count' => $total_count
-    ]);
-
-} catch (Throwable $e) {
-    echo json_encode([
-        'success' => false,
-        'cart_count' => 0,
-        'error' => $e->getMessage()
-    ]);
+    $count_stmt->close();
 }
 
+$stmt->close();
 $conn->close();
-exit;
+
+echo json_encode([
+    'success' => true,
+    'cart_count' => $cart_count
+]);
 ?>
