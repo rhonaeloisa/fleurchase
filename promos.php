@@ -274,6 +274,25 @@ function renderSaleItems() {
   el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No sale items right now</h3><p>We update sale prices regularly based on freshness!</p></div>`;
 }
 
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+loadCartCount();
+
 // INITIALIZATION
 loadPromosFromDB();
 </script>
