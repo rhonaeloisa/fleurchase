@@ -340,12 +340,13 @@ a.btn-green:focus {
         </button>
 
         <button class="bc-act edit"
-                type="button"
-                title="Edit"
-                aria-label="Edit"
-                onclick="openEditProd('<?php echo $id; ?>')">
+        type="button"
+        title="Edit"
+        aria-label="Edit"
+        onclick="window.location.href='edit-bouquet.php?id=<?php echo $id; ?>'">
           <i class="ti ti-edit" aria-hidden="true"></i>
         </button>
+
 
         <button class="bc-act del"
                 type="button"
