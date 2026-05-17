@@ -1117,17 +1117,45 @@ async function addCustomToCart(buyNow = false) {
         const result = JSON.parse(text);
 
         if (result.success) {
-    toast('Custom bouquet added successfully!', 'success');
+        if (!buyNow) {
+            toast('Custom bouquet added successfully!', 'success');
+        }  
 
-    if (typeof result.cart_count !== 'undefined') {
+        const checkoutItem = {
+            cart_item_id: result.cart_item_id || null,
+            productId: 'custom',
+            name: 'Custom Bouquet (' + selSize.label + ')',
+            sub: used + ' stems • ' + selColor.n + '<br>' + flowerDesc,
+            price: flwCost + fillerCost + extrasCost,
+            qty: 1,
+            img: 'images/default.jpg',
+            checked: true,
+            is_custom: 1,
+            custom_data: customData,
+
+            size: selSize.label,
+            stems: used,
+            color: selColor.n,
+            flowers: flowerDesc,
+            flowerCounts: flowerCounts,
+            fillerCounts: fillerCounts,
+            selectedAddons: selectedAddons,
+            note: customData.note || ''
+        };
+
         document.querySelectorAll('.cart-count').forEach(el => {
+        if (typeof result.cart_count !== 'undefined') {
             el.textContent = result.cart_count;
-        });
-
-        localStorage.setItem('fc_cart_count', String(result.cart_count));
-    }
+        } else {
+            const current = parseInt(el.textContent || '0', 10);
+            el.textContent = current + 1;
+        }
+    });
 
     if (buyNow) {
+        sessionStorage.setItem('fc_checkout_items', JSON.stringify([checkoutItem]));
+        sessionStorage.setItem('fc_checkout_promo', '');
+
         setTimeout(() => {
             location.href = 'checkout.html';
         }, 700);
