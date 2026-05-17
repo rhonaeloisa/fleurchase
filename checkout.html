@@ -159,17 +159,6 @@
   background: white;
 }
 @media(max-width:760px){.co-layout{grid-template-columns:1fr}.aside-sum{position:static}}
-
-.addr-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.addr-actions .btn {
-  flex: 1;
-  justify-content: center;
-}
 </style>
 </head>
 <body>
@@ -201,68 +190,20 @@
           + Add New Address
         </button>
 
-        <div class="addr-actions">
-          <button class="btn btn-ghost" id="co-edit-address-btn" onclick="editCheckoutAddress()">
-            Edit Address
-          </button>
-
-          <button class="btn btn-ghost" id="co-add-address-btn" onclick="addCheckoutAddress()">
-            + Add Address
-          </button>
-        </div>
-
-        <div class="addr-actions" id="co-save-actions" style="display:none">
-          <button class="btn btn-ghost" onclick="cancelCheckoutAddressEdit()">
-            Cancel
-          </button>
-
-          <button class="btn btn-green" onclick="saveCheckoutAddress()">
-            Save Address
-          </button>
-        </div>
-
-        <div id="co-new-address-form-container" style="margin-top:10px"></div>
+        <div id="co-new-address-form-container" style="margin-top: 10px;"></div>
 
         <div id="co-address-fields" style="display:none">
-          <div class="fg2">
-            <div class="ff"><label>First name</label><input id="co-fn" placeholder="Maria"/></div>
-            <div class="ff"><label>Last name</label><input id="co-ln" placeholder="Santos"/></div>
-          </div>
-
-          <div class="fg2">
-            <div class="ff"><label>House No.</label><input id="co-house" placeholder="House No."/></div>
-            <div class="ff"><label>Street</label><input id="co-street" placeholder="Street"/></div>
-          </div>
-
-          <div class="ff"><label>Barangay</label><input id="co-barangay" placeholder="Barangay"/></div>
-
-          <div class="fg2">
-            <div class="ff">
-              <label>Municipality (Albay)</label>
-              <select id="co-mun" onchange="updateShipping()">
-                <option value="">Select municipality</option>
-                <option value="Legazpi City">Legazpi City</option>
-                <option value="Daraga">Daraga</option>
-                <option value="Camalig">Camalig (+&#8369;50)</option>
-                <option value="Guinobatan">Guinobatan (+&#8369;80)</option>
-                <option value="Libon">Libon (+&#8369;120)</option>
-                <option value="Oas">Oas (+&#8369;150)</option>
-                <option value="Tabaco City">Tabaco City (+&#8369;100)</option>
-                <option value="Polangui">Polangui (+&#8369;120)</option>
-                <option value="Ligao City">Ligao City (+&#8369;100)</option>
-                <option value="Malilipot">Malilipot (+&#8369;70)</option>
-                <option value="Bacacay">Bacacay (+&#8369;90)</option>
-                <option value="Other in Albay">Other in Albay (+&#8369;150)</option>
-              </select>
-            </div>
-
-            <div class="ff"><label>Province</label><input id="co-province" placeholder="Province"/></div>
-          </div>
-
-          <div class="fg2">
-            <div class="ff"><label>ZIP Code</label><input id="co-zip" placeholder="ZIP Code"/></div>
-            <div class="ff"><label>Contact number</label><input id="co-ph" placeholder="09XX XXX XXXX" maxlength="11"/></div>
-          </div>
+          <input id="co-fn"/> <input id="co-ln"/>
+          <input id="co-house"/> <input id="co-street"/> <input id="co-barangay"/>
+          <select id="co-mun">
+            <option value="Legazpi City">Legazpi City</option><option value="Daraga">Daraga</option>
+            <option value="Camalig">Camalig</option><option value="Guinobatan">Guinobatan</option>
+            <option value="Libon">Libon</option><option value="Oas">Oas</option>
+            <option value="Tabaco City">Tabaco City</option><option value="Polangui">Polangui</option>
+            <option value="Ligao City">Ligao City</option><option value="Malilipot">Malilipot</option>
+            <option value="Bacacay">Bacacay</option><option value="Other in Albay">Other in Albay</option>
+          </select>
+          <input id="co-province"/> <input id="co-zip"/> <input id="co-ph"/>
         </div>
       </div>
 
@@ -436,8 +377,34 @@ const ADDON_CATS = [
   {id:'extras',     label:'Extras'},
 ];
 
+let DB_ADDONS = [];
+
+async function loadCheckoutAddons() {
+  try {
+    const res = await fetch('get_product.php');
+    const data = await res.json();
+
+    DB_ADDONS = (data.products || [])
+      .map(p => ({
+        id: p.id ?? p.product_id,
+        name: p.name ?? p.product_name,
+        price: Number(p.price || 0),
+        type: p.type ?? p.product_type,
+        category: p.category || 'extras',
+        img: p.img ?? (p.product_image ? 'images/' + p.product_image : 'images/default.png'),
+        stock: Number(p.stock || 0)
+      }))
+      .filter(p => p.type === 'addon' && p.stock > 0);
+
+    renderAddons();
+  } catch (err) {
+    console.error(err);
+    toast('Cannot load add-ons from database.', 'err');
+  }
+}
+
 function getAllAddons() {
-  return FC.getAddons();
+  return DB_ADDONS;
 }
 
 // ── RENDER ITEMS ──────────────────────────────────────────
@@ -638,97 +605,6 @@ function updateGiftMsgPreview() {
       row.style.display = 'none';
     }
   }
-}
-
-let checkoutAddressMode = null; // edit or add
-
-function editCheckoutAddress() {
-  checkoutAddressMode = 'edit';
-
-  document.getElementById('co-address-fields').style.display = 'block';
-  document.getElementById('co-edit-address-btn').parentElement.style.display = 'none';
-  document.getElementById('co-save-actions').style.display = 'flex';
-}
-
-function addCheckoutAddress() {
-  checkoutAddressMode = 'add';
-
-  selectedAddressId = null;
-
-  document.getElementById('co-address-fields').style.display = 'block';
-  document.getElementById('co-edit-address-btn').parentElement.style.display = 'none';
-  document.getElementById('co-save-actions').style.display = 'flex';
-
-  document.getElementById('co-fn').value = '';
-  document.getElementById('co-ln').value = '';
-  document.getElementById('co-house').value = '';
-  document.getElementById('co-street').value = '';
-  document.getElementById('co-barangay').value = '';
-  document.getElementById('co-mun').value = '';
-  document.getElementById('co-province').value = '';
-  document.getElementById('co-zip').value = '';
-  document.getElementById('co-ph').value = '';
-}
-
-function cancelCheckoutAddressEdit() {
-  checkoutAddressMode = null;
-
-  document.getElementById('co-address-fields').style.display = 'none';
-  document.getElementById('co-edit-address-btn').parentElement.style.display = 'flex';
-  document.getElementById('co-save-actions').style.display = 'none';
-
-  selectCheckoutAddress();
-}
-
-async function saveCheckoutAddress() {
-  const payload = {
-    address_id: checkoutAddressMode === 'edit' ? selectedAddressId : '',
-    first_name: document.getElementById('co-fn').value.trim(),
-    last_name: document.getElementById('co-ln').value.trim(),
-    house_no: document.getElementById('co-house').value.trim(),
-    street: document.getElementById('co-street').value.trim(),
-    barangay: document.getElementById('co-barangay').value.trim(),
-    city: document.getElementById('co-mun').value.trim(),
-    province: document.getElementById('co-province').value.trim(),
-    zip: document.getElementById('co-zip').value.trim(),
-    contact: document.getElementById('co-ph').value.trim(),
-    mode: checkoutAddressMode
-  };
-
-  if (!payload.first_name || !payload.last_name || !payload.house_no || !payload.street || !payload.barangay || !payload.city || !payload.province || !payload.zip || !payload.contact) {
-    toast('Please complete all address fields.', 'warn');
-    return;
-  }
-
-  if (!/^09\d{9}$/.test(payload.contact)) {
-    toast('Please enter a valid 11-digit PH mobile number.', 'err');
-    return;
-  }
-
-  const res = await fetch('save_checkout_address.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    toast(data.message || 'Unable to save address.', 'err');
-    return;
-  }
-
-  toast('Address saved.', 'success');
-
-  checkoutAddressMode = null;
-  selectedAddressId = data.address_id || selectedAddressId;
-
-  document.getElementById('co-address-fields').style.display = 'none';
-  document.getElementById('co-edit-address-btn').parentElement.style.display = 'flex';
-  document.getElementById('co-save-actions').style.display = 'none';
-
-  await loadCheckoutProfile();
-  updateSummary();
 }
 
 async function loadCheckoutProfile() {
@@ -1186,7 +1062,10 @@ async function placeOrder() {
   orderForm.append('delivery_type', 'Delivery');
   orderForm.append('delivery_time', document.getElementById('co-time').value);
   orderForm.append('items', JSON.stringify(checkoutItems));
-  
+  orderForm.append('payment_type', payLabels[payOpt]);
+  orderForm.append('reference_number', document.getElementById('gcash-ref')?.value.trim() || '');
+  orderForm.append('img_receipt', receiptFileName || '');
+  orderForm.append('receipt_base64', receiptBase64 || '');
   const validAddressId = (selectedAddressId && !String(selectedAddressId).includes("No saved address")) ? selectedAddressId : '';
   orderForm.append('address_id', validAddressId);
   
@@ -1204,10 +1083,16 @@ async function placeOrder() {
       body: orderForm
     });
 
-    const orderData = await orderRes.json();
+    const rawText = await orderRes.text();
+    console.log('PLACE ORDER RAW RESPONSE:', rawText);
 
-    if (!orderData.success) {
-      toast(orderData.message || 'Unable to save order.', 'err');
+    let orderData;
+
+    try {
+      orderData = JSON.parse(rawText);
+    } catch (e) {
+      toast('Server returned invalid response. Check console.', 'err');
+      console.error('Invalid JSON from place_order.php:', rawText);
       return;
     }
 
@@ -1215,6 +1100,7 @@ async function placeOrder() {
 
     const stockForm = new FormData();
     stockForm.append('items', JSON.stringify(checkoutItems));
+    stockForm.append('addons', JSON.stringify(Object.values(selectedAddons)));
 
     const stockRes = await fetch('decrement_stock.php', {
       method: 'POST',
@@ -1277,7 +1163,7 @@ document.getElementById('co-date').value=minDate.toISOString().split('T')[0];
 
 renderCoItems();
 renderAddonTabs();
-renderAddons();
+loadCheckoutAddons();
 selPay(1);
 updateSummary();
 loadCheckoutProfile();

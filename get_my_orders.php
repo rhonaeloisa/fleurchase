@@ -82,6 +82,7 @@ try {
                 "payMethod" => "GCash",
                 "payStatus" => "uploaded",
                 "deliveryType" => $row["delivery_type"],
+                'order_item_id' => intval($row['order_item_id']),
                 "full_address" => $row["full_address"] ?? 'No address',
                 "itemDetails" => [],
                 "review" => null

@@ -1,150 +1,247 @@
 <?php
-session_start();
-header("Content-Type: application/json");
-
-require "db_connection.php";
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-
-function toMysqlTime($slot) {
-    if (preg_match('/(\d{1,2}):(\d{2})\s*(AM|PM)/i', $slot, $m)) {
-        $hour = (int)$m[1];
-        $min = (int)$m[2];
-        $ampm = strtoupper($m[3]);
-
-        if ($ampm === "PM" && $hour !== 12) $hour += 12;
-        if ($ampm === "AM" && $hour === 12) $hour = 0;
-
-        return sprintf("%02d:%02d:00", $hour, $min);
-    }
-
-    return null;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
+header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once 'db_connection.php';
+
 try {
-    if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-        echo json_encode(["success" => false, "message" => "Invalid request method"]);
-        exit;
+    $user_email = $_POST['user_email'] ?? '';
+    $order_name = $_POST['order_name'] ?? '';
+    $discount_amount = floatval($_POST['discount_amount'] ?? 0);
+    $shipping_fee = floatval($_POST['shipping_fee'] ?? 0);
+    $total_amount = floatval($_POST['total_amount'] ?? 0);
+    $notes = $_POST['notes'] ?? '';
+    $delivery_date = $_POST['delivery_date'] ?? null;
+    $delivery_type = $_POST['delivery_type'] ?? 'Delivery';
+    $delivery_time = $_POST['delivery_time'] ?? '';
+    $address_id = intval($_POST['address_id'] ?? 0);
+    $items = json_decode($_POST['items'] ?? '[]', true);
+
+    if (!$user_email || !$order_name || $total_amount <= 0 || empty($items)) {
+        throw new Exception('Missing order details.');
     }
-
-    $email = trim($_POST["user_email"] ?? "");
-    $orderName = trim($_POST["order_name"] ?? "");
-    $discount = (float)($_POST["discount_amount"] ?? 0);
-    $shipping = (float)($_POST["shipping_fee"] ?? 0);
-    $total = (float)($_POST["total_amount"] ?? 0);
-    $notes = trim($_POST["notes"] ?? "");
-    $deliveryDate = $_POST["delivery_date"] ?? "";
-    $deliveryType = $_POST["delivery_type"] ?? "Delivery";
-    $deliveryTime = toMysqlTime($_POST["delivery_time"] ?? "");
-    $addressId = (int)($_POST["address_id"] ?? 0);
-
-    if ($email === "" || $orderName === "" || $deliveryDate === "" || !$deliveryTime || $addressId <= 0) {
-        echo json_encode(["success" => false, "message" => "Missing order or delivery address details"]);
-        exit;
-    }
-
-    $userStmt = $conn->prepare("SELECT user_id FROM `user` WHERE user_email = ? LIMIT 1");
-    $userStmt->bind_param("s", $email);
-    $userStmt->execute();
-    $user = $userStmt->get_result()->fetch_assoc();
-
-    if (!$user) {
-        echo json_encode(["success" => false, "message" => "User not found"]);
-        exit;
-    }
-
-    $userId = (int)$user["user_id"];
-
-    $addrStmt = $conn->prepare("SELECT address_id FROM address WHERE address_id = ? AND user_id = ? LIMIT 1");
-    $addrStmt->bind_param("ii", $addressId, $userId);
-    $addrStmt->execute();
-    $address = $addrStmt->get_result()->fetch_assoc();
-
-    if (!$address) {
-        echo json_encode(["success" => false, "message" => "Selected address not found"]);
-        exit;
-    }
-
-    $promoId = null;
-    $userPromoId = null;
-    $status = "Pending";
 
     $conn->begin_transaction();
 
-    $sql = "INSERT INTO `order`
-        (user_id, promo_id, user_promo_id, order_name, order_date, discount_amount, shipping_fee, total_amount, status, notes, delivery_date, delivery_type, delivery_time)
-        VALUES (?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)";
+    $user_stmt = $conn->prepare("SELECT user_id FROM user WHERE user_email = ? LIMIT 1");
+    if (!$user_stmt) {
+        throw new Exception($conn->error);
+    }
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param(
-        "iiisdddsssss",
-        $userId,
-        $promoId,
-        $userPromoId,
-        $orderName,
-        $discount,
-        $shipping,
-        $total,
-        $status,
+    $user_stmt->bind_param("s", $user_email);
+    $user_stmt->execute();
+    $user_res = $user_stmt->get_result();
+
+    if (!$user_res || $user_res->num_rows === 0) {
+        throw new Exception('User not found.');
+    }
+
+    $user_id = intval($user_res->fetch_assoc()['user_id']);
+    $user_stmt->close();
+
+    $order_stmt = $conn->prepare("
+        INSERT INTO `order`
+        (user_id, order_name, order_date, discount_amount, shipping_fee, total_amount, status, notes, delivery_date, delivery_type, delivery_time)
+        VALUES (?, ?, NOW(), ?, ?, ?, 'Pending', ?, ?, ?, ?)
+    ");
+
+    if (!$order_stmt) {
+        throw new Exception($conn->error);
+    }
+
+    $order_stmt->bind_param(
+        "isdddssss",
+        $user_id,
+        $order_name,
+        $discount_amount,
+        $shipping_fee,
+        $total_amount,
         $notes,
-        $deliveryDate,
-        $deliveryType,
-        $deliveryTime
+        $delivery_date,
+        $delivery_type,
+        $delivery_time
     );
 
-    $stmt->execute();
-    $orderId = $conn->insert_id;
+    if (!$order_stmt->execute()) {
+        throw new Exception($order_stmt->error);
+    }
 
-    $shipmentStatus = "Pending";
-    $rateId = null;
+    $order_id = intval($conn->insert_id);
+    $order_stmt->close();
 
-    $shipSql = "INSERT INTO shipment
-        (address_id, order_id, rate_id, status, fee)
-        VALUES (?, ?, ?, ?, ?)";
+    foreach ($items as $item) {
+        $quantity = intval($item['qty'] ?? 1);
+        $unit_price = floatval($item['price'] ?? 0);
+        $subtotal = $quantity * $unit_price;
+        $snapshot_name = $item['name'] ?? 'Item';
 
-    $shipStmt = $conn->prepare($shipSql);
-    $shipStmt->bind_param(
-        "iiisd",
-        $addressId,
-        $orderId,
-        $rateId,
-        $shipmentStatus,
-        $shipping
+        $bouquet_id = null;
+        if (!empty($item['bouquet_id'])) {
+            $bouquet_id = intval($item['bouquet_id']);
+        } elseif (!empty($item['productId']) && is_numeric($item['productId'])) {
+            $bouquet_id = intval($item['productId']);
+        }
+
+        if ($bouquet_id === null) {
+            $item_stmt = $conn->prepare("
+                INSERT INTO order_item
+                (order_id, bouquet_id, quantity, unit_price, subtotal, snapshot_name)
+                VALUES (?, NULL, ?, ?, ?, ?)
+            ");
+
+            if (!$item_stmt) {
+                throw new Exception($conn->error);
+            }
+
+            $item_stmt->bind_param(
+                "iidds",
+                $order_id,
+                $quantity,
+                $unit_price,
+                $subtotal,
+                $snapshot_name
+            );
+        } else {
+            $item_stmt = $conn->prepare("
+                INSERT INTO order_item
+                (order_id, bouquet_id, quantity, unit_price, subtotal, snapshot_name)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+
+            if (!$item_stmt) {
+                throw new Exception($conn->error);
+            }
+
+            $item_stmt->bind_param(
+                "iiidds",
+                $order_id,
+                $bouquet_id,
+                $quantity,
+                $unit_price,
+                $subtotal,
+                $snapshot_name
+            );
+        }
+
+        if (!$item_stmt->execute()) {
+            throw new Exception($item_stmt->error);
+        }
+
+        $item_stmt->close();
+    }
+
+    $payment_amount = $total_amount;
+    $payment_type = $_POST['payment_type'] ?? 'GCash';
+    $reference_number = $_POST['reference_number'] ?? '';
+    $payment_status = 'uploaded';
+    $img_receipt = $_POST['img_receipt'] ?? '';
+    $receipt_base64 = $_POST['receipt_base64'] ?? '';
+
+    if ($receipt_base64 && $img_receipt) {
+        $uploadDir = __DIR__ . '/uploads/receipts/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($img_receipt));
+        $targetPath = $uploadDir . $safeName;
+
+        if (preg_match('/^data:image\/\w+;base64,/', $receipt_base64)) {
+            $receipt_base64 = preg_replace('/^data:image\/\w+;base64,/', '', $receipt_base64);
+        }
+
+        $imageData = base64_decode($receipt_base64);
+
+        if ($imageData === false) {
+            throw new Exception('Invalid receipt image upload.');
+        }
+
+        if (file_put_contents($targetPath, $imageData) === false) {
+            throw new Exception('Unable to save receipt image.');
+        }
+
+        $img_receipt = $safeName;
+    }
+
+    $pay_stmt = $conn->prepare("
+        INSERT INTO payment
+        (order_id, amount, payment_date, payment_type, reference_number, img_receipt, status)
+        VALUES (?, ?, NOW(), ?, ?, ?, ?)
+    ");
+
+    if (!$pay_stmt) {
+        throw new Exception($conn->error);
+    }
+
+    $pay_stmt->bind_param(
+        "idssss",
+        $order_id,
+        $payment_amount,
+        $payment_type,
+        $reference_number,
+        $img_receipt,
+        $payment_status
     );
-    $shipStmt->execute();
 
-    $paymentSql = "INSERT INTO payment(
-        payment_id, order_id, amount, payment_date, payment_type, reference_number, img_recceipt, status)
-        VALUES (?, ?, ?, CURDATE(), ?, ?, ?, ?)";
+    if (!$pay_stmt->execute()) {
+        throw new Exception($pay_stmt->error);
+    }
 
-    $paymentStmt = $conn->prepare($paymentSql);
-    $paymentStmt->bind_param(
-        "iisssss",
-        $paymentId,
-        $orderId,
-        $total,
-        $paymentType,
-        $referenceNumber,
-        $imgReceipt,
-        $paymentStatus
-    );
-    
+    $pay_stmt->close();
+
+    if ($address_id > 0) {
+        $ship_status = 'Pending';
+        $fee = $shipping_fee;
+
+        $ship_stmt = $conn->prepare("
+            INSERT INTO shipment
+            (address_id, order_id, rate_id, status, fee)
+            VALUES (?, ?, NULL, ?, ?)
+        ");
+
+        if (!$ship_stmt) {
+            throw new Exception($conn->error);
+        }
+
+        $ship_stmt->bind_param(
+            "iisd",
+            $address_id,
+            $order_id,
+            $ship_status,
+            $fee
+        );
+
+        if (!$ship_stmt->execute()) {
+            throw new Exception($ship_stmt->error);
+        }
+
+        $ship_stmt->close();
+    }
 
     $conn->commit();
 
     echo json_encode([
-        "success" => true,
-        "message" => "Order saved",
-        "order_id" => $orderId
+        'success' => true,
+        'order_id' => $order_id
     ]);
-} catch (Throwable $e) {
+} catch (Exception $e) {
     if (isset($conn)) {
         $conn->rollback();
     }
 
-    http_response_code(500);
     echo json_encode([
-        "success" => false,
-        "message" => "Server error: " . $e->getMessage()
+        'success' => false,
+        'message' => 'SQL error: ' . $e->getMessage()
     ]);
+}
+
+if (isset($conn)) {
+    $conn->close();
 }
 ?>

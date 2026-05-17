@@ -369,7 +369,7 @@ async function removeItem(i) {
       FC.saveCart(updatedLocal); 
 
       renderCart(); // Re-renders the display elements
-      toast('Item dropped from database record storage.');
+      toast('Cart item deleted.');
     }
   } catch(err) {
     console.error(err);
