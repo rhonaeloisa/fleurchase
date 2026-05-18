@@ -1,130 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>FleurChase — Admin Dashboard</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-.barchart{
-  display:flex;
-  align-items:flex-end;
-  gap:8px;
-  height:110px;
-  padding:0 .5rem
+/* ── Bar chart ─────────────────────────────────────────────────────────── */
+.barchart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 110px;
+  padding: 0 .5rem;
 }
+.bcol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 4px;
+}
+.bbar {
+  width: 100%;
+  border-radius: 5px 5px 0 0;
+  min-height: 4px;
+  transition: opacity .2s, height .4s ease;
+}
+.bbar:hover { opacity: .75; }
+.bbar-g { background: linear-gradient(to top, var(--g3), var(--g5)); }
+.bbar-p { background: linear-gradient(to top, var(--p2), var(--p5)); }
+.blbl { font-size: 10px; color: var(--muted); text-align: center; }
+.bval { font-size: 10px; font-weight: 600; color: var(--g3); }
 
-.bcol{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  flex:1;gap:4px
+/* ── Loading / error states ────────────────────────────────────────────── */
+.dash-loading {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--muted);
+  font-size: 13px;
+  padding: .5rem 0;
 }
-
-.bbar{
-  width:100%;
-  border-radius:5px 5px 0 0;
-  min-height:4px;
-  transition:opacity .2s
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--muted);
+  border-top-color: var(--g3);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
 }
-
-.bbar:hover{
-  opacity:.8
-}
-
-.bbar-g{
-  background:linear-gradient(to top,var(--g3),var(--g5))
-}
-
-.bbar-p{
-  background:linear-gradient(to top,var(--p2),var(--p5))
-}
-
-.blbl{
-  font-size:10px;
-  color:var(--muted);
-  text-align:center
-}
- 
-.bval{
-  font-size:10px;
-  font-weight:600;
-  color:var(--g3)
+@keyframes spin { to { transform: rotate(360deg); } }
+.dash-error {
+  color: var(--p3, #c44);
+  font-size: 13px;
+  padding: .5rem;
+  border-left: 3px solid var(--p3, #c44);
 }
 </style>
 </head>
 <body>
+
 <div id="top-nav" class="app-nav"></div>
 <aside class="sidebar" id="fc-sidebar"></aside>
+
 <div class="main-area">
 <div class="p-page">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
-    <div><div class="page-title">Dashboard</div><div class="page-sub" id="dash-date" style="margin-bottom:0"></div></div>
-    <button class="btn btn-green btn-sm" onclick="location.reload()">↻ Refresh</button>
+
+  <!-- ── Page header ─────────────────────────────────────────────────── -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;
+              margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="dash-date" style="margin-bottom:0"></div>
+    </div>
+    <button class="btn btn-green btn-sm" id="refresh-btn">↻ Refresh</button>
   </div>
-  <div class="metrics-grid" id="dash-metrics"></div>
+
+  <!-- ── Metric cards ────────────────────────────────────────────────── -->
+  <div class="metrics-grid" id="dash-metrics">
+    <div class="dash-loading"><div class="spinner"></div> Loading metrics…</div>
+  </div>
+
+  <!-- ── Recent orders + Top flowers chart ───────────────────────────── -->
   <div class="two-col">
     <div class="table-wrap">
-      <div class="table-head"><h3>Recent Orders</h3><a class="btn btn-ghost btn-sm" href="orders-admin.html">View all</a></div>
-      <table class="data-table"><thead><tr><th>Order #</th><th>Customer</th><th>Status</th><th>Total</th></tr></thead><tbody id="dash-orders"></tbody></table>
+      <div class="table-head">
+        <h3>Recent Orders</h3>
+        <a class="btn btn-ghost btn-sm" href="orders-admin.html">View all</a>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Order #</th><th>Customer</th><th>Status</th><th>Total</th></tr>
+        </thead>
+        <tbody id="dash-orders">
+          <tr><td colspan="4"><div class="dash-loading"><div class="spinner"></div> Loading orders…</div></td></tr>
+        </tbody>
+      </table>
     </div>
+
     <div class="card">
-      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:1rem">Top Flowers This Month</div>
-      <div class="barchart" id="dash-chart"></div>
-    </div>
-  </div>
-  <div class="two-col">
-    <div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:1rem;color:var(--ink)">⚠ Freshness Alerts</div><div id="dash-alerts"></div></div>
-    <div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:1rem;color:var(--ink)">Quick Actions</div>
-      <div class="two-col" style="gap:8px">
-        <a class="btn btn-green btn-sm" href="orders-admin.html" style="justify-content:center;text-decoration:none">📦 Process Orders</a>
-        <button class="btn btn-ghost btn-sm" onclick="location.href='products-admin.html'">+ Add Product</button>
-        <button class="btn btn-ghost btn-sm" onclick="location.href='inventory-admin.html'">🌿 Check Stock</button>
-        <button class="btn btn-ghost btn-sm" onclick="location.href='reports-admin.html'">📋 Reports</button>
+      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:1rem">
+        Top Flowers This Month
+      </div>
+      <div class="barchart" id="dash-chart">
+        <div class="dash-loading"><div class="spinner"></div> Loading…</div>
       </div>
     </div>
   </div>
-</div>
-</div>
+
+  <!-- ── Freshness alerts + Quick actions ────────────────────────────── -->
+  <div class="two-col">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:1rem;color:var(--ink)">
+        ⚠ Freshness Alerts
+      </div>
+      <div id="dash-alerts">
+        <div class="dash-loading"><div class="spinner"></div> Loading alerts…</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:1rem;color:var(--ink)">
+        Quick Actions
+      </div>
+      <div class="two-col" style="gap:8px">
+        <a class="btn btn-green btn-sm" href="orders-admin.html"
+           style="justify-content:center;text-decoration:none">📦 Process Orders</a>
+        <button class="btn btn-ghost btn-sm"
+                onclick="location.href='products-admin.php'">+ Add Bouquet</button>
+        <button class="btn btn-ghost btn-sm"
+                onclick="location.href='inventory-admin.php'">🌿 Check Stock</button>
+        <button class="btn btn-ghost btn-sm"
+                onclick="location.href='reports-admin.html'">📋 Reports</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.p-page -->
+</div><!-- /.main-area -->
+
 <div id="fc-toast" class="toast"></div>
+
+<!-- ── Your existing shared scripts ──────────────────────────────────────── -->
 <script src="data.js"></script>
 <script src="nav.js"></script>
+
+<!-- ── Dashboard logic ───────────────────────────────────────────────────── -->
 <script>
-  
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// Change this path if dashboard_api.php lives in a subfolder, e.g. '/api/dashboard_api.php'
+// ─────────────────────────────────────────────────────────────────────────────
+const API_URL = 'db/dashboard_api.php';
+
+// ── Auth + nav (unchanged from original) ─────────────────────────────────────
 const user = requireAuth('admin');
 buildTopNav('admin');
 buildAdminSidebar('admin.html');
-document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-const orders = FC.getOrders();
-const pending = orders.filter(o => (o.payStatus === 'uploaded' || o.payStatus === 'cod-pending') && o.status === 'Pending').length;
-const inv = FC.getInventory();
+// ── Date header ───────────────────────────────────────────────────────────────
+document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-PH', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
 
-// Metrics
-document.getElementById('dash-metrics').innerHTML = [
-  {label:'Total Orders',val:orders.length,sub:'All time',cls:'metric-n'},
-  {label:'Revenue (Est.)',val:'₱'+orders.reduce((s,o)=>s+o.total,0).toLocaleString(),sub:'All orders',cls:'metric-up'},
-  {label:'Pending Validation',val:pending,sub:'Awaiting review',cls:'metric-dn'},
-  {label:'Low Stock Items',val:inv.filter(i=>i.stock<30).length,sub:'Below 30 stems',cls:'metric-n'},
-].map(m=>`<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val" style="${m.cls==='metric-dn'&&m.val>0?'color:var(--p3)':''}">${m.val}</div><div class="metric-sub ${m.cls}">${m.sub}</div></div>`).join('');
+// ── Status badge colours (keep in sync with your shared.css tags) ─────────────
+const STATUS_CLS = {
+  'Pending':          'tag-a',
+  'Processing':       'tag-b',
+  'Out for Delivery': 'tag-g',
+  'Delivered':        'tag-w',
+  'Cancelled':        'tag-r',
+};
 
-// Recent orders
-const sc = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w'};
-document.getElementById('dash-orders').innerHTML = orders.slice(0,5).map(o=>`
-  <tr><td style="font-weight:700;font-size:12px">${o.id}</td><td>${o.customer||o.cust||'—'}</td><td><span class="tag ${sc[o.status]||'tag-w'}">${o.status}</span></td><td>${fmtP(o.total)}</td></tr>
-`).join('');
+// ── PHP money formatter ───────────────────────────────────────────────────────
+function fmtPHP(amount) {
+  return '₱' + Number(amount).toLocaleString('en-PH', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+}
 
-// Chart
-const flowerData = [{l:'Roses',v:85,p:true},{l:'Tulips',v:60},{l:'Sunflowers',v:45},{l:'Peonies',v:38,p:true},{l:'Lilies',v:30},{l:'Gerbera',v:25}];
-const maxV = Math.max(...flowerData.map(d=>d.v));
-document.getElementById('dash-chart').innerHTML = flowerData.map(d=>`
-  <div class="bcol"><div class="bval" style="color:${d.p?'var(--p3)':'var(--g3)'}">${d.v}</div><div class="bbar ${d.p?'bbar-p':'bbar-g'}" style="height:${Math.round((d.v/maxV)*95)}px"></div><div class="blbl">${d.l}</div></div>
-`).join('');
+// ── Generic error renderer ────────────────────────────────────────────────────
+function showError(elId, msg) {
+  document.getElementById(elId).innerHTML =
+    `<div class="dash-error">⚠ ${msg}</div>`;
+}
 
-// Alerts
-const alerts = FC.getInventory().filter(i=>i.freshness<=40).sort((a,b)=>a.freshness-b.freshness);
-document.getElementById('dash-alerts').innerHTML = alerts.map(i=>`
-  <div class="alert ${i.freshness<=15?'alert-r':'alert-a'}">${i.icon} <strong>${i.name}</strong> — ${i.freshness}% freshness · ${i.stock} stems</div>
-`).join('')||`<div class="alert alert-g">✅ All stock is in good condition!</div>`;
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER FUNCTIONS
+// Each function receives the JSON slice from the API and updates the DOM.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function renderMetrics(data) {
+  const cards = [
+    {
+      label : 'Total Orders',
+      val   : data.total_orders.toLocaleString(),
+      sub   : 'All time',
+      cls   : 'metric-n',
+      warn  : false,
+    },
+    {
+      label : 'Revenue (Est.)',
+      val   : fmtPHP(data.revenue),
+      sub   : 'All orders',
+      cls   : 'metric-up',
+      warn  : false,
+    },
+    {
+      label : 'Pending Orders',
+      val   : data.pending_orders,
+      sub   : 'Awaiting action',
+      cls   : 'metric-dn',
+      warn  : data.pending_orders > 0,
+    },
+    {
+      label : 'Low Stock Items',
+      val   : data.low_stock,
+      sub   : 'Below 30 stems',
+      cls   : 'metric-n',
+      warn  : data.low_stock > 0,
+    },
+  ];
+
+  document.getElementById('dash-metrics').innerHTML = cards.map(c => `
+    <div class="metric-card">
+      <div class="metric-label">${c.label}</div>
+      <div class="metric-val" ${c.warn ? 'style="color:var(--p3)"' : ''}>${c.val}</div>
+      <div class="metric-sub ${c.cls}">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderOrders(rows) {
+  if (!rows.length) {
+    document.getElementById('dash-orders').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No orders yet.</td></tr>';
+    return;
+  }
+  document.getElementById('dash-orders').innerHTML = rows.map(o => `
+    <tr>
+      <td style="font-weight:700;font-size:12px">${o.order_id}</td>
+      <td>${o.order_name || '—'}</td>
+      <td><span class="tag ${STATUS_CLS[o.status] || 'tag-w'}">${o.status}</span></td>
+      <td>${fmtPHP(o.total_amount)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderChart(flowers) {
+  if (!flowers.length) {
+    document.getElementById('dash-chart').innerHTML =
+      '<div style="color:var(--muted);font-size:13px">No data available.</div>';
+    return;
+  }
+  const maxVal = Math.max(...flowers.map(f => f.chart_val));
+  // Alternate between green and pink bars for visual variety
+  document.getElementById('dash-chart').innerHTML = flowers.map((f, i) => `
+    <div class="bcol">
+      <div class="bval" style="color:${i % 2 === 1 ? 'var(--p3)' : 'var(--g3)'}">${f.stock}</div>
+      <div class="bbar ${i % 2 === 1 ? 'bbar-p' : 'bbar-g'}"
+           style="height:${Math.max(6, Math.round((f.chart_val / maxVal) * 95))}px"
+           title="${f.name}: ${f.stock} stems in stock"></div>
+      <div class="blbl">${f.name}</div>
+    </div>
+  `).join('');
+}
+
+function renderAlerts(items) {
+  if (!items.length) {
+    document.getElementById('dash-alerts').innerHTML =
+      '<div class="alert alert-g">✅ All stock is well within freshness dates!</div>';
+    return;
+  }
+  document.getElementById('dash-alerts').innerHTML = items.map(item => {
+    const daysLeft = parseInt(item.days_left, 10);
+    const urgency  = daysLeft <= 0 ? 'alert-r' : (daysLeft <= 2 ? 'alert-a' : '');
+    const label    = daysLeft < 0
+      ? `expired ${Math.abs(daysLeft)}d ago`
+      : daysLeft === 0
+        ? 'expires TODAY'
+        : `${daysLeft}d left`;
+
+    return `
+      <div class="alert ${urgency}" style="margin-bottom:6px">
+        🌸 <strong>${item.name}</strong>
+        — ${item.stock} in stock
+        · <span style="font-weight:600">${label}</span>
+        <span style="opacity:.6;font-size:11px"> (${item.best_before})</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN LOAD FUNCTION
+// Fetches all dashboard data in one request (?action=all)
+// and dispatches to each render function.
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  // Reset refresh button
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = '↻ Refreshing…';
+
+  try {
+    const res = await fetch(`${API_URL}?action=all`, {
+      headers: { 'Accept': 'application/json' },
+      // Prevent browser from serving a stale cached response
+      cache: 'no-cache',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server responded ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // If the API itself returned an error object
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Render each section
+    renderMetrics(data.metrics);
+    renderOrders(data.orders);
+    renderChart(data.top_flowers);
+    renderAlerts(data.alerts);
+
+  } catch (err) {
+    console.error('[Dashboard] Failed to load:', err);
+
+    // Show inline errors in each section so the page doesn't just go blank
+    const errMsg = err.message || 'Could not connect to the server.';
+    showError('dash-metrics', errMsg);
+    showError('dash-orders',  errMsg);
+    showError('dash-chart',   errMsg);
+    showError('dash-alerts',  errMsg);
+
+    // Also surface in toast if available
+    if (typeof showToast === 'function') {
+      showToast('Dashboard failed to load: ' + errMsg, 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ Refresh';
+  }
+}
+
+// ── Wire up refresh button ────────────────────────────────────────────────────
+document.getElementById('refresh-btn').addEventListener('click', loadDashboard);
+
+// ── Initial load ──────────────────────────────────────────────────────────────
+loadDashboard();
 </script>
 </body>
 </html>
