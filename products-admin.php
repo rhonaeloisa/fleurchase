@@ -42,6 +42,7 @@ function freshnessData(string $best_before, DateTime $today): array {
 <title>FleurChase — Products & Add-ons</title>
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
 <style>
 .page-tabs{display:flex;background:var(--soft);border-radius:var(--r);padding:3px;gap:3px;width:fit-content;margin-bottom:1.5rem}
 .ptab{padding:8px 22px;border-radius:8px;border:none;font-family:var(--font-b);font-size:13px;font-weight:500;cursor:pointer;background:none;color:var(--muted);transition:all .2s}
@@ -549,7 +550,7 @@ a.btn-green:focus {
             <button class="tbl-act sale" aria-label="Mark as sale" onclick="openSaleModal('<?php echo $id; ?>')">
               <i class="ti ti-tag" aria-hidden="true"></i> Sale
             </button>
-            <button class="tbl-act edit" aria-label="Edit" onclick="openEditProd('<?php echo $id; ?>')">
+            <button class="tbl-act edit" aria-label="Edit" onclick="window.location.href='edit-bouquet.php?id=<?php echo $id; ?>'">
               <i class="ti ti-edit" aria-hidden="true"></i> Edit
             </button>
             <button class="tbl-act del" aria-label="Delete" onclick="openDeleteProd('<?php echo $id; ?>', '<?php echo $nameEsc; ?>')">
