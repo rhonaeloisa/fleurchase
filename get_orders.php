@@ -2,6 +2,25 @@
 header("Content-Type: application/json");
 require "db_connection.php";
 
+function normalizeReceiptPath($receipt) {
+    $receipt = trim($receipt ?? '');
+
+    if ($receipt === '') {
+        return '';
+    }
+
+    if (
+        str_starts_with($receipt, 'http') ||
+        str_starts_with($receipt, 'uploads/') ||
+        str_starts_with($receipt, 'images/') ||
+        str_starts_with($receipt, 'data:image')
+    ) {
+        return $receipt;
+    }
+
+    return 'uploads/receipts/' . $receipt;
+}
+
 $sql = "
 SELECT 
     o.order_id,
@@ -16,6 +35,16 @@ SELECT
     o.shipping_fee,
     o.notes,
 
+     CONCAT(
+            COALESCE(a.house_no, ''), 
+            IF(a.house_no IS NOT NULL AND a.street IS NOT NULL, ', ', ''),
+            COALESCE(a.street, ''),
+            IF(a.street IS NOT NULL AND a.barangay IS NOT NULL, ', ', ''),
+            COALESCE(a.barangay, ''),
+            IF(a.barangay IS NOT NULL AND a.city IS NOT NULL, ', ', ''),
+            COALESCE(a.province, '')
+        ) AS full_address,
+
     u.first_name,
     u.last_name,
     u.contact,
@@ -26,9 +55,13 @@ SELECT
     p.img_receipt,
     p.status AS payment_status,
 
+    a.city,
+
     GROUP_CONCAT(oi.snapshot_name SEPARATOR ', ') AS items
 FROM `order` o
 LEFT JOIN `user` u ON o.user_id = u.user_id
+LEFT JOIN shipment s ON o.order_id = s.order_id
+LEFT JOIN `address` a ON s.address_id = a.address_id
 LEFT JOIN payment p ON o.order_id = p.order_id
 LEFT JOIN order_item oi ON o.order_id = oi.order_id
 GROUP BY o.order_id
@@ -51,10 +84,14 @@ while ($row = $result->fetch_assoc()) {
         "delivTime" => $row["delivery_time"] ?? "—",
         "payMethod" => $row["payment_type"] ?? "—",
         "payStatus" => strtolower($row["payment_status"] ?? "pending"),
-        "receipt" => $row["img_receipt"] ?? "",
+        "receipt" => normalizeReceiptPath($row["img_receipt"] ?? ""),
+        "receiptImg" => normalizeReceiptPath($row["img_receipt"] ?? ""),
+        "refNum" => $row["reference_number"] ?? "",
         "status" => $row["order_status"] ?? "Pending",
         "total" => (float)($row["total_amount"] ?? 0),
         "discount" => (float)($row["discount_amount"] ?? 0),
+        "city" => $row["city"] ?? "—",
+        "full_address" => $row["full_address"] ?? 'No address',
         "shippingFee" => (float)($row["shipping_fee"] ?? 0),
         "giftMsg" => $row["notes"] ?? "",
         "placedAt" => $row["order_date"] ?? ""

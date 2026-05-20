@@ -10,32 +10,51 @@ try {
         exit;
     }
 
-    $sql = "
-        SELECT 
-            o.order_id,
-            o.order_name,
-            o.order_date,
-            o.discount_amount,
-            o.shipping_fee,
-            o.total_amount,
-            o.status,
-            o.notes,
-            o.delivery_date,
-            o.delivery_type,
-            o.delivery_time,
-            oi.order_item_id,
-            oi.snapshot_name,
-            oi.quantity,
-            oi.unit_price,
-            r.rating,
-            r.review_text
-        FROM `order` o
-        INNER JOIN `user` u ON o.user_id = u.user_id
-        LEFT JOIN order_item oi ON o.order_id = oi.order_id
-        LEFT JOIN reviews r ON oi.order_item_id = r.order_item_id
-        WHERE u.user_email = ?
-        ORDER BY o.order_id DESC
-    ";
+   $sql = "
+    SELECT 
+        o.order_id,
+        o.order_name,
+        o.order_date,
+        o.discount_amount,
+        o.shipping_fee,
+        o.total_amount,
+        o.status,
+        o.notes,
+
+        o.delivery_date,
+        o.delivery_type,
+        o.delivery_time,
+
+        -- Full Address (Concatenated)
+        CONCAT(
+            COALESCE(a.house_no, ''), 
+            IF(a.house_no IS NOT NULL AND a.street IS NOT NULL, ', ', ''),
+            COALESCE(a.street, ''),
+            IF(a.street IS NOT NULL AND a.barangay IS NOT NULL, ', ', ''),
+            COALESCE(a.barangay, ''),
+            IF(a.barangay IS NOT NULL AND a.city IS NOT NULL, ', ', ''),
+            COALESCE(a.city, ''),
+            IF(a.city IS NOT NULL AND a.province IS NOT NULL, ', ', ''),
+            COALESCE(a.province, '')
+        ) AS full_address,
+
+        oi.order_item_id,
+        oi.snapshot_name,
+        oi.quantity,
+        oi.unit_price,
+        
+        r.rating,
+        r.review_text
+
+    FROM `order` o
+    INNER JOIN `user` u ON o.user_id = u.user_id
+    LEFT JOIN `address` a ON o.user_id = a.user_id    
+    LEFT JOIN order_item oi ON o.order_id = oi.order_id
+    LEFT JOIN reviews r ON oi.order_item_id = r.order_item_id
+
+    WHERE u.user_email = ?
+    ORDER BY o.order_id DESC
+";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
@@ -62,7 +81,9 @@ try {
                 "notes" => $row["notes"],
                 "payMethod" => "GCash",
                 "payStatus" => "uploaded",
-                "loc" => $row["delivery_type"],
+                "deliveryType" => $row["delivery_type"],
+                'order_item_id' => intval($row['order_item_id']),
+                "full_address" => $row["full_address"] ?? 'No address',
                 "itemDetails" => [],
                 "review" => null
             ];

@@ -147,7 +147,7 @@ async function loadPromosFromDB() {
 // LOCALIZED PROMO VALIDATION ENGINE (Decoupled from data.js)
 // ============================================================
 function getLocalActivePromos() {
-  return loadedPromos.filter(p => p.status === 'active');
+  return loadedPromos.filter(p => getPromoRuntimeStatus(p) === 'active');
 }
 
 function applyLocalPromo(promoCode, subtotal) {
@@ -167,7 +167,19 @@ function validateLocalPromo(promoCode, subtotal, cartItems) {
   const pr = loadedPromos.find(p => p.code.toLowerCase() === promoCode.toLowerCase());
   
   if (!pr) return { ok: false, discount: 0, label: '', reason: 'Promo code not found.' };
-  if (pr.status !== 'active') return { ok: false, discount: 0, label: '', reason: 'This promo is no longer active.' };
+  const runtimeStatus = getPromoRuntimeStatus(pr);
+
+  if (runtimeStatus === 'upcoming') {
+    return { ok: false, discount: 0, label: '', reason: 'This promo is not active yet.' };
+  }
+
+  if (runtimeStatus === 'expired') {
+    return { ok: false, discount: 0, label: '', reason: 'This promo has expired.' };
+  }
+
+  if (runtimeStatus !== 'active') {
+    return { ok: false, discount: 0, label: '', reason: 'This promo is no longer active.' };
+  }
   
   const today = new Date(); 
   today.setHours(0,0,0,0);
@@ -243,7 +255,7 @@ function renderActivePromos() {
 }
 
 function renderUpcomingPromos() {
-  const promos = loadedPromos.filter(p => p.status !== 'active');
+  const promos = loadedPromos.filter(p => getPromoRuntimeStatus(p) === 'upcoming');
   const el = document.getElementById('upcoming-promo-grid');
   if (!promos.length) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">📅</div><h3>No upcoming promos yet</h3><p>Stay tuned — something exciting is coming!</p></div>`;
@@ -273,6 +285,58 @@ function renderSaleItems() {
   const el = document.getElementById('sale-items-grid');
   el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No sale items right now</h3><p>We update sale prices regularly based on freshness!</p></div>`;
 }
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getTodayLocal() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function getPromoRuntimeStatus(p) {
+  const dbStatus = String(p.status || '').trim().toLowerCase();
+
+  if (dbStatus === 'inactive' || dbStatus === 'disabled' || dbStatus === 'archived') {
+    return 'inactive';
+  }
+
+  const today = getTodayLocal();
+  const start = parseLocalDate(p.start_date);
+  const end = parseLocalDate(p.end_date);
+
+  if (start) start.setHours(0, 0, 0, 0);
+  if (end) end.setHours(23, 59, 59, 999);
+
+  if (start && today < start) return 'upcoming';
+  if (end && new Date() > end) return 'expired';
+
+  return 'active';
+}
+
+loadCartCount();
 
 // INITIALIZATION
 loadPromosFromDB();

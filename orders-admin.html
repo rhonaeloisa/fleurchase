@@ -154,7 +154,7 @@ function renderOrders() {
     return `
     <tr>
       <td style="font-weight:700;font-size:12px">${o.id}</td>
-      <td>${o.customer||'—'}<br><span style="font-size:11px;color:var(--muted)">${o.loc||'—'}</span></td>
+      <td>${o.customer||'—'}<br><span style="font-size:11px;color:var(--muted)"></span></td>
       <td style="font-size:12px">
         ${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);font-weight:600;text-decoration:none">${o.phone}</a>`:'<span style="color:var(--muted)">—</span>'}
       </td>
@@ -185,11 +185,18 @@ function openDetail(id) {
   const o = DB_ORDERS.find(x => x.id === id);
   if (!o) return;
 
-  const payStatusLabel = o.payStatus==='verified'?'✅ Verified'
-    :o.payStatus==='rejected'?'❌ Rejected'
-    :o.payStatus==='uploaded'?'⏳ Receipt Uploaded — Awaiting Review'
-    :'⏳ Pending';
-  const payStatusColor = o.payStatus==='verified'?'var(--g3)':o.payStatus==='rejected'?'var(--p3)':'var(--muted)';
+  const receiptSrc = o.receiptImg || o.receipt || '';
+
+  const payStatusLabel = o.payStatus === 'verified' ? '✅ Verified'
+    : o.payStatus === 'rejected' ? '❌ Rejected'
+    : o.payStatus === 'uploaded' ? '⏳ Receipt Uploaded — Awaiting Review'
+    : '⏳ Pending';
+
+  const payStatusColor = o.payStatus === 'verified'
+    ? 'var(--g3)'
+    : o.payStatus === 'rejected'
+      ? 'var(--p3)'
+      : 'var(--muted)';
 
   // Build items list
   const itemRows = (o.itemDetails||[]).map(it => {
@@ -247,7 +254,7 @@ function openDetail(id) {
         <div class="dm-grid2">
           <div class="dm-field"><label>Full Name</label><span>${o.customer||'—'}</span></div>
           <div class="dm-field"><label>Phone Number</label><span>${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);text-decoration:none;font-weight:600">${o.phone}</a>`:'—'}</span></div>
-          <div class="dm-field" style="grid-column:1/-1"><label>Delivery Address</label><span>${o.address||o.loc||'—'}</span></div>
+          <div class="dm-field" style="grid-column:1/-1"><label>Delivery Address</label><span>${o.full_address||'—'}</span></div>
         </div>
       </div>
 
@@ -255,7 +262,7 @@ function openDetail(id) {
       <div class="dm-section">
         <div class="dm-section-title">📍 Delivery Details</div>
         <div class="dm-grid3">
-          <div class="dm-field"><label>Municipality</label><span>${o.loc||'—'}</span></div>
+          <div class="dm-field"><label>Municipality</label><span>${o.city||'—'}</span></div>
           <div class="dm-field"><label>Delivery Date</label><span>${o.delivDate||'—'}</span></div>
           <div class="dm-field"><label>Time Slot</label><span>${o.delivTime||'—'}</span></div>
         </div>
@@ -301,12 +308,21 @@ function openDetail(id) {
 
       <!-- RECEIPT -->
       <div class="dm-section">
-        <div class="dm-section-title">📷 Payment Receipt</div>
-        <div id="detail-receipt-${o.id}">
-          <div style="font-size:12px;color:var(--muted)">Loading receipt...</div>
-        </div>
+      <div class="dm-section-title">📷 Payment Receipt</div>
+      <div id="detail-receipt-${o.id}">
+        ${receiptSrc ? `
+          <a href="${receiptSrc}" target="_blank" style="display:inline-block">
+            <img src="${receiptSrc}"
+                alt="Payment receipt"
+                style="max-width:260px;width:100%;border-radius:10px;border:1px solid var(--line);object-fit:cover"/>
+          </a>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">
+            Click image to view full receipt
+          </div>
+        ` : `
+          <div style="font-size:12px;color:var(--muted)">No receipt uploaded.</div>
+        `}
       </div>
-
     </div>
 
     <!-- ACTION BAR -->
@@ -318,37 +334,30 @@ function openDetail(id) {
   `;
 
   openModal('detail-modal');
-
-  // Load receipt asynchronously after modal opens
-  setTimeout(() => {
-    const receiptEl = document.getElementById('detail-receipt-' + o.id);
-    if (!receiptEl) return;
-    const receiptSrc = localStorage.getItem('fc_receipt_' + o.id)
-      || (o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
-    if (receiptSrc) {
-      receiptEl.innerHTML = `
-        <img src="${receiptSrc}" class="receipt-img" alt="Payment receipt"
-          onerror="this.style.display='none';this.nextSibling.style.display='block'"/>
-        <div style="display:none;background:var(--soft);border-radius:var(--r);padding:.8rem;text-align:center;color:var(--muted);font-size:12px">⚠ Image could not be loaded</div>
-        <div style="text-align:center;margin-top:.4rem;font-size:11px;color:var(--muted)">${o.receiptFile||'Receipt image'}</div>`;
-    } else {
-      receiptEl.innerHTML = `<div class="receipt-placeholder"><span style="font-size:26px">📷</span><span>No receipt uploaded</span></div>`;
-    }
-  }, 80);
 }
 
 // ── VIEW RECEIPT (quick modal) ───────────────────────────────────────────────
 function viewReceipt(id) {
   const o = DB_ORDERS.find(x => x.id === id);
+
   const receiptSrc = localStorage.getItem('fc_receipt_' + id)
-    || (o && o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
-  if (!receiptSrc) { toast('No receipt image found.','err'); return; }
+    || o?.receiptImg
+    || o?.receipt
+    || null;
+
+  if (!receiptSrc) {
+    toast('No receipt image found.', 'err');
+    return;
+  }
+
   document.getElementById('vm-body').innerHTML = `
-    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">${o?.id} · ${o?.customer||'—'} · ${o?.payMethod||'—'}</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">${o?.id} · ${o?.customer || '—'} · ${o?.payMethod || '—'}</p>
     <img src="${receiptSrc}" class="receipt-img" alt="Receipt"
       onerror="this.style.display='none';this.nextSibling.style.display='block'"/>
     <div style="display:none;background:var(--soft);border-radius:var(--r);padding:1rem;text-align:center;color:var(--muted);font-size:13px">Image could not be loaded</div>
-    <div style="text-align:center;margin-top:.5rem;font-size:12px;color:var(--muted)">${o?.receiptFile||'Receipt image'}</div>`;
+    <div style="text-align:center;margin-top:.5rem;font-size:12px;color:var(--muted)">${o?.receiptFile || 'Receipt image'}</div>
+  `;
+
   openModal('validate-modal');
 }
 
@@ -356,8 +365,11 @@ function viewReceipt(id) {
 function openValidate(id) {
   const o = DB_ORDERS.find(x => x.id === id);
   if (!o) return;
+
   const receiptSrc = localStorage.getItem('fc_receipt_' + id)
-    || (o.receipt && o.receipt.startsWith('data:image') ? o.receipt : null);
+    || o.receiptImg
+    || o.receipt
+    || null;
   document.getElementById('vm-body').innerHTML = `
     <div style="background:var(--soft);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem;font-size:13px">
       <div style="font-weight:600;color:var(--ink)">${o.id} · ${o.customer||'—'}</div>
@@ -482,6 +494,7 @@ function openUpdate(id) {
     <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:.5rem" onclick="updateStatus('${id}')">Update Status</button>`;
   openModal('update-modal');
 }
+
 
 loadOrders();
 </script>

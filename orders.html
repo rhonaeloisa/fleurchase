@@ -77,12 +77,17 @@ function renderOrderCard(o){
   const deliveredActions=o.status==='Delivered'?`
     <div style="display:flex;gap:8px;margin-top:.5rem;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="toast('Reorder initiated!');setTimeout(()=>location.href='shop.html',1200)">↻ Reorder</button>
-      ${rev?`<div class="review-section done">
-        <div style="font-size:12px;font-weight:600;color:var(--g2);margin-bottom:3px">Your Review</div>
-        <div style="color:#F9A825;font-size:14px">${'★'.repeat(rev.rating)}${'☆'.repeat(5-rev.rating)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px;font-style:italic">"${rev.text}"</div>
-      </div>`:`<button class="btn btn-green btn-sm" onclick="openReview('${o.id}', '${o.orderItemId}')">⭐ Leave a Review</button>`}
-    </div>`:'';
+        ${rev ? `
+    <div class="review-section done">
+      <div style="font-size:12px;font-weight:600;color:var(--g2);margin-bottom:3px">Your Review</div>
+      <div style="color:#F9A825;font-size:14px">${'★'.repeat(rev.rating)}${'☆'.repeat(5-rev.rating)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;font-style:italic">"${rev.text}"</div>
+    </div>
+  ` : `
+    <button class="btn btn-green btn-sm" onclick="openReview('${o.id}', '${o.order_item_id || o.orderItemId}')">⭐ Leave a Review</button>
+  `}
+    </div>
+  `:'';
   return `
     <div class="order-card">
       <div class="oc-head">
@@ -97,7 +102,7 @@ function renderOrderCard(o){
           ${o.addonDetails?.length?`<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Extras: ${o.addonDetails.map(a=>a.name).join(', ')}</div>`:''}
           ${o.promo?`<span class="tag tag-p" style="font-size:10px">🏷️ ${o.promo}</span> `:'' }
           <div style="font-size:12px;color:var(--g3);font-weight:500;margin-top:3px">${o.payMethod||''}</div>
-          <div style="font-size:12px;color:var(--muted)">📍 ${o.loc||o.address||'—'} · ${isFree?'🟢 Free delivery':'🟡 Extra shipping fee'}</div>
+          <div style="font-size:12px;color:var(--muted)">📍 ${o.full_address||'—'} · ${isFree?'🟢 Free delivery':'🟡 Extra shipping fee'}</div>
         </div>
         <div class="price-breakdown">
           <div class="pb-row"><span>Items</span><span>${fmtP(o.sub||o.total)}</span></div>
@@ -162,27 +167,38 @@ function setTab(t,btn){
   });
 }
 
-// REVIEW SYSTEM
-let reviewOrderItemId = null;
 
-function openReview(orderId, orderItemId){
-   reviewOrderItemId = orderItemId;
-  const o=FC.getOrders().find(x=>x.id===orderId);
-  document.getElementById('review-modal-body').innerHTML=`
+let reviewOrderItemId = null;
+let reviewRating = 0;
+
+function openReview(orderId, orderItemId) {
+  reviewOrderItemId = orderItemId;
+  reviewRating = 0;
+
+  const o = DB_ORDERS.find(x => String(x.id) === String(orderId));
+
+  if (!reviewOrderItemId || reviewOrderItemId === 'undefined') {
+    toast('Cannot review this order item. Missing order item ID.', 'err');
+    return;
+  }
+
+  document.getElementById('review-modal-body').innerHTML = `
     <div style="font-size:13px;color:var(--muted);margin-bottom:1rem">
-      <strong style="color:var(--ink)">${o?.items||'Your order'}</strong><br>
+      <strong style="color:var(--ink)">${o?.items || 'Your order'}</strong><br>
       Share your experience to help others!
     </div>
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.5rem">Your Rating</div>
     <div class="stars-row" id="stars-row">
-      ${[1,2,3,4,5].map(i=>`<button class="star-btn" id="star-${i}" onclick="setRating(${i})">★</button>`).join('')}
+      ${[1,2,3,4,5].map(i => `<button class="star-btn" id="star-${i}" onclick="setRating(${i})">★</button>`).join('')}
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:.8rem" id="rating-lbl">Tap a star to rate</div>
     <div class="ff"><label>Your Review</label>
       <textarea class="review-ta" id="review-text" placeholder="Tell us about your experience — the flowers, packaging, delivery..."></textarea>
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:.8rem">Your review helps future customers and our florists!</div>
-    <button class="btn btn-green" style="width:100%;justify-content:center" onclick="submitReview()">Submit Review ⭐</button>`;
+    <button class="btn btn-green" style="width:100%;justify-content:center" onclick="submitReview()">Submit Review ⭐</button>
+  `;
+
   openModal('review-modal');
 }
 
@@ -228,6 +244,25 @@ async function submitReview(){
     toast('Cannot submit review.', 'err');
   }
 }
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+loadCartCount();
 
 loadOrdersFromDB();
 </script>

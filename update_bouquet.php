@@ -1,4 +1,4 @@
-<?php
+<?php //edit bouquet
 
 session_start();
 include 'connection_db.php';
@@ -48,10 +48,9 @@ $products     = json_decode($products_raw, true);
 if (!is_array($products)) redirect_err('Invalid product data.', $bouquet_id);
 
 /* ── Image handling ── */
-$new_image = $old_image; // default: keep existing
+$new_image = $old_image;
 
 if ($remove_img && $old_image) {
-  // Delete old file
   $old_path = '../images/' . $old_image;
   if (file_exists($old_path)) @unlink($old_path);
   $new_image = '';
@@ -65,7 +64,6 @@ if (!empty($_FILES['image']['name'])) {
   if ($_FILES['image']['size'] > 5 * 1024 * 1024)
     redirect_err('Image must be under 5 MB.', $bouquet_id);
 
-  // Delete old file before replacing
   if ($old_image && file_exists('../images/' . $old_image)) @unlink('../images/' . $old_image);
 
   $ext       = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
@@ -79,7 +77,104 @@ if (!empty($_FILES['image']['name'])) {
 mysqli_begin_transaction($conn);
 
 try {
-  /* 1. Update bouquet row */
+  /* 1. Fetch the OLD bouquet stock before updating */
+  $fetchOld = mysqli_prepare($conn, "SELECT stock FROM bouquet WHERE bouquet_id = ?");
+  if (!$fetchOld) throw new Exception('Prepare failed (fetch old stock): ' . mysqli_error($conn));
+  mysqli_stmt_bind_param($fetchOld, 'i', $bouquet_id);
+  mysqli_stmt_execute($fetchOld);
+  $oldResult   = mysqli_stmt_get_result($fetchOld);
+  $oldBouquet  = mysqli_fetch_assoc($oldResult);
+  mysqli_stmt_close($fetchOld);
+
+  if (!$oldBouquet) throw new Exception('Bouquet not found.');
+  $old_stock = intval($oldBouquet['stock']);
+
+  /* 2. Fetch OLD products (product_id => quantity) */
+  $fetchOldProds = mysqli_prepare($conn,
+    "SELECT product_id, quantity FROM bouquet_product WHERE bouquet_id = ?"
+  );
+  if (!$fetchOldProds) throw new Exception('Prepare failed (fetch old products): ' . mysqli_error($conn));
+  mysqli_stmt_bind_param($fetchOldProds, 'i', $bouquet_id);
+  mysqli_stmt_execute($fetchOldProds);
+  $oldProdsResult = mysqli_stmt_get_result($fetchOldProds);
+  $old_products_map = []; // [product_id => quantity]
+  while ($row = mysqli_fetch_assoc($oldProdsResult)) {
+    $old_products_map[intval($row['product_id'])] = intval($row['quantity']);
+  }
+  mysqli_stmt_close($fetchOldProds);
+
+  /* 3. Build new products map from submitted data */
+  $new_products_map = []; // [product_id => quantity]
+  foreach ($products as $p) {
+    $pid = intval($p['product_id']);
+    $qty = intval($p['quantity']);
+    if ($pid > 0 && $qty > 0) {
+      $new_products_map[$pid] = $qty;
+    }
+  }
+
+  /* 4. Calculate stock adjustments per product
+   *
+   *  For every product that appears in old or new (or both):
+   *    old_total = old_qty_per_bouquet × old_bouquet_stock   (what was deducted before)
+   *    new_total = new_qty_per_bouquet × new_bouquet_stock   (what should be deducted now)
+   *    adjustment = old_total - new_total
+   *      positive → restore stock back to product
+   *      negative → deduct more stock from product
+   *      zero     → no change needed
+   */
+  $all_pids = array_unique(array_merge(
+    array_keys($old_products_map),
+    array_keys($new_products_map)
+  ));
+
+  $adjustStmt = mysqli_prepare($conn,
+    "UPDATE product SET stock = stock + ? WHERE product_id = ?"
+  );
+  if (!$adjustStmt) throw new Exception('Prepare failed (stock adjust): ' . mysqli_error($conn));
+
+  $checkStmt = mysqli_prepare($conn,
+    "SELECT stock FROM product WHERE product_id = ?"
+  );
+  if (!$checkStmt) throw new Exception('Prepare failed (stock check): ' . mysqli_error($conn));
+
+  foreach ($all_pids as $pid) {
+    $old_qty   = $old_products_map[$pid] ?? 0;
+    $new_qty   = $new_products_map[$pid] ?? 0;
+    $old_total = $old_qty * $old_stock;
+    $new_total = $new_qty * $stock;
+    $adjustment = $old_total - $new_total; // positive = restore, negative = deduct more
+
+    if ($adjustment === 0) continue; // nothing to do
+
+    if ($adjustment < 0) {
+      // Need to deduct more — check current stock first
+      $deduct_amount = abs($adjustment);
+
+      mysqli_stmt_bind_param($checkStmt, 'i', $pid);
+      mysqli_stmt_execute($checkStmt);
+      $checkResult   = mysqli_stmt_get_result($checkStmt);
+      $productRow    = mysqli_fetch_assoc($checkResult);
+
+      if (!$productRow || intval($productRow['stock']) < $deduct_amount) {
+        $new_qty_label = $new_products_map[$pid] ?? 0;
+        throw new Exception(
+          "Insufficient stock for product ID $pid. " .
+          "Need $deduct_amount more units ($new_qty_label per bouquet × $stock bouquets)."
+        );
+      }
+    }
+
+    // Apply adjustment (positive restores, negative deducts via negative addition)
+    mysqli_stmt_bind_param($adjustStmt, 'ii', $adjustment, $pid);
+    if (!mysqli_stmt_execute($adjustStmt))
+      throw new Exception("Stock adjustment failed for product ID $pid: " . mysqli_stmt_error($adjustStmt));
+  }
+
+  mysqli_stmt_close($adjustStmt);
+  mysqli_stmt_close($checkStmt);
+
+  /* 5. Update bouquet row */
   $sql = "UPDATE bouquet SET
             category=?, variation=?, name=?, description=?, price=?,
             is_custom=?, image=?, status=?, stock=?,
@@ -100,7 +195,7 @@ try {
     throw new Exception('Update bouquet failed: ' . mysqli_stmt_error($stmt));
   mysqli_stmt_close($stmt);
 
-  /* 2. Delete existing bouquet_product rows for this bouquet */
+  /* 6. Delete old bouquet_product rows */
   $del = mysqli_prepare($conn, "DELETE FROM bouquet_product WHERE bouquet_id=?");
   if (!$del) throw new Exception('Prepare delete failed: ' . mysqli_error($conn));
   mysqli_stmt_bind_param($del, 'i', $bouquet_id);
@@ -108,8 +203,8 @@ try {
     throw new Exception('Delete bouquet_product failed: ' . mysqli_stmt_error($del));
   mysqli_stmt_close($del);
 
-  /* 3. Re-insert selected products */
-  if (!empty($products)) {
+  /* 7. Re-insert selected products */
+  if (!empty($new_products_map)) {
     $ins = mysqli_prepare($conn,
       "INSERT INTO bouquet_product (bouquet_id, product_id, quantity, is_addons)
        VALUES (?, ?, ?, ?)"
@@ -134,7 +229,6 @@ try {
 } catch (Exception $e) {
   mysqli_rollback($conn);
 
-  // Roll back uploaded image on failure
   if (!empty($new_image) && $new_image !== $old_image && file_exists('../images/' . $new_image)) {
     @unlink('../images/' . $new_image);
   }
