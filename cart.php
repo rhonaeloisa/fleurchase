@@ -1,52 +1,47 @@
-  <?php
-  // 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
-  if (session_status() === PHP_SESSION_NONE) {
-      session_start();
-  }
+<?php
+// 1. DATABASE CONNECTION & SERVER-SIDE CART FETCHING
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-  error_reporting(E_ALL);
-  ini_set('display_errors', 1);
-  require_once 'db_connection.php'; // Matches your exact filename perfectly
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once 'db_connection.php'; 
 
-  // Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
-  $current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
+// Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
 
-  // LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
-  $current_cart_id = 0;
-  $cart_lookup_stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
-  $cart_lookup_stmt->bind_param("i", $current_user_id);
-  $cart_lookup_stmt->execute();
-  $cart_lookup_res = $cart_lookup_stmt->get_result();
+// LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
+$current_cart_id = 0;
+$cart_lookup_stmt = $conn->prepare("SELECT cart_id FROM cart WHERE user_id = ? LIMIT 1");
+$cart_lookup_stmt->bind_param("i", $current_user_id);
+$cart_lookup_stmt->execute();
+$cart_lookup_res = $cart_lookup_stmt->get_result();
 
-  if ($cart_lookup_res && $cart_lookup_res->num_rows > 0) {
-      $cart_lookup_row = $cart_lookup_res->fetch_assoc();
-      $current_cart_id = intval($cart_lookup_row['cart_id']);
-  }
-  $cart_lookup_stmt->close();
+if ($cart_lookup_res && $cart_lookup_res->num_rows > 0) {
+    $cart_lookup_row = $cart_lookup_res->fetch_assoc();
+    $current_cart_id = intval($cart_lookup_row['cart_id']);
+}
+$cart_lookup_stmt->close();
 
-  // SQL Query joining cart_item with the bouquet catalog table matching our live user's cart container index
-  $sql = "
-      SELECT ci.*, 
-            b.name AS bouquet_name, 
-            b.description AS bouquet_desc, 
-            b.image AS bouquet_img
-      FROM cart_item ci
-      LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
-      WHERE ci.cart_id = ?
-      ORDER BY ci.cart_item_id DESC
-  ";
+// SQL Query joining cart_item with the bouquet catalog table matching our live user's cart container index
+$sql = "
+    SELECT ci.*, 
+          b.name AS bouquet_name, 
+          b.description AS bouquet_desc, 
+          b.image AS bouquet_img
+    FROM cart_item ci
+    LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
+    WHERE ci.cart_id = ?
+    ORDER BY ci.cart_item_id DESC
+";
 
-  $stmt = $conn->prepare($sql);
-  $stmt->bind_param("i", $current_cart_id);
-  $stmt->execute();
-  $result = $stmt->get_result();
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $current_cart_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-
-  $db_cart_items = [];
-
-  $db_cart_items = [];
-
-  $db_cart_items = [];
+$db_cart_items = [];
 
 while($row = $result->fetch_assoc()) {
     $isCustom = !empty($row['is_custom']) && $row['is_custom'] == 1;
@@ -64,9 +59,7 @@ while($row = $result->fetch_assoc()) {
                ($customData['color'] ?? 'No color') . "<br>" .
                ($customData['flowers'] ?? 'Mixed flowers');
 
-        // Use saved total price (Best approach)
         $price = floatval($row['unit_price']);
-
         $imagePath = "images/default.jpg"; 
     } 
     else {
@@ -87,7 +80,7 @@ while($row = $result->fetch_assoc()) {
         'cart_id'      => intval($row['cart_id']),
         'bouquet_id'   => intval($row['bouquet_id'] ?? 0),
         'qty'          => intval($row['quantity']),
-        'price'        => $price,           // ← This is what shows the total
+        'price'        => $price,           
         'name'         => $name,
         'sub'          => $sub,
         'img'          => $imagePath,
@@ -97,27 +90,41 @@ while($row = $result->fetch_assoc()) {
     ];
 }
 
-  // Fetch active vouchers from the database to power the checkout summary calculation components
-  $promo_sql = "SELECT * FROM promos WHERE status = 'active'";
-  $promo_result = $conn->query($promo_sql);
-  $db_active_promos = [];
+// FETCH ACTIVE VOUCHERS PRE-FILTERED TO EXCLUDE CODES ALREADY CLAIMED BY THIS USER
+// FIXED: Runs an anti-join subquery checking against user_promo records to prevent reuse options early
+$promo_sql = "
+    SELECT p.* FROM promos p
+    WHERE p.status = 'active'
+      AND p.promo_id NOT IN (
+          SELECT up.promo_id 
+          FROM user_promo up 
+          WHERE up.user_id = ? AND up.status = 'used'
+      )
+";
 
-  if ($promo_result && $promo_result->num_rows > 0) {
-      while($row = $promo_result->fetch_assoc()) {
-          $db_active_promos[] = [
-              'promo_id'         => intval($row['promo_id']),
-              'code'             => $row['code'],
-              'name'             => $row['promo_name'],
-              'description'      => $row['description'],
-              'type'             => $row['discount_type'],
-              'value'            => floatval($row['discount_value']),
-              'min_order_amount' => floatval($row['min_order_amount']),
-              'start_date'       => $row['start_date'],
-              'end_date'         => $row['end_date']
-          ];
-      }
-  }
+$promo_stmt = $conn->prepare($promo_sql);
+$promo_stmt->bind_param("i", $current_user_id);
+$promo_stmt->execute();
+$promo_result = $promo_stmt->get_result();
 
+$db_active_promos = [];
+
+if ($promo_result && $promo_result->num_rows > 0) {
+    while($row = $promo_result->fetch_assoc()) {
+        $db_active_promos[] = [
+            'promo_id'         => intval($row['promo_id']),
+            'code'             => $row['code'],
+            'name'             => $row['promo_name'],
+            'description'      => $row['description'],
+            'type'             => $row['discount_type'],
+            'value'            => floatval($row['discount_value']),
+            'min_order_amount' => floatval($row['min_order_amount']),
+            'start_date'       => $row['start_date'],
+            'end_date'         => $row['end_date']
+        ];
+    }
+}
+$promo_stmt->close();
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -219,7 +226,6 @@ requireAuth('customer');
 buildTopNav('cart');
 renderFooter('footer-container', false);
 
-// Inject server-side database records straight into operational runtime memory scope
 let currentCartId = <?php echo $current_cart_id; ?>;
 let cartItemsArray = <?php echo json_encode($db_cart_items); ?>;
 let availablePromos = <?php echo json_encode($db_active_promos); ?>;
@@ -250,7 +256,6 @@ function renderCart() {
       <div class="ci-info">
         <div class="ci-name">${item.name}</div>
         <div class="ci-sub" style="line-height:1.4">${item.sub||''}</div>
-          ${item.is_custom ? `<div style="font-size:12px; color:var(--p3); margin-top:4px;">✦ Custom Arrangement</div>` : ''}
         ${item.is_custom ? `
           <div style="font-size:11px;color:var(--p3);margin-top:4px;">
             ✨ Custom Arrangement
@@ -276,7 +281,6 @@ function renderCart() {
   if (!manualPromoUsed) autoApplyPromo();
 }
 
-// ── BACKEND SYNC: ALTER REQUISITION COUNT ───────────────────
 async function changeQty(i, delta) {
   if (!cartItemsArray[i]) return;
   const targetItem = cartItemsArray[i];
@@ -290,12 +294,10 @@ async function changeQty(i, delta) {
     });
     const res = await response.json();
     if (res.success) {
-      // 1. Update the quantities inside the active viewing array scope
       targetItem.qty += delta;
       document.getElementById('qty-' + i).textContent = targetItem.qty;
       document.getElementById('price-' + i).textContent = fmtP(targetItem.price * targetItem.qty);
       
-      // FIXED: Sync the newly incremented quantities back into local storage context
       const updatedLocal = cartItemsArray.map(item => ({
         cart_item_id: item.cart_item_id,
         cartId: String(item.bouquet_id),
@@ -306,17 +308,16 @@ async function changeQty(i, delta) {
         qty: item.qty,
         checked: item.checked
       }));
-      FC.saveCart(updatedLocal); // Commits the clean dataset boundaries to browser storage
+      FC.saveCart(updatedLocal); 
 
       updateSummary();
       if (!manualPromoUsed) autoApplyPromo();
     }
   } catch(err) {
-    console.error("Critical communications malfunction with action endpoint pipeline:", err);
+    console.error(err);
   }
 }
 
-// ── SELECTION ─────────────────────────────────────────────
 function toggleItem(i, checked) {
   if (!cartItemsArray[i]) return;
   cartItemsArray[i].checked = checked;
@@ -342,7 +343,6 @@ function syncSelectAll() {
   document.getElementById('sel-summary').textContent = sel.length+' of '+cartItemsArray.length+' item'+(cartItemsArray.length!==1?'s':'')+' selected';
 }
 
-// ── BACKEND SYNC: DISCARD SINGLE INSTANCE ROW ────────────────
 async function removeItem(i) {
   if (!cartItemsArray[i]) return;
   try {
@@ -353,9 +353,8 @@ async function removeItem(i) {
     });
     const res = await response.json();
     if(res.success) {
-      cartItemsArray.splice(i, 1); // Drops it from active array scope
+      cartItemsArray.splice(i, 1); 
       
-      // FIXED: Sync the newly updated array data back into local storage context
       const updatedLocal = cartItemsArray.map(item => ({
         cart_item_id: item.cart_item_id,
         cartId: String(item.bouquet_id),
@@ -368,14 +367,14 @@ async function removeItem(i) {
       }));
       FC.saveCart(updatedLocal); 
 
-      renderCart(); // Re-renders the display elements
+      renderCart(); 
       toast('Cart item deleted.');
     }
   } catch(err) {
     console.error(err);
   }
 }
-// ── BACKEND SYNC: PURGE WHOLE CART COMPARTMENT ───────────────
+
 async function clearCart() {
   if (!confirm('Remove all items from your database cart context?')) return;
   try {
@@ -395,7 +394,6 @@ async function clearCart() {
   }
 }
 
-// ── LOCAL MATHEMATICAL CHECKOUT CALCULATIONS ───────────────
 function getSelectedSub() {
   return cartItemsArray.filter(i=>i.checked).reduce((s,i)=>s+i.price*i.qty,0);
 }
@@ -424,7 +422,6 @@ function updateSummary() {
 
   document.getElementById('os-total').textContent = fmtP(finalSub);
 
-  // Overwrite header navigation badge total quantities to sync with dynamic db arrays row sizes layout loops
   const currentDbCount = cartItemsArray.reduce((total, item) => total + item.qty, 0);
   document.querySelectorAll('.cart-count').forEach(el => el.textContent = currentDbCount);
 
@@ -440,11 +437,10 @@ function updateSummary() {
     : count+' item'+(count!==1?'s':'')+' will be checked out';
 }
 
-// ── LOCAL SQL CODES EVALUATION ENGINE ───────────────────────
 function validateLocalPromo(promoCode, subtotal) {
   const pr = availablePromos.find(p => p.code.toLowerCase() === promoCode.toLowerCase());
   
-  if (!pr) return { ok: false, discount: 0, reason: 'Promo code not found.' };
+  if (!pr) return { ok: false, discount: 0, reason: 'Promo code already used or not found.' };
   
   const today = new Date(); 
   today.setHours(0,0,0,0);
@@ -521,7 +517,6 @@ function applyPromoCode() {
   }
 }
 
-// ── PROCEED TO CHECKOUT ───────────────────────────────────
 function proceedCheckout() {
   const selected = cartItemsArray.filter(i=>i.checked);
   if (!selected.length) { toast('Please select at least one item.','warn'); return; }
