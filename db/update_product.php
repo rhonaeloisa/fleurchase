@@ -1,4 +1,5 @@
 <?php
+session_start();
 include 'connection_db.php';
 
 $product_id = $_POST['product_id'] ?? '';
