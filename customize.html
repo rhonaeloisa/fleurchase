@@ -2,81 +2,583 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FleurChase — Customize Bouquet</title>
+<title>FleurChase - Customize Bouquet</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-.custom-layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;padding:2rem 2.5rem;align-items:start}
-.step-card{background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.4rem;margin-bottom:1rem}
-.step-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
-.step-title::after{content:'';flex:1;height:1px;background:var(--line)}
-/* SIZE CARDS */
-.size-row{display:flex;gap:8px}
-.size-btn{flex:1;border:2px solid var(--line);border-radius:var(--rl);padding:14px 10px;cursor:pointer;transition:all .2s;background:white;text-align:left}
-.size-btn:hover{border-color:var(--g5);background:var(--g9)}
-.size-btn.sel{border-color:var(--p4);background:var(--p9)}
-.size-btn .sb-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px}
-.size-btn .sb-range{font-size:12px;font-weight:600;color:var(--g3)}
-.size-btn .sb-desc{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
-/* STEM PROGRESS */
-.stem-progress{background:var(--soft);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem}
-.stem-progress-bar-wrap{flex:1;background:var(--line);border-radius:10px;height:8px;overflow:hidden}
-.stem-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--g5),var(--g3));transition:width .3s}
-.stem-bar.ready{background:linear-gradient(90deg,var(--p4),var(--p3))}
-.stem-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
-.stem-count{font-size:13px;font-weight:700;color:var(--g2);white-space:nowrap}
-.stem-hint{font-size:11px;color:var(--muted);margin-top:3px}
-/* FLOWER GRID */
-.flower-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.fo{background:var(--soft);border-radius:var(--r);padding:10px 6px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.fo.sel{border-color:var(--g4);background:var(--g9)}.fo.maxed-no-sel{opacity:.5}
-.fo .fi{font-size:22px;margin-bottom:3px}.fo strong{font-size:11px;color:var(--ink);display:block}.fo small{font-size:10px;color:var(--muted)}
-.fo-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:7px}
-.fo-btn{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;color:var(--ink);flex-shrink:0}
-.fo-btn:hover{background:var(--g8);border-color:var(--g5)}
-.fo-btn.rem:hover{background:var(--p9);border-color:var(--p5)}
-.fo-btn:disabled{opacity:.3;cursor:not-allowed;background:white}
-.fo-qty{font-size:13px;font-weight:700;min-width:22px;text-align:center;color:var(--ink)}
-/* FILLERS */
-.filler-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.filler-card{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s}
-.filler-card:hover{border-color:var(--g6)}.filler-card.sel{border-color:var(--g4);background:var(--g9)}
-.filler-icon{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.filler-name{font-size:10px;font-weight:600;color:var(--ink);margin-bottom:2px}
-.filler-price{font-size:10px;color:var(--g3);font-weight:600}
-.filler-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-/* ADDONS */
-.acats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
-.acat{padding:5px 13px;border-radius:16px;border:1.5px solid var(--line);background:white;font-family:var(--font-b);font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
-.acat:hover{border-color:var(--g5);color:var(--g2)}.acat.active{background:var(--g9);border-color:var(--g5);color:var(--g2)}
-.addons-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.aoc{background:var(--soft);border-radius:var(--r);padding:10px 7px 8px;text-align:center;border:2px solid transparent;transition:all .2s;position:relative}
-.aoc:hover{border-color:var(--g6)}.aoc.sel{border-color:var(--g4);background:var(--g9)}
-.aoc .aoc-img{width:38px;height:38px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 4px}
-.aoc .aoc-icon-wrap{width:38px;height:38px;font-size:22px;background:white;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.aoc .aoc-name{font-size:10px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
-.aoc .aoc-price{font-size:10px;color:var(--g3);font-weight:600}
-.aoc-chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--g4);border-radius:50%;display:none;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:700}
-.aoc.sel .aoc-chk{display:flex}
-.aoc-ctrl{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
-/* SHARED SMALL +/- */
-.sm-btn{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1;flex-shrink:0}
-.sm-btn:hover{background:var(--g8)}.sm-btn.rem:hover{background:var(--p9)}
-.sm-btn:disabled{opacity:.3;cursor:not-allowed}
-.sm-qty{font-size:12px;font-weight:700;min-width:18px;text-align:center;color:var(--ink)}
-/* COLORS */
-.color-row{display:flex;gap:8px;flex-wrap:wrap}
-.cdot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s}
-.cdot:hover{transform:scale(1.1)}.cdot.sel{border-color:var(--ink);box-shadow:0 0 0 3px white,0 0 0 4.5px var(--ink)}
-/* SUMMARY */
-.sum-sticky{position:sticky;top:calc(var(--nh)+16px)}
-.sum-preview{background:var(--soft);border-radius:var(--rl);height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:1rem;border:1px solid var(--line)}
-.sum-preview img{width:100%;height:100%;object-fit:cover}
-.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
-.sum-row:last-of-type{border-bottom:none}.sum-k{color:var(--muted)}.sum-v{font-weight:500;text-align:right;max-width:155px;font-size:12px}
-.sum-total{display:flex;justify-content:space-between;font-size:17px;font-weight:700;padding:11px 0 0;border-top:2px solid var(--line);margin-top:4px;color:var(--g1)}
-.note-ta{width:100%;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:13px;resize:none;height:75px;color:var(--ink);outline:none;transition:border-color .2s;background:var(--soft)}
-.note-ta:focus{border-color:var(--g4);background:white}
-@media(max-width:900px){.custom-layout{grid-template-columns:1fr}.sum-sticky{position:static}}
+/* --- LAYOUT STRUCTURE --- */
+.custom-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  padding: 2rem 2.5rem;
+  align-items: start;
+}
+
+.step-card {
+  background: white;
+  border-radius: var(--rl);
+  border: 1px solid var(--line);
+  padding: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.step-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* --- STEP 1: BOUQUET SIZE CARDS --- */
+.size-row {
+  display: flex;
+  gap: 8px;
+}
+
+.size-btn {
+  flex: 1;
+  border: 2px solid var(--line);
+  border-radius: var(--rl);
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  text-align: left;
+}
+
+.size-btn:hover {
+  border-color: var(--g5);
+  background: var(--g9);
+}
+
+.size-btn.sel {
+  border-color: var(--p4);
+  background: var(--p9);
+}
+
+.size-btn .sb-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+
+.size-btn .sb-range {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--g3);
+}
+
+.size-btn .sb-desc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+/* --- STEM PROGRESS BAR --- */
+.stem-progress {
+  background: var(--soft);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  margin-bottom: 1rem;
+}
+
+.stem-progress-bar-wrap {
+  flex: 1;
+  background: var(--line);
+  border-radius: 10px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.stem-bar {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--g5), var(--g3));
+  transition: width 0.3s;
+}
+
+.stem-bar.ready {
+  background: linear-gradient(90deg, var(--p4), var(--p3));
+}
+
+.stem-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.stem-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--g2);
+  white-space: nowrap;
+}
+
+.stem-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* --- STEP 2: FLOWER SELECTION --- */
+.flower-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 12px;
+}
+
+.fo {
+  background: var(--soft);
+  border-radius: var(--rl);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; 
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  min-height: 120px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.fo:hover {
+  border-color: var(--g6); /* Darker border on hover */
+}
+
+/* --- SELECTED STATE (Turns Green) --- */
+.fo.sel {
+  border-color: var(--g4);
+  background: var(--g9);
+}
+
+.fo.maxed-no-sel {
+  opacity: 0.5;
+}
+
+/* Image on the left */
+.fo img, .fo .fi {
+  width: 90px;             /* Bigger size */
+  height: 90px;            /* Bigger size */
+  flex-shrink: 0;
+  object-fit: contain;       
+  border-radius: 10px;
+  padding: 5px;
+  display: block;
+}
+
+/* Text Block: Positioned Right, but Content is Centered */
+.fo-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* Right-aligns the text and buttons */
+  text-align: right;
+  flex: 1;
+  padding-left: 15px;
+  gap: 2px;
+}
+
+.fo strong {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.fo small {
+  font-size: 12px;
+  color: var(--g3);         /* Green Price */
+  font-weight: 700;
+}
+
+/* Controls - Centered under the text */
+.fo-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.fo-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  color: var(--ink);
+}
+
+.fo-btn:hover { 
+  background: var(--g8); 
+  border-color: var(--g5); 
+}
+
+.fo-btn.rem:hover { 
+  background: var(--p9); 
+  border-color: var(--p5); 
+}
+
+.fo-btn:disabled { 
+  opacity: 0.3; 
+  cursor: not-allowed; 
+}
+
+.fo-qty {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* --- STEP 3: FILLERS (Matched to Flower Style) --- */
+.filler-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 items per row */
+  gap: 12px;
+}
+
+.filler-card {
+  background: var(--soft);
+  border-radius: var(--r);
+  
+  /* Pushed text away from the right border */
+  padding: 14px 30px 14px 14px; 
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  
+  /* Forces the square shape */
+  aspect-ratio: 1 / 1; 
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Hover effect */
+.filler-card:hover {
+  border-color: var(--g6);
+}
+
+/* Selected state (Green) */
+.filler-card.sel {
+  border-color: var(--g4);
+  background: var(--g9);
+}
+
+/* Icon on the left */
+.filler-icon {
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24px;
+}
+
+/* Text Block: Positioned Right, but Content is Centered */
+.fo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    /* Centered relative to each other */
+  text-align: center;     
+  padding-left: 35px;     /* The "nudge" to the right side */
+  gap: 3px;
+}
+
+.filler-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.filler-price {
+  font-size: 12px;
+  color: var(--g3);         /* Green Price */
+  font-weight: 700;
+}
+
+/* Controls - Centered under the text */
+.filler-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Shared button styles are already in your CSS, but added here for safety */
+.sm-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  color: var(--ink);
+}
+
+.sm-btn:hover { background: var(--g8); border-color: var(--g5); }
+.sm-btn.rem:hover { background: var(--p9); border-color: var(--p5); }
+.sm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.sm-qty {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+/* --- STEP 4: EXTRAS & ADD-ONS (Matched to Flower Style) --- */
+/* --- STEP 4: EXTRAS & ADD-ONS (No Checkmark) --- */
+.acats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.acat {
+  padding: 5px 13px;
+  border-radius: 16px;
+  border: 1.5px solid var(--line);
+  background: white;
+  font-family: var(--font-b);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.acat:hover { border-color: var(--g5); color: var(--g2); }
+.acat.active { background: var(--g9); border-color: var(--g5); color: var(--g2); }
+
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 12px;
+}
+
+.aoc {
+  background: var(--soft);
+  border-radius: var(--r);
+  padding: 14px 30px 14px 14px; 
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  aspect-ratio: 1 / 1; 
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.aoc:hover { border-color: var(--g6); }
+
+/* Selected state - still turns green, but no checkmark */
+.aoc.sel { 
+  border-color: var(--g4); 
+  background: var(--g9); 
+}
+
+.aoc .aoc-img, .aoc .aoc-icon-wrap {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aoc .fo-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    
+  text-align: center;     
+  padding-left: 35px;     
+  gap: 3px;
+}
+
+.aoc .aoc-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.aoc .aoc-price {
+  font-size: 12px;
+  color: var(--g3);         
+  font-weight: 700;
+}
+
+/* --- REMOVED THE CHECKMARK LOGIC --- */
+.aoc-chk {
+  display: none !important; /* Forces the checkmark to stay hidden */
+}
+
+.aoc-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* --- STEP 5: WRAPPING COLOR --- */
+.color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cdot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.cdot:hover {
+  transform: scale(1.1);
+}
+
+.cdot.sel {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px white, 0 0 0 4.5px var(--ink);
+}
+
+/* --- STEP 6: NOTES & SUMMARY SIDEBAR --- */
+.sum-sticky {
+  position: sticky;
+  top: calc(var(--nh) + 16px);
+}
+
+.sum-preview {
+  background: var(--soft);
+  border-radius: var(--rl);
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+}
+
+.sum-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.sum-row:last-of-type {
+  border-bottom: none;
+}
+
+.sum-k {
+  color: var(--muted);
+}
+
+.sum-v {
+  font-weight: 500;
+  text-align: right;
+  max-width: 155px;
+  font-size: 12px;
+}
+
+.sum-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 11px 0 0;
+  border-top: 2px solid var(--line);
+  margin-top: 4px;
+  color: var(--g1);
+}
+
+.note-ta {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  resize: none;
+  height: 75px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+  background: var(--soft);
+}
+
+.note-ta:focus {
+  border-color: var(--g4);
+  background: white;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 900px) {
+  .custom-layout {
+    grid-template-columns: 1fr;
+  }
+  .sum-sticky {
+    position: static;
+  }
+}
 </style>
 </head>
 <body>
@@ -89,7 +591,7 @@
 
     <!-- STEP 1: SIZE -->
     <div class="step-card">
-      <div class="step-title">Step 1 — Bouquet size</div>
+      <div class="step-title">Step 1 - Bouquet size</div>
       <div class="size-row" id="size-row"></div>
     </div>
 
@@ -104,33 +606,33 @@
 
     <!-- STEP 2: FLOWERS -->
     <div class="step-card">
-      <div class="step-title">Step 2 — Choose flowers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(use + / − to adjust stems)</span></div>
+      <div class="step-title">Step 2 - Choose flowers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(use + / − to adjust stems)</span></div>
       <div class="flower-grid" id="flower-grid"></div>
     </div>
 
     <!-- STEP 3: FILLERS (optional) -->
     <div class="step-card">
-      <div class="step-title">Step 3 — Fillers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <div class="step-title">Step 3 - Fillers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
       <div class="filler-grid" id="filler-grid"></div>
     </div>
 
     <!-- STEP 4: ADD-ONS -->
     <div class="step-card">
-      <div class="step-title">Step 4 — Extras <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional — chocolates, teddies, gifts)</span></div>
+      <div class="step-title">Step 4 - Extras <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional — chocolates, teddies, gifts)</span></div>
       <div class="acats" id="addon-cats"></div>
       <div class="addons-grid" id="addons-grid"></div>
     </div>
 
     <!-- STEP 5: WRAPPING -->
     <div class="step-card">
-      <div class="step-title">Step 5 — Wrapping color</div>
+      <div class="step-title">Step 5 - Wrapping color</div>
       <div class="color-row" id="color-row"></div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px" id="color-lbl">Selected: Blush Pink</div>
     </div>
 
     <!-- STEP 6: NOTE -->
     <div class="step-card">
-      <div class="step-title">Step 6 — Florist note <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
+      <div class="step-title">Step 6 - Florist note <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(optional)</span></div>
       <textarea class="note-ta" id="bouquet-note" placeholder="e.g. Extra lush, sage ribbon, no carnations..."></textarea>
     </div>
   </div>
@@ -150,7 +652,7 @@
       <div class="sum-row"><span class="sum-k">Service fee</span><span class="sum-v" id="s-svc">₱50</span></div>
       <div class="sum-total"><span>Total</span><span id="s-total">₱50</span></div>
       <div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-green" style="justify-content:center;padding:12px" onclick="addCustomToCart()">Add to Cart</button>
+        <button class="btn btn-green" style="justify-content:center;padding:12px" onclick="addCustomToCart(false)">Add to Cart</button>
         <button class="btn btn-pink" style="justify-content:center;padding:12px" onclick="addCustomToCart(true)">Buy Now</button>
       </div>
       <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">Pre-order · Min. 48 hrs advance<br>Select at least the minimum stems to proceed</p>
@@ -166,6 +668,35 @@ requireAuth('customer');
 buildTopNav('customize');
 renderFooter('footer-container', false);
 
+let DB_CUSTOM_PRODUCTS = [];
+
+async function loadCustomProducts(){
+  try{
+    const res = await fetch('get_product.php');
+    const data = await res.json();
+
+    DB_CUSTOM_PRODUCTS = data.products.map(p => ({
+      id: p.id ?? p.product_id,
+      name: p.name ?? p.product_name,
+      price: Number(p.price || 0),
+      type: p.type ?? p.product_type,
+      img: p.img ?? (p.product_image ? 'images/' + p.product_image : 'images/default.png'),
+      stock: Number(p.stock || 0)
+      }));
+
+    renderSizes();
+    renderFlowers();
+    renderFillers();
+    renderAddonCats();
+    renderAddons();
+    renderColors();
+    updateSummary();
+  } catch(err) {
+    console.error('Error loading products:', err);
+    toast('Cannot load custom products from database', 'error');
+  }
+}
+
 const COLORS=[
   {n:'Blush Pink',c:'#FFE4EC'},{n:'Sage Green',c:'#D4EDD7'},{n:'Lavender',c:'#E8D9F0'},
   {n:'Cream',c:'#FFF5DC'},{n:'Rose Red',c:'#FECDD3'},{n:'Sky Blue',c:'#D0ECF8'},{n:'White',c:'#F8F8F8'},
@@ -177,7 +708,6 @@ const FILLERS=[
   {id:'fil2', name:'Eucalyptus',    price:25, icon:'🍃'},
   {id:'fil3', name:'Wax Flower',    price:30, icon:'🌸'},
   {id:'fil4', name:'Fern Leaves',   price:20, icon:'🌱'},
-  {id:'fil5', name:'Gypsophila',    price:22, icon:'🤍'},
 ];
 
 // Add-on categories — no flowers or fillers here
@@ -219,27 +749,33 @@ function setSize(label){
 
 // ── FLOWERS ────────────────────────────────────────────────
 function renderFlowers(){
-  const flowers=FC.getProducts().filter(p=>p.type==='flower');
-  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
-  const atMax=used>=selSize.maxStems;
-  document.getElementById('flower-grid').innerHTML=flowers.map(f=>{
-    const cnt=flowerCounts[f.id]||0;
-    const addDis=atMax?'disabled':'';
-    const remDis=cnt===0?'disabled':'';
-    const imgHtml=f.img
-      ?`<img src="${f.img}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:block;margin:0 auto 3px"/>`
-      :`<div style="display:flex;justify-content:center;margin-bottom:3px">${imgPlaceholder(40)}</div>`;
+  // 1. GET ONLY FLOWERS (This hides Fern Leaves/Fillers from this section)
+  const flowers = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'flower');
+  
+  const used = Object.values(flowerCounts).reduce((s, v) => s + v, 0);
+  const atMax = used >= selSize.maxStems;
+
+  document.getElementById('flower-grid').innerHTML = flowers.map(f => {
+    const cnt = flowerCounts[f.id] || 0;
+    const addDis = atMax ? 'disabled' : '';
+    const remDis = cnt === 0 ? 'disabled' : '';
+
+    // Fix Image Path
+    const imgPath = f.img || 'images/default.png';
+
     return `
-    <div class="fo ${cnt>0?'sel':''} ${atMax&&cnt===0?'maxed-no-sel':''}">
-      ${imgHtml}
-      <strong>${f.name}</strong>
-      <small>${fmtP(f.price)}/stem</small>
-      <div class="fo-ctrl">
-        <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
-        <span class="fo-qty">${cnt}</span>
-        <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
-      </div>
-    </div>`;
+      <div class="fo ${cnt > 0 ? 'sel' : ''} ${atMax && cnt === 0 ? 'maxed-no-sel' : ''}">
+        <img src="${imgPath}" onerror="this.src='images/default.png'"/>
+        <div class="fo-info"> 
+          <strong>${f.name}</strong>
+          <small>₱${f.price}/stem</small>
+          <div class="fo-ctrl">
+            <button class="fo-btn rem" ${remDis} onclick="removeFlower('${f.id}')">−</button>
+            <span class="fo-qty">${cnt}</span>
+            <button class="fo-btn" ${addDis} onclick="addFlower('${f.id}')">+</button>
+          </div>
+        </div>
+      </div>`;
   }).join('');
 }
 
@@ -259,20 +795,31 @@ function removeFlower(id){
 
 // ── FILLERS ────────────────────────────────────────────────
 function renderFillers(){
-  document.getElementById('filler-grid').innerHTML=FILLERS.map(f=>{
-    const qty=fillerCounts[f.id]||0;
+  // 1. GET ONLY FILLERS from your Inventory
+  const fillers = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'filler');
+  
+  const html = fillers.map(f => {
+    const qty = fillerCounts[f.id] || 0;
+    
+    // Fix Image Path logic to match flowers
+    const imgPath = f.img || 'images/default.png';
+
     return `
-    <div class="filler-card ${qty>0?'sel':''}">
-      <div class="filler-icon">${imgPlaceholder(38)}</div>
-      <div class="filler-name">${f.name}</div>
-      <div class="filler-price">${fmtP(f.price)}/stem</div>
-      <div class="filler-ctrl">
-        <button class="sm-btn rem" ${qty===0?'disabled':''} onclick="changeFillerQty('${f.id}',-1)">−</button>
-        <span class="sm-qty">${qty}</span>
-        <button class="sm-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+    <div class="fo ${qty > 0 ? 'sel' : ''}">
+      <img src="${imgPath}" onerror="this.src='images/default.png'"/>
+      <div class="fo-info"> 
+        <strong class="filler-name">${f.name}</strong>
+        <small class="filler-price">₱${f.price}/stem</small>
+        <div class="fo-ctrl">
+          <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''} onclick="changeFillerQty('${f.id}',-1)">−</button>
+          <span class="fo-qty">${qty}</span>
+          <button class="fo-btn" onclick="changeFillerQty('${f.id}',1)">+</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+
+  document.getElementById('filler-grid').innerHTML = html || `<div style="grid-column:1/-1; color:var(--muted); font-size:12px; padding:10px;">No fillers in stock</div>`;
 }
 
 function changeFillerQty(id,delta){
@@ -289,40 +836,79 @@ function renderAddonCats(){
 }
 function setAddonCat(cat){activeCat=cat;renderAddonCats();renderAddons();}
 
-function renderAddons(){
-  const storeAddons=FC.getAddons();
-  const list=activeCat==='all'?storeAddons:storeAddons.filter(a=>a.category===activeCat);
-  document.getElementById('addons-grid').innerHTML=list.map(a=>{
-    const sel=!!selectedAddons[a.id];
-    const qty=sel?(selectedAddons[a.id].qty||1):0;
-    const imgHtml=a.img?`<img src="${a.img}" class="aoc-img"/>`:`<div class="aoc-icon-wrap">${imgPlaceholder(38)}</div>`;
-    const qtyRow=sel?`
-      <div class="aoc-ctrl" onclick="event.stopPropagation()">
-        <button class="sm-btn rem" onclick="changeAddonQty('${a.id}',-1)">−</button>
-        <span class="sm-qty">${qty}</span>
-        <button class="sm-btn" onclick="changeAddonQty('${a.id}',1)">+</button>
-      </div>`:'';
+function renderAddons() {
+  const storeAddons = DB_CUSTOM_PRODUCTS.filter(p => p.type === 'addon');
+  const list = activeCat === 'all'
+    ? storeAddons
+    : storeAddons.filter(a => a.category === activeCat);
+
+  document.getElementById('addons-grid').innerHTML = list.map(a => {
+    const sel = !!selectedAddons[a.id];
+    const qty = sel ? (selectedAddons[a.id].qty || 1) : 0;
+    const imgPath = a.img || 'images/default.png';
+
     return `
-    <div class="aoc ${sel?'sel':''}" id="aoc-${a.id}" onclick="toggleAddon('${a.id}')">
-      <div class="aoc-chk">✓</div>
-      ${imgHtml}
-      <div class="aoc-name">${a.name}</div>
-      <div class="aoc-price">${fmtP(a.price)}</div>
-      ${qtyRow}
-    </div>`;
-  }).join('')||`<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
+      <div class="fo ${sel ? 'sel' : ''}" onclick="toggleAddon('${a.id}')">
+        <img src="${imgPath}" onerror="this.src='images/default.png'"/>
+        <div class="fo-info"> 
+          <strong>${a.name}</strong>
+          <small>₱${a.price}</small>
+          <div class="fo-ctrl">
+            <button class="fo-btn rem" ${qty === 0 ? 'disabled' : ''}
+              onclick="event.stopPropagation(); changeAddonQty('${a.id}', -1)">
+              −
+            </button>
+            <span class="fo-qty">${qty}</span>
+            <button class="fo-btn"
+              onclick="event.stopPropagation(); changeAddonQty('${a.id}', 1)">
+              +
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }).join('') || `<div style="grid-column:1/-1;font-size:12px;color:var(--muted);padding:.5rem">No items in this category</div>`;
 }
 
-function toggleAddon(id){
-  const a=FC.getAddons().find(x=>x.id===id); if(!a) return;
-  if(selectedAddons[id]) delete selectedAddons[id];
-  else selectedAddons[id]={...a,qty:1};
-  renderAddons();updateSummary();
+
+function toggleAddon(id) {
+  const a = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'addon'
+  );
+
+  if (!a) return;
+
+  if (selectedAddons[id]) {
+    delete selectedAddons[id];
+  } else {
+    selectedAddons[id] = { ...a, qty: 1 };
+  }
+
+  renderAddons();
+  updateSummary();
 }
-function changeAddonQty(id,delta){
-  if(!selectedAddons[id]) return;
-  selectedAddons[id].qty=Math.max(1,(selectedAddons[id].qty||1)+delta);
-  renderAddons();updateSummary();
+
+function changeAddonQty(id, delta) {
+  const addon = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'addon'
+  );
+
+  if (!addon) return;
+
+  if (!selectedAddons[id]) {
+    if (delta < 1) return;
+    selectedAddons[id] = { ...addon, qty: 1 };
+  } else {
+    const newQty = Math.max(0, (selectedAddons[id].qty || 1) + delta);
+
+    if (newQty === 0) {
+      delete selectedAddons[id];
+    } else {
+      selectedAddons[id].qty = newQty;
+    }
+  }
+
+  renderAddons();
+  updateSummary();
 }
 
 // ── COLORS ─────────────────────────────────────────────────
@@ -331,22 +917,47 @@ function renderColors(){
     `<div class="cdot ${selColor.n===c.n?'sel':''}" style="background:${c.c}" title="${c.n}" onclick="pickColor(${i})"></div>`
   ).join('');
 }
-function pickColor(i){selColor=COLORS[i];document.getElementById('color-lbl').textContent='Selected: '+selColor.n;renderColors();updateSummary();}
+
+function pickColor(i){
+  selColor = COLORS[i];
+  document.getElementById('color-lbl').textContent = 'Selected: ' + selColor.n;
+  
+  // Apply color to preview wrap
+  const previewWrap = document.getElementById('bq-preview-wrap') || document.querySelector('.bouquet-preview');
+  if(previewWrap) previewWrap.style.backgroundColor = selColor.c;
+  
+  renderColors();
+  updateSummary();
+}
 
 // ── SUMMARY ────────────────────────────────────────────────
 function updateSummary(){
-  const products=FC.getProducts();
+  const products = DB_CUSTOM_PRODUCTS;
   const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
   const used=sel.reduce((s,[,v])=>s+v,0);
 
   // Pricing: all dynamic
-  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
-  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
+  const flwCost = Object.entries(flowerCounts).reduce((s, [id, cnt]) => {
+  const p = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'flower'
+  );
+
+  return s + (p ? Number(p.price) * Number(cnt) : 0);
+}, 0);
+
+  const fillerCost = Object.entries(fillerCounts).reduce((s, [id, cnt]) => {
+  const p = DB_CUSTOM_PRODUCTS.find(x =>
+    String(x.id) === String(id) && x.type === 'filler'
+  );
+
+  return s + (p ? Number(p.price) * Number(cnt) : 0);
+}, 0);
+
   const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
   const svcFee=FC.SERVICE_FEE;
   const total=flwCost+fillerCost+extrasCost+svcFee;
 
-  // Stem progress bar — based on min/max range
+  // Stem progress bar - based on min/max range
   const pct=selSize.maxStems>0?Math.min(100,Math.round((used/selSize.maxStems)*100)):0;
   document.getElementById('stem-bar').style.width=pct+'%';
   const atMin=used>=selSize.minStems;
@@ -370,17 +981,38 @@ function updateSummary(){
   document.getElementById('s-flw').textContent=fmtP(flwCost);
   document.getElementById('s-svc').textContent=fmtP(svcFee);
   document.getElementById('s-total').textContent=fmtP(total);
-  document.getElementById('s-flowers').textContent=sel.length
-    ?sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ')
-    :'None selected';
+  document.getElementById('s-flowers').textContent = sel.length
+  ? sel.map(([id, cnt]) => {
+      const p = DB_CUSTOM_PRODUCTS.find(x =>
+        String(x.id) === String(id) && x.type === 'flower'
+      );
+
+      return (p ? p.name : 'Unknown flower') + (cnt > 1 ? ' ×' + cnt : '');
+    }).join(', ')
+  : 'None selected';
 
   // Fillers row
-  const fRow=document.getElementById('row-fillers');
-  if(fillerCost>0){
-    fRow.style.display='flex';
-    const names=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,q])=>{const f=FILLERS.find(x=>x.id===id);return(f?.name||id)+(q>1?' ×'+q:'');}).join(', ');
-    document.getElementById('s-fillers').textContent=fmtP(fillerCost)+(names?' ('+names+')':'');
-  } else fRow.style.display='none';
+  const fRow = document.getElementById('row-fillers');
+
+  if (fillerCost > 0) {
+    fRow.style.display = 'flex';
+
+    const names = Object.entries(fillerCounts)
+      .filter(([, q]) => q > 0)
+      .map(([id, q]) => {
+        const f = DB_CUSTOM_PRODUCTS.find(x =>
+          String(x.id) === String(id) && x.type === 'filler'
+        );
+
+        return (f ? f.name : 'Unknown filler') + (q > 1 ? ' ×' + q : '');
+      })
+      .join(', ');
+
+    document.getElementById('s-fillers').textContent =
+      fmtP(fillerCost) + (names ? ' (' + names + ')' : '');
+  } else {
+    fRow.style.display = 'none';
+  }
 
   // Extras row
   const eRow=document.getElementById('row-extras');
@@ -406,69 +1038,161 @@ function updateSummary(){
 }
 
 // ── ADD TO CART ────────────────────────────────────────────
-function addCustomToCart(buyNow=false){
-  const used=Object.values(flowerCounts).reduce((s,v)=>s+v,0);
-  // Validate against min stems
-  if(used<selSize.minStems){
-    toast('Please add at least '+selSize.minStems+' stems for a '+selSize.label+' bouquet (currently '+used+')','warn');
-    return;
-  }
-  // Validate against max stems (shouldn't be possible via UI, but safety check)
-  if(used>selSize.maxStems){
-    toast('Too many stems. '+selSize.label+' bouquet allows max '+selSize.maxStems+' stems','warn');
-    return;
-  }
+async function addCustomToCart(buyNow = false) {
+    const used = Object.values(flowerCounts).reduce((s, v) => s + v, 0);
 
-  const products=FC.getProducts();
-  const sel=Object.entries(flowerCounts).filter(([,v])=>v>0);
-  const flwCost=sel.reduce((s,[id,cnt])=>{const p=products.find(x=>x.id===id);return s+(p?p.price*cnt:0);},0);
-  const fillerCost=Object.entries(fillerCounts).reduce((s,[id,qty])=>{const f=FILLERS.find(x=>x.id===id);return s+(f?f.price*qty:0);},0);
-  const extrasCost=Object.values(selectedAddons).reduce((s,a)=>s+a.price*(a.qty||1),0);
-  const svcFee=FC.SERVICE_FEE;
-  const total=flwCost+fillerCost+extrasCost+svcFee;
+    if (used < selSize.minStems) {
+        toast(`Please add at least ${selSize.minStems} stems`, 'warn');
+        return;
+    }
+    if (used > selSize.maxStems) {
+        toast(`Maximum ${selSize.maxStems} stems allowed`, 'warn');
+        return;
+    }
 
-  const flowerList=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+(cnt>1?' ×'+cnt:'');}).join(', ');
+    // ====================== FIXED CALCULATION ======================
+    let flwCost = 0;
+    let flowerDescParts = [];
 
-  // Combine fillers + store add-ons into addonDetails
-  const fillerDetails=Object.entries(fillerCounts).filter(([,q])=>q>0).map(([id,qty])=>{
-    const f=FILLERS.find(x=>x.id===id);
-    return {addonId:f.id, name:f.name, img:null, price:f.price, qty};
-  });
-  const addonDetails=[
-    ...fillerDetails,
-    ...Object.values(selectedAddons).map(a=>({addonId:a.id,name:a.name,img:a.img||null,price:a.price,qty:a.qty||1}))
-  ];
+    Object.entries(flowerCounts).forEach(([id, cnt]) => {
+        const product = DB_CUSTOM_PRODUCTS.find(p =>
+          String(p.id) === String(id) && p.type === 'flower'
+        );
+        
+        if (product) {
+            flwCost += Number(product.price) * Number(cnt);
+            flowerDescParts.push(`${product.name} ×${cnt}`);
+        } else {
+            flowerDescParts.push(`Unknown (${id}) ×${cnt}`);
+        }
+    });
 
-  // Build flower description for admin visibility
-  const flowerDesc=sel.map(([id,cnt])=>{const p=products.find(x=>x.id===id);return(p?.name||id)+' ×'+cnt;}).join(', ');
+      const fillerCost = Object.entries(fillerCounts).reduce((sum, [id, qty]) => {
+        const f = DB_CUSTOM_PRODUCTS.find(x =>
+          String(x.id) === String(id) && x.type === 'filler'
+        );
 
-  const item={
-    cartId:'custom-'+Date.now(),
-    productId:'custom-'+selSize.label.toLowerCase(),
-    name:'Custom Bouquet ('+selSize.label+')',
-    icon:null, img:null,
-    price:total, qty:1, type:'bouquet',
-    sub:selSize.label+' · '+used+' stems · '+selColor.n+' wrapping · svc fee ₱'+svcFee,
-    checked:true,
-    flowers:flowerDesc,  // detailed flower list for admin
-    flowerDesc,           // explicit for order detail display
-    addonDetails,
-    note:document.getElementById('bouquet-note').value,
-    isCustom:true,
-    stems:used,
-    svcFee,
-  };
+        return sum + (f ? Number(f.price) * Number(qty) : 0);
+      }, 0);
 
-  const cart=FC.getCart(); cart.push(item); FC.saveCart(cart); updateCartBadge();
-  toast('Custom bouquet added to cart!');
-  if(buyNow){
-    sessionStorage.setItem('fc_checkout_items',JSON.stringify([item]));
-    sessionStorage.setItem('fc_checkout_promo','');
-    location.href='checkout.html';
+    const extrasCost = Object.values(selectedAddons).reduce((sum, a) => {
+        return sum + Number(a.price || 0) * Number(a.qty || 1);
+    }, 0);
+
+    const svcFee = Number(FC.SERVICE_FEE) || 50;
+    const total = flwCost + fillerCost + extrasCost + svcFee;
+
+    const flowerDesc = flowerDescParts.join(', ');
+
+    const customData = {
+        size: selSize.label,
+        stems: used,
+        color: selColor.n,
+        flowers: flowerDesc,
+        flowerCounts: flowerCounts,
+        fillerCounts: fillerCounts,
+        selectedAddons: selectedAddons,
+        note: document.getElementById('bouquet-note')?.value || '',
+        flwCost: flwCost,
+        total: total
+    };
+
+    const payload = {
+        unit_price: total,
+        is_custom: 1,
+        custom_data: customData
+    };
+
+    console.log("✅ FINAL PAYLOAD:", { total, flwCost, flowerDesc, payload });
+
+    try {
+        const response = await fetch('add_to_cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+        console.log("Response:", text);
+        const result = JSON.parse(text);
+
+        if (result.success) {
+        if (!buyNow) {
+            toast('Custom bouquet added successfully!', 'success');
+        }  
+
+        const checkoutItem = {
+            cart_item_id: result.cart_item_id || null,
+            productId: 'custom',
+            name: 'Custom Bouquet (' + selSize.label + ')',
+            sub: used + ' stems • ' + selColor.n + '<br>' + flowerDesc,
+            price: flwCost + fillerCost + extrasCost,
+            qty: 1,
+            img: 'images/default.jpg',
+            checked: true,
+            is_custom: 1,
+            custom_data: customData,
+
+            size: selSize.label,
+            stems: used,
+            color: selColor.n,
+            flowers: flowerDesc,
+            flowerCounts: flowerCounts,
+            fillerCounts: fillerCounts,
+            selectedAddons: selectedAddons,
+            note: customData.note || ''
+        };
+
+        document.querySelectorAll('.cart-count').forEach(el => {
+        if (typeof result.cart_count !== 'undefined') {
+            el.textContent = result.cart_count;
+        } else {
+            const current = parseInt(el.textContent || '0', 10);
+            el.textContent = current + 1;
+        }
+    });
+
+    if (buyNow) {
+        sessionStorage.setItem('fc_checkout_items', JSON.stringify([checkoutItem]));
+        sessionStorage.setItem('fc_checkout_promo', '');
+
+        setTimeout(() => {
+            location.href = 'checkout.html';
+        }, 700);
+    } else {
+        setTimeout(() => {
+            location.reload();
+        }, 700);
+    }
+    } else {
+        toast(result.error || 'Failed to add to cart', 'error');
+    }
+        
+    } catch (err) {
+        console.error(err);
+        toast('Error - Check console (F12)', 'error');
+    }
+}
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
   }
 }
 
-renderSizes();renderFlowers();renderFillers();renderAddonCats();renderAddons();renderColors();updateSummary();
+loadCustomProducts();
+loadCartCount();
 </script>
 </body>
 </html>

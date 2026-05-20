@@ -4,69 +4,250 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>FleurChase — Shop</title>
 <link rel="stylesheet" href="shared.css"/>
-<style>
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:1.2rem}
-.prod-card{background:white;border-radius:var(--rl);border:1px solid var(--line);overflow:hidden;transition:all .22s;cursor:pointer;position:relative}
-.prod-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.09)}
-.pc-img{height:155px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
-.pc-bdg{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.4px}
-.pc-wl{position:absolute;top:8px;right:8px;background:white;border:none;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.12);transition:all .2s;display:flex;align-items:center;justify-content:center}
-.pc-wl:hover,.pc-wl.on{color:var(--p3);transform:scale(1.15)}
-.pc-body{padding:10px 12px;background:white}
-.pc-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
-.pc-sub{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:5px}
-.pc-stars{font-size:11px;color:#D4891A}
-.pc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-.pc-price{font-size:14px;font-weight:700;color:var(--g3)}
-.pc-old{font-size:11px;color:var(--muted);text-decoration:line-through;margin-left:3px}
-.add-btn{background:linear-gradient(135deg,var(--g5),var(--g3));border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(46,150,82,.3)}
-.add-btn:hover{transform:scale(1.12)}
-.stem-badge{font-size:9px;background:var(--g9);color:var(--g3);padding:2px 6px;border-radius:6px;font-weight:700;margin-left:4px}
-.cat-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:1rem}
-.cat-pill{background:white;border:1.5px solid var(--line);padding:6px 14px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .2s}
-.cat-pill:hover{border-color:var(--g5);color:var(--g2)}
-.cat-pill.active{background:var(--g9);border-color:var(--g5);color:var(--g2);font-weight:600}
-/* stem modal */
-.stem-modal-product{display:flex;gap:1rem;align-items:center;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line)}
-.stem-modal-icon{font-size:44px;width:70px;height:70px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
-</style>
+  <style>
+      /* SHOP GRID LAYOUT */
+      .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 14px;
+        margin-top: 1.2rem;
+      }
+
+      /* PRODUCT CARD */
+      .prod-card {
+        background: white;
+        border-radius: var(--rl);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.22s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .prod-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+      }
+
+      .prod-card.out-stock {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .prod-card.out-stock:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .prod-card.out-stock .pc-img img {
+        filter: grayscale(100%);
+      }
+
+      .prod-card.out-stock .add-btn {
+        background: #aaa;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .stock-msg {
+        font-size: 10px;
+        color: #b00020;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      /* PRODUCT IMAGE */
+      .pc-img {
+        height: 155px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 52px;
+        position: relative;
+      }
+
+      /* BADGE */
+      .pc-bdg {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      /* PRODUCT BODY */
+      .pc-body {
+        padding: 10px 12px;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      .pc-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 2px;
+        min-height: 34px;
+      }
+
+      .pc-sub {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+        margin-bottom: 5px;
+        min-height: 46px;
+      }
+
+      .pc-stars {
+        font-size: 11px;
+        color: #D4891A;
+      }
+
+      /* FOOTER SECTION */
+      .pc-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+      }
+
+      .pc-price {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--g3);
+      }
+
+      .pc-old {
+        font-size: 11px;
+        color: var(--muted);
+        text-decoration: line-through;
+        margin-left: 3px;
+      }
+
+      /* ADD BUTTON */
+      .add-btn {
+        background: linear-gradient(135deg, var(--g5), var(--g3));
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 15px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(46, 150, 82, 0.3);
+        transition: all 0.2s ease;
+      }
+
+      .add-btn:hover {
+        transform: scale(1.12);
+      }
+
+      /* STEM BADGE */
+      .stem-badge {
+        font-size: 9px;
+        background: var(--g9);
+        color: var(--g3);
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-weight: 700;
+        margin-left: 4px;
+      }
+
+      /* CATEGORY FILTER */
+      .cat-row {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .cat-pill {
+        background: white;
+        border: 1.5px solid var(--line);
+        padding: 6px 14px;
+        border-radius: 18px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--muted);
+        transition: all 0.2s ease;
+      }
+
+      .cat-pill:hover {
+        border-color: var(--g5);
+        color: var(--g2);
+      }
+
+      .cat-pill.active {
+        background: var(--g9);
+        border-color: var(--g5);
+        color: var(--g2);
+        font-weight: 600;
+      }
+
+      /* STEM MODAL */
+      .stem-modal-product {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.2rem;
+        padding-bottom: 1.2rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stem-modal-icon {
+        font-size: 44px;
+        width: 70px;
+        height: 70px;
+        background: var(--soft);
+        border-radius: var(--r);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+  </style>
 </head>
 <body>
 <nav class="app-nav" id="top-nav"></nav>
 
 <div class="main-area no-sidebar">
   <div id="promo-banner-wrap"></div>
-  <!-- Mini hero -->
   <div style="background:linear-gradient(135deg,var(--g9) 0%,white 40%,var(--p9) 100%);padding:2rem 2.5rem;display:flex;gap:2rem;align-items:center;border-bottom:1px solid var(--line);overflow:hidden;position:relative">
     <div style="flex:1;max-width:520px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--p4);margin-bottom:.5rem">FleurChase Collection</div>
       <h2 style="font-family:var(--font-d);font-size:40px;font-weight:700;color:var(--g1);line-height:1.05;margin-bottom:.7rem">Every bloom <em style="color:var(--p3);font-style:italic">tells</em> a story</h2>
       <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;max-width:380px">Pre-order handcrafted arrangements or mix your own stems. Delivered fresh across Albay.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="customize.html" class="btn btn-pink">🎨 Build Custom Bouquet</a>
-        <a href="promos.html" class="btn btn-outline">🏷️ See Promos</a>
+        <a href="customize.html" class="btn btn-pink">Build Custom Bouquet</a>
+        <a href="promos.php" class="btn btn-outline">See Promos</a>
       </div>
-    </div>
-    <div style="display:flex;gap:10px;flex-shrink:0">
-      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05)"><div style="font-size:22px;margin-bottom:.3rem">📅</div><strong style="font-size:10px;display:block;color:var(--ink)">Pre-order</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">48hr advance</p></div>
-      <div style="background:white;border-radius:var(--rl);padding:.9rem;text-align:center;width:90px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(0,0,0,.05);margin-top:16px"><div style="font-size:22px;margin-bottom:.3rem">💳</div><strong style="font-size:10px;display:block;color:var(--ink)">Multi-Pay</strong><p style="font-size:9px;color:var(--muted);margin-top:1px">GCash, COD, Maya</p></div>
     </div>
   </div>
 
   <div class="p-page">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
       <div><div class="page-title">Our <span style="color:var(--p3);font-style:italic">Collection</span></div><div class="page-sub" id="count-lbl" style="margin-bottom:0"></div></div>
-      <button class="btn btn-ghost btn-sm" onclick="resetFilter()">Reset</button>
     </div>
     <div class="cat-row" id="cat-row">
-      <div class="cat-pill active" onclick="filterCat('all',this)">🌺 All</div>
-      <div class="cat-pill" onclick="filterCat('ready-made',this)">💐 Ready-Made</div>
-      <div class="cat-pill" onclick="filterCat('individual',this)">🌹 Individual Stems</div>
-      <div class="cat-pill" onclick="filterCat('customized',this)">🎨 Customized</div>
-      <div class="cat-pill" onclick="filterCat('seasonal',this)">🌸 Seasonal</div>
-      <div class="cat-pill" onclick="filterCat('gift-set',this)">🎁 Gift Sets</div>
-      <div class="cat-pill" onclick="filterCat('promo',this)">🏷️ Promos</div>
-      <div class="cat-pill" onclick="filterCat('sale',this)">🔖 On Sale</div>
+      <div class="cat-pill active" onclick="filterCat('all',this)"> All</div>
+      <div class="cat-pill" onclick="filterCat('ready-made',this)"> Ready-Made</div>
+      <div class="cat-pill" onclick="filterCat('individual',this)"> Individual Stems</div>
+      <div class="cat-pill" onclick="filterCat('seasonal',this)"> Seasonal</div>
+      <div class="cat-pill" onclick="filterCat('gift-set',this)"> Gift Sets</div>
+      <div class="cat-pill" onclick="filterCat('promo',this)"> Promos</div>
+      <div class="cat-pill" onclick="filterCat('sale',this)"> On Sale</div>
     </div>
     <div class="shop-grid" id="shop-grid"></div>
   </div>
@@ -74,7 +255,6 @@
   <div id="footer-wrap"></div>
 </div>
 
-<!-- Stem qty modal -->
 <div class="modal-overlay" id="stem-modal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-head"><h3 id="sm-title">Add Stems</h3><button class="modal-close" onclick="closeModal('stem-modal')">✕</button></div>
@@ -96,47 +276,95 @@
   </div>
 </div>
 <div id="fc-toast" class="toast"></div>
+
 <script src="data.js"></script><script src="nav.js"></script>
 <script>
 let _cat='all', _stemProd=null, _stemQty=1;
 const BADGE_CLS={'Sale':'tag-p','On Sale':'tag-p','Promo':'tag-g','Popular':'tag-g','New':'tag-gold','Seasonal':'tag-b','Premium':'tag-gold'};
 
-window.onload=()=>{
-  const user=requireAuth('customer'); if(!user) return;
+let DB_PRODUCTS = [];
+
+window.onload = async () => {
+  const user = requireAuth('customer');
+  if (!user) return;
+
   buildTopNav('shop');
   renderPromoBanner('promo-banner-wrap');
-  renderFooter('footer-wrap',false);
-  renderProducts('all');
+  renderFooter('footer-wrap', false);
+
+  await loadProductsFromDB();
 };
 
+async function loadProductsFromDB() {
+  try {
+    const res = await fetch('get_bouquets.php');
+    const data = await res.json();
+
+    if (!data.success) {
+      toast(data.message || 'Failed to load products.', 'err');
+      return;
+    }
+
+    DB_PRODUCTS = data.products;
+    renderProducts('all');
+  } catch (error) {
+    console.error(error);
+    toast('Cannot load products from database.', 'err');
+  }
+}
+
 function renderProducts(cat){
-  const prods=FC.getProducts();
-  const list=cat==='all'?prods:prods.filter(p=>p.category===cat);
+  const prods = DB_PRODUCTS;
+  const list = (cat === 'all' ? prods : prods.filter(p => p.category === cat))
+  .slice()
+  .sort((a, b) => {
+    const aOut = Number(a.stock || 0) <= 0 ? 1 : 0;
+    const bOut = Number(b.stock || 0) <= 0 ? 1 : 0;
+    return aOut - bOut;
+  });
   document.getElementById('count-lbl').textContent=list.length+' product'+(list.length!==1?'s':'');
   const g=document.getElementById('shop-grid');
   if(!list.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No products found</h3><p>Check back soon!</p></div>`;return;}
-  g.innerHTML=list.map(p=>{
-    const isFlower=p.type==='flower';
-    const bdgCls=BADGE_CLS[p.badge]||'tag-w';
-    // Show uploaded photo if available, else clean placeholder
+    g.innerHTML = list.map(p => {
+    const isFlower = p.type === 'flower';
+    const bdgCls = BADGE_CLS[p.badge] || 'tag-w';
+    const outOfStock = Number(p.stock || 0) <= 0;
+
+    // FIXED: Formatted raw markup string enclosures cleanly using template literals
     const imgContent = p.img
       ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
       : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${imgPlaceholder(72)}</div>`;
-    return `<div class="prod-card">
-      <div class="pc-img" style="background:${p.bg||'var(--soft)'}">
+
+    return `<div class="prod-card ${outOfStock ? 'out-stock' : ''}">
+      <div class="pc-img" style="background:${p.bg || 'var(--soft)'}">
         ${imgContent}
-        ${p.badge?`<span class="pc-bdg ${bdgCls}">${p.badge}</span>`:''}
-        <button class="pc-wl" onclick="event.stopPropagation();this.classList.toggle('on');toast(this.classList.contains('on')?'Added to wishlist 💖':'Removed from wishlist')">♡</button>
+        ${outOfStock
+          ? `<span class="pc-bdg tag-w">Out of Stock</span>`
+          : p.badge ? `<span class="pc-bdg ${bdgCls}">${p.badge}</span>` : ''}
       </div>
+
       <div class="pc-body">
-        <div class="pc-name">${p.name}${isFlower?`<span class="stem-badge">per stem</span>`:''}</div>
+        <div class="pc-name">${p.name}${isFlower ? `<span class="stem-badge">per stem</span>` : ''}</div>
         <div class="pc-sub">${p.desc}</div>
-        <div class="pc-stars">${'★'.repeat(Math.floor(p.rating))}${p.rating%1>=.5?'⭐':''} <span style="color:var(--muted);font-size:10px">(${p.reviews})</span></div>
+        <div class="pc-stars">${'★'.repeat(Math.floor(p.rating))}${p.rating % 1 >= .5 ? '⭐' : ''} <span style="color:var(--muted);font-size:10px">(${p.reviews})</span></div>
+
         <div class="pc-foot">
-          <div><span class="pc-price">${fmtP(p.price)}</span>${p.oldPrice?`<span class="pc-old">${fmtP(p.oldPrice)}</span>`:''}</div>
-          <button class="add-btn" onclick="${isFlower?`openStemModal('${p.id}')`:`addToCart('${p.id}',1)`}" title="${isFlower?'Select stems':'Add to cart'}">+</button>
+          <div>
+            <span class="pc-price">${fmtP(p.price)}</span>
+            ${p.oldPrice ? `<span class="pc-old">${fmtP(p.oldPrice)}</span>` : ''}
+          </div>
+
+          <button
+            class="add-btn"
+            ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart(${p.id}, ${p.price})"`}
+            title="${outOfStock ? 'Out of stock' : 'Add to cart'}">
+            ${outOfStock ? '×' : '+'}
+          </button>
         </div>
-        ${isFlower?`<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem · Select quantity →</div>`:''}
+
+        ${outOfStock
+          ? `<div class="stock-msg">Currently unavailable</div>`
+          : isFlower ? `<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem · Select quantity →</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -154,17 +382,50 @@ function resetFilter(){
   renderProducts('all');
 }
 
-function addToCart(productId, qty, stems=0){
-  const p=FC.getProducts().find(x=>x.id===productId); if(!p) return;
-  if(p.stock<qty){toast('Not enough stock!','err');return;}
-  const cart=FC.getCart();
-  const cartId=stems>0?productId+'_stem':productId;
-  const ex=cart.find(i=>i.cartId===cartId);
-  if(ex){ex.qty+=qty; if(stems>0)ex.stems+=stems;}
-  else cart.push({cartId,productId:p.id,name:stems>0?p.name+' (stems)':p.name,img:p.img||null,type:p.type,price:p.price,qty,stems,checked:true});
+function addToCart(productId, qty = 1, stems = 0) {
+  const p = DB_PRODUCTS.find(x => String(x.id) === String(productId));
+
+  if (!p) {
+    toast('Product not found.', 'err');
+    return;
+  }
+
+  if (p.stock && p.stock < qty) {
+    toast('Not enough stock!', 'err');
+    return;
+  }
+
+  if (Number(p.stock || 0) <= 0) {
+      toast('This product is out of stock.', 'err');
+      return;
+    }
+
+  const cart = FC.getCart();
+  const cartId = stems > 0 ? p.id + '_stem' : String(p.id);
+
+  const existingItem = cart.find(i => String(i.cartId) === String(cartId));
+
+  if (existingItem) {
+    existingItem.qty += qty;
+    if (stems > 0) existingItem.stems += stems;
+  } else {
+    cart.push({
+      cartId: cartId,
+      productId: p.id,
+      name: stems > 0 ? p.name + ' (stems)' : p.name,
+      img: p.img || null,
+      type: p.type || 'bouquet',
+      price: Number(p.price),
+      qty: qty,
+      stems: stems,
+      checked: true
+    });
+  }
+
   FC.saveCart(cart);
   updateCartBadge();
-  toast(`"${p.name}" added to cart!`);
+  // FIXED: Adjusted template string quotes assignment bounding conditions seamlessly
+  toast(`${p.name} added to cart!`);
 }
 
 // ── STEM MODAL ──
@@ -172,7 +433,6 @@ function openStemModal(productId){
   const p=FC.getProducts().find(x=>x.id===productId); if(!p) return;
   _stemProd=p; _stemQty=1;
   document.getElementById('sm-title').textContent='Add '+p.name;
-  // Show image if available, else clean placeholder
   const iconEl=document.getElementById('sm-icon');
   if(p.img){iconEl.innerHTML=`<img src="${p.img}" style="width:60px;height:60px;object-fit:cover;border-radius:var(--r)"/>`;}
   else{iconEl.innerHTML=imgPlaceholder(60);}
@@ -202,6 +462,76 @@ function confirmStem(){
   closeModal('stem-modal');
   toast(`${_stemQty} stem(s) of ${_stemProd.name} added!`);
 }
+
+// Global Handler to route "Add to Cart" directly to MySQL
+// FIXED: Isolated script variables to stop loose system flags from throwing false connection errors
+async function addProductToDatabaseCart(bouquetId, unitPrice) {
+  try {
+    const response = await fetch('add_to_cart.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bouquet_id: bouquetId,
+        unit_price: unitPrice,
+        quantity: 1 
+      })
+    });
+    
+    const res = await response.json();
+    
+    if (res.success) {
+      toast('Added to your cart!');
+      
+      // FIX: Also save it to local memory so your original navbar badge reads it!
+      const p = DB_PRODUCTS.find(x => String(x.id) === String(bouquetId));
+      if (p) {
+        const cart = FC.getCart();
+        const existingItem = cart.find(i => String(i.productId) === String(bouquetId));
+        
+        if (existingItem) {
+          existingItem.qty += 1;
+        } else {
+          cart.push({
+            cartId: String(bouquetId),
+            productId: p.id,
+            name: p.name,
+            img: p.img || null,
+            price: Number(p.price),
+            qty: 1,
+            checked: true
+          });
+        }
+        FC.saveCart(cart); // Commits to local memory scope
+      }
+
+      // Triggers your original fast badge counter engine!
+      if (typeof updateCartBadge === 'function') updateCartBadge(); 
+    } else {
+      toast('✕ Failed to add item: ' + res.error, 'warn');
+    }
+  } catch (err) {
+    console.error(err);
+    toast('✕ Connection to server failed.', 'warn');
+  }
+}
+
+async function loadCartCount() {
+  try {
+    const res = await fetch('cart_count.php');
+    const data = await res.json();
+
+    if (data.success) {
+      document.querySelectorAll('.cart-count').forEach(el => {
+        el.textContent = data.cart_count;
+      });
+      localStorage.setItem('fc_cart_count', String(data.cart_count));
+    }
+  } catch (err) {
+    console.error('Error loading cart count:', err);
+  }
+}
+
+loadCartCount();
 </script>
 </body>
 </html>

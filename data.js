@@ -5,14 +5,14 @@ const FC = (() => {
   const SEED_PRODUCTS = [
     { id:'p1', name:'Red Rose Bouquet',       type:'bouquet', category:'ready-made', price:350,  maxPrice:850, bg:'#fff5f7', badge:'New',      rating:4.8, reviews:42,  stock:30, desc:'Classic 12-stem red rose arrangement.' },
     { id:'p2', name:'Tulip Spring Bundle',    type:'bouquet', category:'seasonal',   price:280,  oldPrice:450, bg:'#f0f4ff', badge:'Sale',     rating:4.6, reviews:28,  stock:20, desc:'Fresh seasonal tulip bundle.' },
-    { id:'p3', name:'Custom Arrangement',     type:'bouquet', category:'customized', price:350,  maxPrice:850, bg:'#f0fdf4', badge:'Popular',  rating:4.9, reviews:88,  stock:99, desc:'You design it — our florists bring it to life.' },
+    { id:'p3', name:'Custom Arrangement',     type:'bouquet', category:'customized', price:350,  maxPrice:850, bg:'#f0fdf4', badge:'Popular',  rating:4.9, reviews:88,  stock:99, desc:'You design it. Our florists bring it to life.' },
     { id:'p4', name:'Love & Blooms Gift Set', type:'bouquet', category:'gift-set',   price:980,                bg:'#fdf4ff', badge:'',         rating:4.7, reviews:35,  stock:15, desc:'Roses + Chocolates + Greeting card.' },
     { id:'p5', name:'Cherry Blossom Fan',     type:'bouquet', category:'seasonal',   price:650,                bg:'#fff0f6', badge:'Seasonal', rating:4.5, reviews:19,  stock:12, desc:'Japanese-inspired seasonal arrangement.' },
     { id:'p6', name:"Valentine's Rose Trio",  type:'bouquet', category:'promo',      price:550,                bg:'#fff5f7', badge:'Promo',    rating:4.8, reviews:64,  stock:25, desc:"Buy 3 get 2 free! Special arrangement." },
     { id:'p7', name:'Sunflower Sale Bundle',  type:'bouquet', category:'sale',       price:180,  oldPrice:350, bg:'#fffbea', badge:'On Sale',  rating:4.3, reviews:11,  stock:10, desc:'Near-expiry sunflowers at great price.' },
     { id:'p8', name:'Graduation Bouquet',     type:'bouquet', category:'ready-made', price:520,                bg:'#fafff0', badge:'',         rating:4.7, reviews:22,  stock:18, desc:"Sunflowers & Baby's Breath." },
     { id:'p9', name:'Peony Bliss Bundle',     type:'bouquet', category:'ready-made', price:750,                bg:'#fef0f3', badge:'Premium',  rating:4.9, reviews:17,  stock:8,  desc:'Lush premium peonies.' },
-    { id:'f1', name:'Red Rose',         type:'flower', category:'individual', price:45, bg:'#fff5f7', badge:'',        rating:4.9, reviews:120, stock:200, desc:'Fresh red rose, sold per stem.' },
+    { id:'f1', name:'Red Rose',         type:'flower', category:'individual', price:45, bg:'#fff5f7', badge:'',        rating:4.9, reviews:120, stock:200, desc:'Fresh red rose, sold per stem.', price:45, img:'redrose.jpg'},
     { id:'f2', name:'Pink Tulip',       type:'flower', category:'individual', price:35, bg:'#f0f4ff', badge:'',        rating:4.7, reviews:80,  stock:150, desc:'Fresh pink tulip, sold per stem.' },
     { id:'f3', name:'Cherry Blossom',   type:'flower', category:'individual', price:40, bg:'#fff0f6', badge:'',        rating:4.6, reviews:55,  stock:120, desc:'Cherry blossom sprig, per stem.' },
     { id:'f4', name:'Sunflower',        type:'flower', category:'individual', price:30, bg:'#fffbea', badge:'Sale',    rating:4.5, reviews:90,  stock:80,  desc:'Bright sunflower, sold per stem.' },
@@ -116,10 +116,50 @@ const FC = (() => {
     getUser:      ()  => load('user', null),
     setUser:      (u) => save('user', u),
     clearUser:    ()  => { try { localStorage.removeItem('fc_user'); } catch {} },
-    getProducts:  ()  => load('products',  SEED_PRODUCTS),
-    saveProducts: (p) => save('products',  p),
-    getAddons:    ()  => load('addons',    SEED_ADDONS),
-    saveAddons:   (a) => save('addons',    a),
+    getProducts: () => {
+    // 1. Load the base products (Bouquets)
+    const savedProducts = localStorage.getItem('fc_products');
+    let allProducts = savedProducts ? JSON.parse(savedProducts) : SEED_PRODUCTS;
+
+    // Keep only Bouquets from the product list to avoid duplicates
+    let bouquets = allProducts.filter(p => p.type === 'bouquet');
+
+    // 2. Load the Inventory (Individual Stems)
+    const savedInventory = localStorage.getItem('fc_inventory');
+    const inventory = savedInventory ? JSON.parse(savedInventory) : SEED_INVENTORY;
+
+    // 3. Map Inventory items to Product format
+    const stemsFromInventory = inventory.map(item => {
+      return {
+        id: item.flowerId, // This connects 'f1', 'f2', etc.
+        name: item.name,
+        type: 'flower',
+        category: 'individual',
+        price: item.pricePerStem,
+        stock: item.stock,
+        img: item.img, // This ensures your uploaded photos reflect everywhere
+        desc: `Fresh ${item.name.toLowerCase()}, sold per stem.`,
+        rating: 4.8,   // You can default these or add them to inventory schema
+        reviews: 50,
+        bg: 'var(--soft)'
+      };
+    });
+
+    // 4. Combine them
+    return [...bouquets, ...stemsFromInventory];
+  },
+    saveProducts: (p) => {
+      localStorage.setItem('fc_products', JSON.stringify(p));
+      return true;
+    },
+    getAddons:    ()  => {
+      const saved = localStorage.getItem('fc_addons');
+      return saved ? JSON.parse(saved) : SEED_ADDONS;
+    },
+    saveAddons:   (a) => {
+      localStorage.setItem('fc_addons', JSON.stringify(a));
+      return true;
+    },
     getPromos:    ()  => load('promos',    SEED_PROMOS),
     savePromos:   (p) => save('promos',    p),
     getInventory: ()  => load('inventory', SEED_INVENTORY),
