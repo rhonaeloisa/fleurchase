@@ -1,3 +1,5 @@
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 <?php include 'db/connection_db.php'; ?>
 
 <?php
@@ -549,7 +551,7 @@ a.btn-green:focus {
             <button class="tbl-act sale" aria-label="Mark as sale" onclick="openSaleModal('<?php echo $id; ?>')">
               <i class="ti ti-tag" aria-hidden="true"></i> Sale
             </button>
-            <button class="tbl-act edit" aria-label="Edit" onclick="openEditProd('<?php echo $id; ?>')">
+            <button class="tbl-act edit" aria-label="Edit" onclick="window.location.href='edit-bouquet.php?id=<?php echo $id; ?>'">
               <i class="ti ti-edit" aria-hidden="true"></i> Edit
             </button>
             <button class="tbl-act del" aria-label="Delete" onclick="openDeleteProd('<?php echo $id; ?>', '<?php echo $nameEsc; ?>')">

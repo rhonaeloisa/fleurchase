@@ -1,3 +1,5 @@
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 <?php
 // db/save_bouquet.php
 // Receives the submitted form, inserts into bouquet + bouquet_product
