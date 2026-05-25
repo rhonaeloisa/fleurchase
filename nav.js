@@ -51,14 +51,20 @@ function buildTopNav(activePage) {
   if (!nav || !user) return;
 
   if (user.role === 'admin') {
-    nav.innerHTML = `
-      <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Albay</sub></a>
-      <div class="nav-spacer"></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
-        <div class="user-chip"><div class="user-av">${(user.name||'A')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Admin'}</span></div>
-        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
-      </div>`;
-  } else {
+      const adminName = user.name || user.first_name || user.email || 'Admin';
+      const displayName = adminName.includes('@') ? adminName.split('@')[0] : adminName;
+
+      nav.innerHTML = `
+        <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Albay</sub></a>
+        <div class="nav-spacer"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
+          <a class="user-chip" href="admin-profile.html" style="text-decoration:none;color:inherit">
+            <div class="user-av">${displayName[0].toUpperCase()}</div>
+            <span>${displayName.split(' ')[0]}</span>
+          </a>
+          <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+        </div>`;
+    } else {
     // Customer nav — no sidebar, all links in top bar
     const pages = [
       { id:'shop',     href:'shop.html',     label:'Shop' },
@@ -82,44 +88,72 @@ function buildTopNav(activePage) {
   updateCartBadge();
 }
 
+
 // Customer sidebar is REMOVED — kept as no-op for backward compat
 function buildCustomerSidebar() {}
 
 function buildAdminSidebar(activePage) {
-  const sb = document.getElementById('fc-sidebar'); if(!sb) return;
+  const sb = document.getElementById('fc-sidebar');
+  if (!sb) return;
+
   const user = FC.getUser();
-  const pending = FC.getOrders().filter(o=>o.payStatus==='uploaded'&&o.status==='Pending').length;
+  const pending = FC.getOrders().filter(o => o.payStatus === 'uploaded' && o.status === 'Pending').length;
+
   const nav = [
     { s:'Overview', items:[
-      { href:'admin.html',         icon:'dashboard',      label:'Dashboard' },
-      { href:'orders-admin.html',  icon:'inventory_2',    label:'Orders', badge: pending||'' },
+      { href:'admin.html', icon:'dashboard', label:'Dashboard' },
+      { href:'orders-admin.html', icon:'inventory_2', label:'Orders', badge: pending || '' },
     ]},
     { s:'Catalog', items:[
-      { href:'products-admin.php', icon:'local_florist',  label:'Bouquets' },
-      { href:'promos-admin.html',  icon:'sell',           label:'Promos & Sales' },
+      { href:'products-admin.php', icon:'local_florist', label:'Bouquets' },
+      { href:'promos-admin.html', icon:'sell', label:'Promos & Sales' },
     ]},
     { s:'Stock', items:[
-      { href:'inventory-admin.php',icon:'eco',            label:'Products' },
+      { href:'inventory-admin.php', icon:'eco', label:'Products' },
     ]},
     { s:'Insights', items:[
-      { href:'seasonal-admin.html',icon:'trending_up',    label:'Seasonal Trends' },
-      { href:'reports-admin.html', icon:'assignment',     label:'Reports' },
+      { href:'seasonal-admin.html', icon:'trending_up', label:'Seasonal Trends' },
+      { href:'reports-admin.html', icon:'assignment', label:'Reports' },
+    ]},
+    { s:'Account', items:[
+      { href:'admin-profile.html', icon:'person', label:'Profile' },
     ]}
   ];
+
   sb.innerHTML = `
-    <div class="sb-brand"><div class="sb-brand-name">FleurChase<em>.</em></div><div class="sb-brand-sub">Admin Panel</div></div>
-    <div class="sb-body">
-      ${nav.map(sec=>`<div class="sb-section"><div class="sb-section-label">${sec.s}</div>
-        ${sec.items.map(it=>`<a class="sb-item${it.href===activePage?' active':''}" href="${it.href}">
-          <span class="sbi"><span class="material-icons" style="font-size:18px;vertical-align:middle">${it.icon}</span></span><span class="sbl">${it.label}</span>
-          ${it.badge?`<span class="sb-badge">${it.badge}</span>`:''}
-        </a>`).join('')}
-      </div>`).join('')}
+    <div class="sb-brand">
+      <div class="sb-brand-name">FleurChase<em>.</em></div>
+      <div class="sb-brand-sub">Admin Panel</div>
     </div>
-    <div class="sb-footer"><div class="sb-user">
-      <div class="sb-av"><span class="material-icons" style="font-size:18px;vertical-align:middle">settings</span></div>
-      <div><span class="sb-uname">${user?.name||'Admin'}</span><span class="sb-urole">Administrator</span></div>
-    </div></div>`;
+
+    <div class="sb-body">
+      ${nav.map(sec => `
+        <div class="sb-section">
+          <div class="sb-section-label">${sec.s}</div>
+          ${sec.items.map(it => `
+            <a class="sb-item${it.href === activePage ? ' active' : ''}" href="${it.href}">
+              <span class="sbi">
+                <span class="material-icons" style="font-size:18px;vertical-align:middle">${it.icon}</span>
+              </span>
+              <span class="sbl">${it.label}</span>
+              ${it.badge ? `<span class="sb-badge">${it.badge}</span>` : ''}
+            </a>
+          `).join('')}
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="sb-footer">
+      <a class="sb-user" href="admin-profile.html" style="text-decoration:none;color:inherit">
+        <div class="sb-av">
+          <span class="material-icons" style="font-size:18px;vertical-align:middle">person</span>
+        </div>
+        <div>
+          <span class="sb-uname">${user?.name || user?.first_name || user?.email || 'Admin'}</span>
+          <span class="sb-urole">Administrator</span>
+        </div>
+      </a>
+    </div>`;
 }
 
 function renderFooter(containerId, isAdmin) {
