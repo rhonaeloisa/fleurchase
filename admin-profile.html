@@ -89,12 +89,6 @@
     <button class="btn btn-ghost btn-sm" id="edit-btn" onclick="toggleEdit()">✎ Edit</button>
   </div>
 
-  <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat-box"><div class="stat-val" id="stat-total-orders">0</div><div class="stat-lbl">Total Orders</div></div>
-    <div class="stat-box"><div class="stat-val" id="stat-total-spent">₱0</div><div class="stat-lbl">Total Spent</div></div>
-    <div class="stat-box"><div class="stat-val" id="stat-fav-item">—</div><div class="stat-lbl">Fav. Item</div></div>
-  </div>
 
   <div class="profile-grid">
     <!-- LEFT SIDE COLUMN (Personal Info + Recent Orders) -->
@@ -123,69 +117,10 @@
             <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="toggleEdit()">Cancel</button>
           </div>
         </div>
-      </div>
-
-      <!-- RECENT ORDERS -->
-      <div class="prof-card">
-        <h3>Recent Orders</h3>
-        <div id="recent-orders"></div>
-        <div style="text-align:right;margin-top:10px">
-          <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders →</a>
-        </div>
-      </div>
+      </div>     
     </div>
 
-    <!-- RIGHT SIDE COLUMN (Delivery Addresses) -->
-    <div class="prof-card">
-      <h3>Delivery Addresses</h3>
-
-      <div id="address-list"></div>
-
-      <div id="addr-form" style="display:none;margin-top:12px">
-        <input type="hidden" id="addr-id">
-
-        <div class="fg2">
-          <div class="ff">
-            <label>House No.</label>
-            <input id="addr-house" placeholder="House No.">
-          </div>
-          <div class="ff">
-            <label>Street</label>
-            <input id="addr-street" placeholder="Street">
-          </div>
-        </div>
-
-        <div class="ff">
-          <label>Barangay</label>
-          <input id="addr-barangay" placeholder="Barangay">
-        </div>
-
-        <div class="fg2">
-          <div class="ff">
-            <label>City</label>
-            <input id="addr-city" placeholder="City">
-          </div>
-          <div class="ff">
-            <label>Province</label>
-            <input id="addr-province" placeholder="Province" disabled value="Albay">
-          </div>
-        </div>
-
-        <div class="ff">
-          <label>ZIP Code</label>
-          <input id="addr-zip" placeholder="ZIP Code">
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveAddress()">Save Address</button>
-          <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="hideAddressForm()">Cancel</button>
-        </div>
-      </div>
-
-      <button class="btn btn-ghost" id="addr-add-btn" style="width:100%;justify-content:center;margin-top:6px" onclick="showAddAddressForm()">+ Add Address</button>
-    </div>
-  </div> 
-
+    
 </div>
 
 <div id="fc-toast" class="toast"></div>
