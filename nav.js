@@ -75,7 +75,11 @@ function buildTopNav(activePage) {
         ${pages.map(p=>`<a class="nav-pill${activePage===p.id||activePage===p.href?' active':''}" href="${p.href}">${p.label}</a>`).join('')}
       </nav>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
+<<<<<<< HEAD
         <a class="nav-icon-btn" href="cart.php" title="Cart"><span class="material-icons" style="font-size:20px;vertical-align:middle">shopping_cart</span><span class="cart-badge cart-count">0</span></a>
+=======
+        <a class="nav-icon-btn" href="cart.html" title="Cart">🛒<span class="cart-badge cart-count">0</span></a>
+>>>>>>> ad85a928af6b070a93d21807f558cf4812bd025a
         <div class="user-chip"><div class="user-av">${(user.name||'U')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Me'}</span></div>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
       </div>`;  

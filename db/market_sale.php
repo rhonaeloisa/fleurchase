@@ -35,7 +35,7 @@ $currentPrice = $row['price'];
 $newPrice = $currentPrice - ($currentPrice * ($discount / 100));
 
 /* Update price */
-$update = mysqli_prepare($conn, "UPDATE bouquet SET price = ? WHERE bouquet_id = ?");
+$update = mysqli_prepare($conn, "UPDATE bouquet SET price = ?, category= 'sale' WHERE bouquet_id = ?");
 mysqli_stmt_bind_param($update, "di", $newPrice, $id);
 
 if (mysqli_stmt_execute($update)) {

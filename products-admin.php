@@ -44,6 +44,7 @@ function freshnessData(string $best_before, DateTime $today): array {
 <title>FleurChase — Products & Add-ons</title>
 <link rel="stylesheet" href="shared.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
 <style>
 .page-tabs{display:flex;background:var(--soft);border-radius:var(--r);padding:3px;gap:3px;width:fit-content;margin-bottom:1.5rem}
 .ptab{padding:8px 22px;border-radius:8px;border:none;font-family:var(--font-b);font-size:13px;font-weight:500;cursor:pointer;background:none;color:var(--muted);transition:all .2s}

@@ -14,7 +14,7 @@
 
 // ── Database config ──────────────────────────────────────────────────────────
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'fleurchase_db');   // ← change this
+define('DB_NAME', 'fleurchase_db1');   // ← change this
 define('DB_USER', 'root');         // ← change this
 define('DB_PASS', '');     // ← change this
 define('DB_CHARSET', 'utf8mb4');
