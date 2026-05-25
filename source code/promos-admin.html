@@ -1,3 +1,5 @@
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,7 +47,7 @@
 
   <!-- Sale items table -->
   <div class="table-wrap" style="margin-top:1.5rem">
-    <div class="table-head"><h3>🔖 On-Sale Products</h3><span style="font-size:12px;color:var(--muted)">Products with old/sale price set</span></div>
+    <div class="table-head"><h3>On-Sale Products</h3><span style="font-size:12px;color:var(--muted)">Products with old/sale price set</span></div>
     <table class="data-table" id="sale-table"><thead><tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Savings</th><th>Badge</th><th>Actions</th></tr></thead><tbody id="sale-tbody"></tbody></table>
   </div>
 </div>
@@ -91,9 +93,9 @@ function renderPromos() {
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--g1);margin-bottom:.3rem">${p.name}</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:.5rem">${p.desc||'—'}</div>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:12px;color:var(--muted)">
-        <span>📅 ${p.startDate} → ${p.endDate}</span>
-        <span>🏷️ Applies to: ${p.category === 'all' ? 'All products' : p.category}</span>
-        ${p.products?.length ? `<span>📦 ${p.products.length} specific product(s)</span>` : ''}
+        <span>${p.startDate} → ${p.endDate}</span>
+        <span>Applies to: ${p.category === 'all' ? 'All products' : p.category}</span>
+        ${p.products?.length ? `<span>${p.products.length} specific product(s)</span>` : ''}
       </div>
       <div style="display:flex;gap:6px;margin-top:.8rem">
         <button class="btn btn-ghost btn-sm" onclick="openEditModal('${p.id}')">Edit</button>
@@ -259,7 +261,7 @@ function getModalBody(promo) {
         <select id="pm-type" onchange="previewDisc()">
           <option value="percent" ${p.type==='percent'?'selected':''}>% Percentage discount</option>
           <option value="fixed" ${p.type==='fixed'?'selected':''}>₱ Fixed amount off</option>
-          <option value="bundle" ${p.type==='bundle'?'selected':''}>🎁 Bundle (Get X Free)</option>
+          <option value="bundle" ${p.type==='bundle'?'selected':''}>Bundle (Get X Free)</option>
         </select>
       </div>
       <div class="ff"><label>Discount value *</label><input id="pm-val" type="number" value="${p.value||''}" placeholder="e.g. 20 (for 20% or ₱20)" oninput="previewDisc()"/></div>

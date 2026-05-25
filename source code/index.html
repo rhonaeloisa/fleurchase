@@ -74,15 +74,18 @@
 
   /* --- Hero Section --- */
   .hero {
-    min-height: 100vh;
-   background-image: url("images/background.png");   display: flex;
-    align-items: center;
-    padding: calc(66px + 2.5rem) 3rem 4rem;
-    gap: 3rem;
-    position: relative;
-    overflow: hidden;
-  }
-
+  min-height: 100vh;
+  background-image: url("images/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  padding: calc(66px + 2.5rem) 3rem 4rem;
+  gap: 3rem;
+  position: relative;
+  overflow: hidden;
+}
 
   /* Background Decorative Blobs */
   .hero::before {
@@ -147,11 +150,6 @@
     margin-bottom: 1rem;
   }
 
-  .hero-h1 .ps {
-    color: var(--p3);
-    font-style: italic;
-  }
-
   .hero-p {
     font-size: 15px;
     color: var(--muted);
@@ -190,10 +188,6 @@
 /* --- Floating Feature Cards Container --- */
 .hero-cards {
   flex: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 240px); 
-  gap: 20px;
-  z-index: 1;
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
@@ -623,33 +617,7 @@
     </div>
   </div>
   <div class="hero-cards">
-  <div class="hfc">
-    <div class="hfc-icon"><img src="images/pink_roses_bouquet.jpg" alt="Roses"></div>
-    <div class="hfc-name">PinkRoses</div>
-    <div class="hfc-price">₱350</div>
-    <span class="hfc-bdg hfb-g">New</span>
-  </div>
-
-  <div class="hfc">
-    <div class="hfc-icon"><img src="images/tulips_bouquet.jpg" alt="Tulips"></div>
-    <div class="hfc-name">Tulips</div>
-    <div class="hfc-price">₱350</div>
-    <span class="hfc-bdg hfb-g">Popular</span>
-  </div>
-
-  <div class="hfc">
-    <div class="hfc-icon"><img src="images/customized.jpg" alt="Custom Bouquet"></div>
-    <div class="hfc-name">Custom Bouquet</div>
-    <div class="hfc-price">₱350</div>
-    <span class="hfc-bdg hfb-p">Sale</span>
-  </div>
-
-  <div class="hfc">
-    <div class="hfc-icon"><img src="images/pink_lily_bouquet.jpg" alt="Pink Lily Bouquet"></div>
-    <div class="hfc-name">Pink Lily Bouquet</div>
-    <div class="hfc-price">₱350</div>
-    <span class="hfc-bdg hfb-g">New</span>
-  </div>
+  <img src="images/flower.png" alt="Bouquet">
 </div>
 </section>
 
@@ -663,7 +631,7 @@
 <section class="sec" id="products-sec">
   <div class="sec-head">
     <div><div class="sec-eyebrow">Our Collection</div><div class="sec-title">Handpicked <span class="ac">Favorites</span></div><div class="sec-sub">Bouquets and individual stems. Browse our most-loved products</div></div>
-    <button class="btn btn-green" onclick="location.href='login.html?tab=signup'">View All →</button>
+    <button class="btn btn-green" onclick="location.href='login.html?tab=signup'">View All</button>
   </div>
   <div class="preview-grid">
   <div class="prev-card" onclick="location.href='login.html?tab=signup'">
@@ -744,10 +712,30 @@
     <div><div class="sec-eyebrow">Get In Touch</div><div class="sec-title">Contact <span class="ac">Us</span></div><div class="sec-sub">We're here to help with your orders, questions, and special requests.</div></div>
   </div>
   <div class="three-col">
-    <div class="card-sm" style="text-align:center"><div style="font-size:36px;margin-bottom:.8rem">📍</div><div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Visit Us</div><div style="font-size:13px;color:var(--muted);line-height:1.7">Legazpi City, Albay<br>Philippines 4500</div></div>
-    <div class="card-sm" style="text-align:center"><div style="font-size:36px;margin-bottom:.8rem">📞</div><div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Call</div><div style="font-size:13px;color:var(--muted);line-height:1.7">09XX XXX XXXX<br>Mon–Sat: 8AM–6PM</div></div>
-    <div class="card-sm" style="text-align:center"><div style="font-size:36px;margin-bottom:.8rem">✉️</div><div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Email Us</div><div style="font-size:13px;color:var(--muted);line-height:1.7">hello@fleurChase.ph<br>We reply within 24 hours</div></div>
+<div class="card-sm" style="text-align:center">
+  <div style="font-size:36px;margin-bottom:.8rem">
+    <span class="material-icons">location_on</span>
   </div>
+  <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Visit Us</div>
+  <div style="font-size:13px;color:var(--muted);line-height:1.7">Legazpi City, Albay<br>Philippines 4500</div>
+</div>
+
+<div class="card-sm" style="text-align:center">
+  <div style="font-size:36px;margin-bottom:.8rem">
+    <span class="material-icons">call</span>
+  </div>
+  <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Call</div>
+  <div style="font-size:13px;color:var(--muted);line-height:1.7">09XX XXX XXXX<br>Mon-Sat: 8AM-6PM</div>
+</div>
+
+<div class="card-sm" style="text-align:center">
+  <div style="font-size:36px;margin-bottom:.8rem">
+    <span class="material-icons">email</span>
+  </div>
+  <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">Email Us</div>
+  <div style="font-size:13px;color:var(--muted);line-height:1.7">hello@fleurChase.ph<br>We reply within 24 hours</div>
+</div>
+</div>
 </section>
 
 <div id="footer-container"></div>

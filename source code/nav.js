@@ -29,7 +29,6 @@ function requireAuth(role) {
 function doLogout() { FC.clearUser(); FC.saveCart([]); location.href = 'index.html'; }
 
 let _toastTimer;
-// FIXED: Wrapped target node elements inside proper const declarations to prevent uninitialized reference crashes
 function toast(msg, type='') {
   let el = document.getElementById('fc-toast');
   if (!el) { el = document.createElement('div'); el.id='fc-toast'; el.className='toast'; document.body.appendChild(el); }
@@ -53,9 +52,8 @@ function buildTopNav(activePage) {
 
   if (user.role === 'admin') {
     nav.innerHTML = `
-      <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Admin</sub></a>
+      <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Albay</sub></a>
       <div class="nav-spacer"></div>
-      <span class="tag tag-b" style="padding:5px 12px;font-size:11px;font-weight:700">Admin Panel</span>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
         <div class="user-chip"><div class="user-av">${(user.name||'A')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Admin'}</span></div>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -66,7 +64,7 @@ function buildTopNav(activePage) {
       { id:'shop',     href:'shop.html',     label:'Shop' },
       { id:'customize',href:'customize.html', label:'Customize' },
       { id:'orders',   href:'orders.html',   label:'Orders' },
-      { id:'promos',   href:'promos.php',    label:'Promos' }, 
+      { id:'promos',   href:'promos.php',    label:'Promos' }, // CHANGED: .html to .php
       { id:'profile',  href:'profile.html',  label:'Profile' },
     ];
     nav.innerHTML = `
@@ -76,14 +74,15 @@ function buildTopNav(activePage) {
         ${pages.map(p=>`<a class="nav-pill${activePage===p.id||activePage===p.href?' active':''}" href="${p.href}">${p.label}</a>`).join('')}
       </nav>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
-        <a class="nav-icon-btn" href="cart.php" title="Cart">🛒<span class="cart-badge cart-count">0</span></a>
+        <a class="nav-icon-btn" href="cart.php" title="Cart"><span class="material-icons" style="font-size:20px;vertical-align:middle">shopping_cart</span><span class="cart-badge cart-count">0</span></a>
         <div class="user-chip"><div class="user-av">${(user.name||'U')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Me'}</span></div>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
-      </div>`;
+      </div>`;  
   }
   updateCartBadge();
 }
 
+// Customer sidebar is REMOVED — kept as no-op for backward compat
 function buildCustomerSidebar() {}
 
 function buildAdminSidebar(activePage) {
@@ -105,10 +104,7 @@ function buildAdminSidebar(activePage) {
     { s:'Insights', items:[
       { href:'seasonal-admin.html',icon:'trending_up',    label:'Seasonal Trends' },
       { href:'reports-admin.html', icon:'assignment',     label:'Reports' },
-    ]},
-    { s:'Users', items:[
-      { href:'customers-admin.html',icon:'group',         label:'Customers' },
-    ]},
+    ]}
   ];
   sb.innerHTML = `
     <div class="sb-brand"><div class="sb-brand-name">FleurChase<em>.</em></div><div class="sb-brand-sub">Admin Panel</div></div>
@@ -142,7 +138,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Quick Links</h4>
         ${!isAdmin
-          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.php">My Cart</a>`
+          ?`<a href="shop.html">Shop</a><a href="customize.html">Customize Bouquet</a><a href="promos.php">Promos & Sales</a><a href="orders.html">Track Orders</a><a href="cart.html">My Cart</a>` // CHANGED: promos.html to promos.php
           :`<a href="admin.html">Dashboard</a><a href="orders-admin.html">Orders</a><a href="products-admin.php">Bouquets</a>`}
       </div>
       <div>
@@ -156,7 +152,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Contact Us</h4>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">location_on</span></div><div><strong>Address</strong><span>Legazpi City, Albay 4500</span></div></div>
-        <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">phone</span></div><div><strong>Phone / GCash</strong><span>09XX XXX XXXX</span></div></div>
+        <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">phone</span></div><div><strong>Phone / GCash</strong><span>0966 123 4567</span></div></div>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">mail</span></div><div><strong>Email</strong><span>hello@fleurChase.ph</span></div></div>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">schedule</span></div><div><strong>Hours</strong><span>Mon–Sat: 8AM–6PM · Sun: 9AM–3PM</span></div></div>
       </div>
@@ -209,6 +205,8 @@ function renderPromoBanner(containerId) {
   animatePromo();
 }
 
+
+
 function fmtP(n) { return '₱' + Math.round(n).toLocaleString(); }
 
 // ── IMAGE HELPERS ─────────────────────────────────────────
@@ -229,7 +227,6 @@ function productImg(obj, size=40, extraStyle='') {
   return `<span style="display:inline-flex;flex-shrink:0">${imgPlaceholder(size)}</span>`;
 }
 
-// FIXED: Cleaned up dynamic auto-apply rule sorting methods context mappings seamlessly
 function getBestPromo(subtotal, cartItems) {
   const promos = FC.getPromos().filter(p=>p.status==='active');
   let best=null, bestAmt=0;

@@ -5,12 +5,29 @@
 <title>FleurChase — Sign In</title>
 <link rel="stylesheet" href="shared.css"/>
 <style>
-body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradient(155deg,var(--g9) 0%,white 40%,var(--p9) 100%)}
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image: url("images/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .auth-nav{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 2rem;z-index:100;gap:1rem}
 .auth-nav .logo{font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g2);text-decoration:none}
 .auth-nav .logo em{color:var(--p4);font-style:italic}
 .auth-center{flex:1;display:flex;align-items:center;justify-content:center;padding:calc(64px + 2rem) 1.5rem 3rem}
-.auth-box{background:white;border-radius:var(--rxl);border:1px solid var(--line);padding:2.5rem;max-width:430px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.1)}
+.auth-box {
+  background: white;
+  border-radius: var(--rxl);
+  border: 1px solid var(--line);
+  padding: 2.5rem;
+  max-width: 430px;
+  width: 100%;
+  min-height: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.1);
+}
 .auth-brand{text-align:center;margin-bottom:1.8rem}
 .auth-brand-name{font-family:var(--font-d);font-size:30px;font-weight:700;color:var(--g2)}
 .auth-brand-name em{color:var(--p4);font-style:italic}
@@ -20,7 +37,7 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
 .tab-btn.active{background:white;color:var(--g2);box-shadow:0 1px 5px rgba(0,0,0,.08)}
 .auth-panel{display:none}.auth-panel.active{display:block}
 .auth-title{font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g1);text-align:center;margin-bottom:.25rem}
-.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:1.4rem}
+.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:5rem}
 .auth-ff{font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g1);text-align:center;margin-bottom:.25rem}
 .forgot-link{text-align:right;margin:-6px 0 12px;font-size:12px}
 .forgot-link a{color:var(--g3);cursor:pointer;text-decoration:none}
@@ -40,22 +57,17 @@ body{min-height:100vh;display:flex;flex-direction:column;background:linear-gradi
 </nav>
 <div class="auth-center">
   <div class="auth-box">
-    <div class="auth-brand"><div class="auth-brand-name">FleurChase<em>.</em></div><div class="auth-brand-sub">Albay's Premier Flower Shop</div></div>
-    <div class="tab-strip">
-      <button class="tab-btn active" id="tab-login" onclick="showPanel('login')">Sign In</button>
-      <button class="tab-btn" id="tab-signup" onclick="showPanel('signup')">Create Account</button>
-    </div>
-
+    
     <div class="auth-panel active" id="panel-login">
       <div class="auth-title">Welcome back</div>
       <div class="auth-sub">Sign in to your FleurChase account</div>
       <div class="role-tabs" style="margin-top:1rem"></div>
       <div class="ff"><label>Email address</label><input id="l-email" type="email"/></div>
-      <div class="ff"><label>Password</label><input id="l-pass" type="password"/></div>
+      <div class="ff" style="margin-top:1rem; margin-bottom: 1rem;"><label>Password</label><input id="l-pass" type="password"/></div>
       <div class="forgot-link"><a onclick="toast('Password reset email sent!')">Forgot password?</a></div>
 
       <button class="btn btn-green" style="width:100%;justify-content:center;padding:13px;font-size:14px" onclick="doLogin(event)">Sign In</button>
-      <div class="auth-switch">No account? <a onclick="showPanel('signup')">Sign up free</a></div>
+      <div class="auth-switch">No account? <a onclick="showPanel('signup')">Sign up</a></div>
     </div>
 
     <div class="auth-panel" id="panel-signup">

@@ -1,3 +1,5 @@
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link
 <?php
 session_start();
 include 'db/connection_db.php';
@@ -276,14 +278,6 @@ foreach ($wrappers as $w) {
             <input type="number" id="f-stock" min="0" value="<?php echo (int)$b['stock']; ?>" required>
           </div>
           <div class="ff">
-            <label>Bouquet Type</label>
-            <select id="f-btype">
-              <?php foreach (['bouquet'=>'Bouquet','single-stem'=>'Single Stem','box'=>'Box Arrangement','basket'=>'Basket'] as $v=>$l): ?>
-                <option value="<?php echo $v; ?>" <?php echo(($b['bouquet_type']??'bouquet')===$v)?'selected':''; ?>><?php echo $l; ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="ff">
             <label>Status</label>
             <select id="f-status">
               <?php foreach (['Active','Inactive','Out of Stock'] as $s): ?>
@@ -291,16 +285,6 @@ foreach ($wrappers as $w) {
               <?php endforeach; ?>
             </select>
           </div>
-        </div>
-        <div class="ab-cols-2">
-          <div class="ff">
-            <label>Is Customized?</label>
-            <select id="f-iscustom">
-              <option value="0" <?php echo (!$b['is_custom'])?'selected':''; ?>>No — Pre-made</option>
-              <option value="1" <?php echo ($b['is_custom'])?'selected':''; ?>>Yes — Custom order</option>
-            </select>
-          </div>
-          <div></div>
         </div>
       </div>
     </div>

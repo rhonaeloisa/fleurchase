@@ -56,15 +56,15 @@
 
 <div class="p-page">
   <div class="ptabs">
-    <button class="ptab active" id="ptab-active"   onclick="switchTab('active',this)">🏷️ Active Promos</button>
-    <button class="ptab"        id="ptab-sale"     onclick="switchTab('sale',this)">🔖 On Sale</button>
-    <button class="ptab"        id="ptab-upcoming" onclick="switchTab('upcoming',this)">📅 Upcoming</button>
+    <button class="ptab active" id="ptab-active"   onclick="switchTab('active',this)">Active Promos</button>
+    <button class="ptab"        id="ptab-sale"     onclick="switchTab('sale',this)">On Sale</button>
+    <button class="ptab"        id="ptab-upcoming" onclick="switchTab('upcoming',this)">Upcoming</button>
   </div>
 
   <div id="tab-active">
     <div class="promo-grid" id="active-promo-grid"></div>
     <div class="info-box">
-      <div style="font-size:13px;font-weight:700;color:var(--g2);margin-bottom:.6rem">💡 How to use promo codes</div>
+      <div style="font-size:13px;font-weight:700;color:var(--g2);margin-bottom:.6rem">How to use promo codes</div>
       <ol style="font-size:12px;color:var(--g3);line-height:2;padding-left:1.2rem">
         <li>Add items to your cart</li>
         <li>Go to <strong>My Cart</strong> and find the "Promo Code" box</li>
@@ -77,7 +77,7 @@
 
   <div id="tab-sale" style="display:none">
     <div style="background:var(--p9);border:1px solid var(--p7);border-radius:var(--r);padding:12px 16px;margin-bottom:1.2rem;font-size:13px;color:var(--p2);line-height:1.6">
-      🔖 <strong>On-Sale Blooms</strong> — These flowers are discounted because they need to be used soon. Same freshness, just act fast!
+      <strong>On-Sale Blooms</strong> — These flowers are discounted because they need to be used soon. Same freshness, just act fast!
     </div>
     <div class="sale-grid" id="sale-items-grid"></div>
   </div>
@@ -85,12 +85,12 @@
   <div id="tab-upcoming" style="display:none">
     <div class="promo-grid" id="upcoming-promo-grid"></div>
     <div style="background:var(--soft);border-radius:var(--rl);border:1px dashed var(--line);padding:2rem;text-align:center;margin-top:.5rem">
-      <div style="font-size:32px;margin-bottom:.7rem">🔔</div>
+      <div style="font-size:32px;margin-bottom:.7rem"></div>
       <div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:.4rem">Get notified first!</div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;max-width:340px;margin-left:auto;margin-right:auto">Follow us on social media to be the first to know about our upcoming deals.</p>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-green btn-sm" onclick="toast('Follow us: /FleurChaseAlbay 📘')">📘 Facebook</button>
-        <button class="btn btn-pink btn-sm"  onclick="toast('Follow us: @fleurChase.albay 📸')">📸 Instagram</button>
+        <button class="btn btn-green btn-sm" onclick="toast('Follow us: /FleurChaseAlbay')">Facebook</button>
+        <button class="btn btn-pink btn-sm"  onclick="toast('Follow us: @fleurChase.albay')">Instagram</button>
       </div>
     </div>
   </div>
@@ -219,7 +219,7 @@ function switchTab(t, btn) {
 
 function copyCode(code) {
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(code).then(() => toast('Code copied: ' + code + ' 📋')).catch(() => toast('Code: ' + code));
+    navigator.clipboard.writeText(code).then(() => toast('Code copied: ' + code)).catch(() => toast('Code: ' + code));
   } else { toast('Code: ' + code); }
 }
 
@@ -227,14 +227,14 @@ function renderActivePromos() {
   const promos = getLocalActivePromos();
   const el = document.getElementById('active-promo-grid');
   if (!promos.length) {
-    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">🏷️</div><h3>No active promos right now</h3><p>Check back soon — we run promos for every season!</p></div>`;
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei"></div><h3>No active promos right now</h3><p>Check back soon — we run promos for every season!</p></div>`;
     return;
   }
   el.innerHTML = promos.map(p => {
     const valText = p.discount_type === 'percent' ? p.discount_value + '% OFF' : p.discount_type === 'fixed' ? '₱' + p.discount_value + ' OFF' : 'DEAL';
     const valColor = p.discount_type === 'percent' ? 'var(--p3)' : p.discount_type === 'fixed' ? 'var(--g3)' : '#E65100';
     const endDate = p.end_date ? new Date(p.end_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) : 'Limited time';
-    const minOrderText = p.min_order_amount > 0 ? `🛒 Min. Spend: ₱${p.min_order_amount}` : '🌸 No Min. Spend';
+    const minOrderText = p.min_order_amount > 0 ? `Min. Spend: ₱${p.min_order_amount}` : 'No Min. Spend';
 
     return `
     <div class="promo-card is-active">
@@ -243,12 +243,12 @@ function renderActivePromos() {
       <div class="pc-name">${p.promo_name}</div>
       <div class="pc-desc">${p.description}</div>
       <div class="pc-meta">
-        <span>📅 Until ${endDate}</span>
+        <span>Until ${endDate}</span>
         <span>${minOrderText}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="pc-code" onclick="copyCode('${p.code.toUpperCase()}')" title="Click to copy">${p.code.toUpperCase()} 📋</div>
-        <a class="btn btn-pink btn-sm" href="shop.html" style="text-decoration:none">Shop Now →</a>
+        <div class="pc-code" onclick="copyCode('${p.code.toUpperCase()}')" title="Click to copy">${p.code.toUpperCase()}</div>
+        <a class="btn btn-pink btn-sm" href="shop.html" style="text-decoration:none">Shop Now</a>
       </div>
     </div>`;
   }).join('');
@@ -258,17 +258,17 @@ function renderUpcomingPromos() {
   const promos = loadedPromos.filter(p => getPromoRuntimeStatus(p) === 'upcoming');
   const el = document.getElementById('upcoming-promo-grid');
   if (!promos.length) {
-    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei">📅</div><h3>No upcoming promos yet</h3><p>Stay tuned — something exciting is coming!</p></div>`;
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="ei"></div><h3>No upcoming promos yet</h3><p>Stay tuned — something exciting is coming!</p></div>`;
     return;
   }
   el.innerHTML = promos.map(p => {
     const valText = p.discount_type === 'percent' ? p.discount_value + '% OFF' : p.discount_type === 'fixed' ? '₱' + p.discount_value + ' OFF' : 'DEAL';
     const startDate = p.start_date ? new Date(p.start_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) : 'Coming soon';
-    const minOrderText = p.min_order_amount > 0 ? `🛒 Min. Spend: ₱${p.min_order_amount}` : '🌸 No Min. Spend';
+    const minOrderText = p.min_order_amount > 0 ? `Min. Spend: ₱${p.min_order_amount}` : 'No Min. Spend';
 
     return `
     <div class="promo-card">
-      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">📅 Coming Soon</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Coming Soon</div>
       <div class="pc-value" style="color:var(--muted)">${valText}</div>
       <div class="pc-name">${p.promo_name}</div>
       <div class="pc-desc">${p.description}</div>
@@ -276,7 +276,7 @@ function renderUpcomingPromos() {
         <span>🚀 Starts ${startDate}</span>
         <span>${minOrderText}</span>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="toast('We\\'ll notify you when this promo goes live! 🔔')">🔔 Remind Me</button>
+      <button class="btn btn-ghost btn-sm" onclick="toast('We\\'ll notify you when this promo goes live!')">Remind Me</button>
     </div>`;
   }).join('');
 }
