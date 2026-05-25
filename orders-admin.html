@@ -67,6 +67,29 @@
   border-color: var(--g3);
 }
 
+.order-search{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:1rem;
+  flex-wrap:wrap;
+}
+
+.order-search input{
+  flex:1;
+  min-width:240px;
+  border:1.5px solid var(--line);
+  background:white;
+  border-radius:var(--r);
+  padding:10px 12px;
+  font-family:var(--font-b);
+  font-size:13px;
+  outline:none;
+}
+
+.order-search input:focus{
+  border-color:var(--g3);
+}
 </style>
 </head>
 <body>
@@ -86,6 +109,10 @@
       </select>
     </div>
   </div>
+ <div class="order-search">
+  <input id="order-search-input" type="search" placeholder="Search order, customer, phone, item, payment..." oninput="searchOrders()">
+  <button class="btn btn-ghost btn-sm" onclick="clearOrderSearch()">Clear</button>
+</div>
   <div class="table-wrap">
     <div class="table-head"><h3>All Orders</h3><span id="ord-count" style="font-size:12px;color:var(--muted)"></span></div>
     <div style="overflow-x:auto">
@@ -142,6 +169,41 @@ const STATUS_CLASS = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag
 const PAY_ICON     = {'GCash 50% Deposit':'','Full GCash Payment':'','Cash on Delivery':''};
 
 let DB_ORDERS = [];
+let ORDER_QUERY = '';
+
+function searchOrders() {
+  ORDER_QUERY = document.getElementById('order-search-input').value.trim().toLowerCase();
+  renderOrders();
+}
+
+function clearOrderSearch() {
+  document.getElementById('order-search-input').value = '';
+  ORDER_QUERY = '';
+  renderOrders();
+}
+
+function matchesOrderSearch(o) {
+  if (!ORDER_QUERY) return true;
+
+  const haystack = [
+    o.id,
+    o.customer,
+    o.phone,
+    o.items,
+    o.delivDate,
+    o.delivTime,
+    o.payMethod,
+    o.payStatus,
+    o.status,
+    o.full_address,
+    o.city,
+    o.refNum,
+    o.promo,
+    o.promoLabel
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return haystack.includes(ORDER_QUERY);
+}
 
 async function loadOrders() {
   try {
@@ -170,7 +232,7 @@ function setOrderView(status, btn) {
 // ── ORDERS TABLE ────────────────────────────────────────────────────────────
 function renderOrders() {
   const orders = DB_ORDERS;
-  const list = orders.filter(o => o.status === CURRENT_VIEW);
+  const list = orders.filter(o => o.status === CURRENT_VIEW && matchesOrderSearch(o));
   document.getElementById('ord-count').textContent = list.length + ' order' + (list.length !== 1 ? 's' : '');
 
   document.getElementById('ord-tbody').innerHTML = list.map(o => {
