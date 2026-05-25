@@ -46,10 +46,12 @@
 .order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .order-row:last-child{border-bottom:none}
 .or-icon{width:40px;height:40px;background:var(--soft);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.or-info{flex:1}
-.or-name{font-size:12px;font-weight:600;color:var(--ink)}
-.or-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.or-total{font-size:13px;font-weight:700;color:var(--g3)}
+
+.prof-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
 </style>
 </head>
 <body>
@@ -80,8 +82,6 @@
       <div class="prof-name" id="prof-disp-name">Loading...</div>
       <div class="prof-email" id="prof-disp-email">—</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <span class="tag tag-g" id="prof-badge-orders">0 Orders</span>
-        <span class="tag tag-b" id="prof-badge-tier">Regular</span>
         <span class="tag tag-gold">✓ Verified</span>
       </div>
     </div>
@@ -96,93 +96,95 @@
   </div>
 
   <div class="profile-grid">
-    <!-- PERSONAL INFO -->
+    <!-- LEFT SIDE COLUMN (Personal Info + Recent Orders) -->
+    <div class="prof-left-col">
+      <!-- PERSONAL INFO -->
+      <div class="prof-card">
+        <h3>Personal Information</h3>
+        <!-- VIEW -->
+        <div id="view-info">
+          <div class="info-row"><span>Full Name</span><span id="v-name">—</span></div>
+          <div class="info-row"><span>Email</span><span id="v-email">—</span></div>
+          <div class="info-row"><span>Phone</span><span id="v-phone">—</span></div>
+          <div class="info-row"><span>Member Since</span><span id="v-joined">Loading...</span></div>
+        </div>
+        <!-- EDIT (hidden by default) -->
+        <div id="edit-info" style="display:none">
+          <div class="fg2">
+            <div class="ff"><label>First name</label><input id="ef-fn" placeholder="Maria"/></div>
+            <div class="ff"><label>Last name</label><input id="ef-ln" placeholder="Santos"/></div>
+          </div>
+          <div class="ff"><label>Email address</label><input id="ef-email" type="email"/></div>
+          <div class="ff"><label>Phone number</label><input id="ef-phone" placeholder="09XX XXX XXXX" maxlength="11"/></div>
+          <div class="ff"><label>New password <small style="font-weight:400;color:var(--muted)">(leave blank to keep)</small></label><input id="ef-pw" type="password" placeholder="••••••••"/></div>
+          <div style="display:flex;gap:8px;margin-top:.5rem">
+            <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveProfile()">✓ Save</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="toggleEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT ORDERS -->
+      <div class="prof-card">
+        <h3>Recent Orders</h3>
+        <div id="recent-orders"></div>
+        <div style="text-align:right;margin-top:10px">
+          <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE COLUMN (Delivery Addresses) -->
     <div class="prof-card">
-      <h3>Personal Information</h3>
-      <!-- VIEW -->
-      <div id="view-info">
-        <div class="info-row"><span>Full Name</span><span id="v-name">—</span></div>
-        <div class="info-row"><span>Email</span><span id="v-email">—</span></div>
-        <div class="info-row"><span>Phone</span><span id="v-phone">—</span></div>
-        <div class="info-row"><span>Member Since</span><span>March 2024</span></div>
-        <div class="info-row"><span>Role</span><span><span class="tag tag-g">Customer</span></span></div>
-      </div>
-      <!-- EDIT (hidden by default) -->
-      <div id="edit-info" style="display:none">
+      <h3>Delivery Addresses</h3>
+
+      <div id="address-list"></div>
+
+      <div id="addr-form" style="display:none;margin-top:12px">
+        <input type="hidden" id="addr-id">
+
         <div class="fg2">
-          <div class="ff"><label>First name</label><input id="ef-fn" placeholder="Maria"/></div>
-          <div class="ff"><label>Last name</label><input id="ef-ln" placeholder="Santos"/></div>
+          <div class="ff">
+            <label>House No.</label>
+            <input id="addr-house" placeholder="House No.">
+          </div>
+          <div class="ff">
+            <label>Street</label>
+            <input id="addr-street" placeholder="Street">
+          </div>
         </div>
-        <div class="ff"><label>Email address</label><input id="ef-email" type="email"/></div>
-        <div class="ff"><label>Phone number</label><input id="ef-phone" placeholder="09XX XXX XXXX" maxlength="11"/></div>
-        <div class="ff"><label>New password <small style="font-weight:400;color:var(--muted)">(leave blank to keep)</small></label><input id="ef-pw" type="password" placeholder="••••••••"/></div>
-        <div style="display:flex;gap:8px;margin-top:.5rem">
-          <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveProfile()">✓ Save</button>
-          <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="toggleEdit()">Cancel</button>
+
+        <div class="ff">
+          <label>Barangay</label>
+          <input id="addr-barangay" placeholder="Barangay">
+        </div>
+
+        <div class="fg2">
+          <div class="ff">
+            <label>City</label>
+            <input id="addr-city" placeholder="City">
+          </div>
+          <div class="ff">
+            <label>Province</label>
+            <input id="addr-province" placeholder="Province" disabled value="Albay">
+          </div>
+        </div>
+
+        <div class="ff">
+          <label>ZIP Code</label>
+          <input id="addr-zip" placeholder="ZIP Code">
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-green" style="flex:1;justify-content:center" onclick="saveAddress()">Save Address</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="hideAddressForm()">Cancel</button>
         </div>
       </div>
+
+      <button class="btn btn-ghost" id="addr-add-btn" style="width:100%;justify-content:center;margin-top:6px" onclick="showAddAddressForm()">+ Add Address</button>
     </div>
+  </div> 
 
-  <!-- ADDRESSES -->
-<div class="prof-card">
-  <h3>Delivery Addresses</h3>
-
-  <div id="address-list"></div>
-
-  <div id="addr-form" style="display:none;margin-top:12px">
-    <input type="hidden" id="addr-id">
-
-    <div class="fg2">
-      <div class="ff">
-        <label>House No.</label>
-        <input id="addr-house" placeholder="House No.">
-      </div>
-      <div class="ff">
-        <label>Street</label>
-        <input id="addr-street" placeholder="Street">
-      </div>
-    </div>
-
-    <div class="ff">
-      <label>Barangay</label>
-      <input id="addr-barangay" placeholder="Barangay">
-    </div>
-
-    <div class="fg2">
-      <div class="ff">
-        <label>City</label>
-        <input id="addr-city" placeholder="City">
-      </div>
-      <div class="ff">
-        <label>Province</label>
-        <input id="addr-province" placeholder="Province">
-      </div>
-    </div>
-
-    <div class="ff">
-      <label>ZIP Code</label>
-      <input id="addr-zip" placeholder="ZIP Code">
-    </div>
-
-    <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:6px" onclick="saveAddress()">Save Address</button>
-  </div>
-
-  <button class="btn btn-ghost" id="addr-add-btn" style="width:100%;justify-content:center;margin-top:6px" onclick="showAddAddressForm()">+ Add Address</button>
-</div>
-
- 
-
-
-  <!-- RECENT ORDERS -->
-  <div class="prof-card" style="margin-bottom:1.2rem">
-    <h3>Recent Orders</h3>
-    <div id="recent-orders"></div>
-    <div style="text-align:right;margin-top:10px">
-      <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders →</a>
-    </div>
-  </div>
-
-  
 </div>
 
 <div id="footer-container"></div>
@@ -220,7 +222,9 @@ async function loadProfileFromDB() {
       role: String(dbUser.user_role || '').trim().toLowerCase(),
       name: fullName || 'Customer',
       phone: dbUser.contact || '',
-      addresses: data.addresses || (data.address ? [data.address] : [])
+      joined: dbUser.created_at || '', 
+      addresses: data.addresses || (data.address ? [data.address] : []),
+      orders: data.orders || []
     };
 
     FC.setUser(user);
@@ -237,7 +241,7 @@ function toggleAddressForm() {
 
   const isOpen = form.style.display === 'block';
   form.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? '+ Add / Edit Address' : 'Cancel';
+  if(btn) btn.textContent = isOpen ? '+ Add / Edit Address' : 'Cancel';
 
   if (!isOpen && user.address) {
     document.getElementById('addr-house').value = user.address.house_no || '';
@@ -249,6 +253,10 @@ function toggleAddressForm() {
   }
 }
 
+function hideAddressForm() {
+  document.getElementById('addr-form').style.display = 'none';
+}
+
 function init() {
   if (!user) return;
   const parts = (user.name || '').split(' ');
@@ -258,42 +266,60 @@ function init() {
   document.getElementById('v-name').textContent  = user.name || '—';
   document.getElementById('v-email').textContent = user.email || '—';
   document.getElementById('v-phone').textContent = user.phone || '—';
+
+  if (user.joined) {
+    const formatConfig = { year: 'numeric', month: 'long' };
+    document.getElementById('v-joined').textContent = new Date(user.joined).toLocaleDateString('en-US', formatConfig);
+  } else {
+    document.getElementById('v-joined').textContent = '—';
+  }
+
   document.getElementById('ef-fn').value    = parts[0] || '';
   document.getElementById('ef-ln').value    = parts.slice(1).join(' ') || '';
   document.getElementById('ef-email').value = user.email || '';
   document.getElementById('ef-phone').value = user.phone || '';
 
-  const orders = FC.getOrders();
+  const orders = user.orders || [];
   const spent   = orders.reduce((s,o) => s + (o.total||0), 0);
   const count   = orders.length;
   document.getElementById('stat-total-orders').textContent = count;
   document.getElementById('stat-total-spent').textContent  = spent >= 1000 ? '₱' + (spent/1000).toFixed(1) + 'k' : '₱' + spent;
-  document.getElementById('prof-badge-orders').textContent = count + ' Order' + (count!==1?'s':'');
 
-  const tier = spent > 5000 ? '⭐ Gold' : spent > 2000 ? '🥈 Silver' : 'Regular';
-  document.getElementById('prof-badge-tier').textContent = tier;
-
-  // Favourite item
   const freq = {};
-  orders.forEach(o => (o.itemDetails||[]).forEach(it => { freq[it.name] = (freq[it.name]||0)+(it.qty||1); }));
+  orders.forEach(o => { if(o.items) { freq[o.items] = (freq[o.items]||0) + 1; } });
   const fav = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('stat-fav-item').textContent = fav ? fav[0].split(' ')[0] : '—';
+  
+  // IPAPAKITA ANG BUONG PANGALAN NG FAV ITEM NANG HINDI PINUPUTOL
+  if (fav) {
+    document.getElementById('stat-fav-item').textContent = fav[0];
+  } else {
+    document.getElementById('stat-fav-item').textContent = '—';
+  }
 
-  // Recent orders
   const sc = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w'};
   const recentEl = document.getElementById('recent-orders');
   if (!orders.length) {
     recentEl.innerHTML = `<div class="empty-state" style="padding:1.5rem 0"><div class="ei">📭</div><h3>No orders yet</h3><p>Head to the shop to place your first pre-order!</p><a class="btn btn-green btn-sm" href="shop.html" style="text-decoration:none;margin-top:.8rem;display:inline-flex">Shop Now →</a></div>`;
   } else {
-    recentEl.innerHTML = orders.slice(0,4).map(o => `
-      <div class="order-row">
-        <div class="or-icon">${(o.itemDetails&&o.itemDetails[0]?.icon)||'💐'}</div>
-        <div class="or-info">
-          <div class="or-name">${(o.items||'Order').slice(0,48)}${(o.items||'').length>48?'...':''}</div>
-          <div class="or-meta">${o.delivDate||'—'} · <span class="tag ${sc[o.status]||'tag-w'}" style="font-size:9px;padding:1px 6px">${o.status}</span></div>
-        </div>
-        <div class="or-total">${fmtP(o.total)}</div>
-      </div>`).join('');
+    recentEl.innerHTML = orders.slice(0,4).map(o => {
+      const imageFolder = 'images/'; 
+      
+      // Dynamic rendering ng maliit na image thumbnail sa tabi ng text block (size 32px)
+      const finalMediaThumbnail = o.image 
+        ? `<img src="${imageFolder}${o.image}" style="width:32px; height:32px; object-fit:cover; border-radius:var(--r); flex-shrink:0;" alt="">` 
+        : '<div style="width:32px; height:32px; background:var(--soft); border-radius:var(--r); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">💐</div>';
+
+      // Naka-right side ang presyo, kulay green text gamit ang var(--g1) o native green color rule, at saktong font compression (.85rem)
+      return `
+        <div class="order-row" style="display:flex; align-items:center; gap:10px; font-size:0.85rem; width:100%;">
+          ${finalMediaThumbnail}
+          <div class="or-info" style="flex:1;">
+            <div class="or-name" style="font-weight:600; color:var(--g1); font-size:0.85rem;">${(o.items||'Order').slice(0,48)}${(o.items||'').length>48?'...':''}</div>
+            <div class="or-meta" style="font-size:0.75rem; color:var(--muted); margin-top:2px;">${o.delivDate||'—'} · <span class="tag ${sc[o.status]||'tag-w'}" style="font-size:9px;padding:1px 6px">${o.status}</span></div>
+          </div>
+          <div class="or-total" style="font-weight:700; color:green; font-family:var(--font-d); margin-left:auto; font-size:0.85rem;">₱${o.total.toLocaleString()}</div>
+        </div>`;
+    }).join('');
   }
 
   renderAddresses();
@@ -409,7 +435,8 @@ async function saveAddress() {
   formData.append('street', document.getElementById('addr-street').value.trim());
   formData.append('barangay', document.getElementById('addr-barangay').value.trim());
   formData.append('city', document.getElementById('addr-city').value.trim());
-  formData.append('province', document.getElementById('addr-province').value.trim());
+  
+  formData.append('province', 'Albay');
   formData.append('zip', document.getElementById('addr-zip').value.trim());
 
   const res = await fetch('save_address.php', {
@@ -464,7 +491,7 @@ function showAddAddressForm() {
   document.getElementById('addr-street').value = '';
   document.getElementById('addr-barangay').value = '';
   document.getElementById('addr-city').value = '';
-  document.getElementById('addr-province').value = '';
+  document.getElementById('addr-province').value = 'Albay';
   document.getElementById('addr-zip').value = '';
 }
 
@@ -478,7 +505,7 @@ function editAddress(addressId) {
   document.getElementById('addr-street').value = address.street || '';
   document.getElementById('addr-barangay').value = address.barangay || '';
   document.getElementById('addr-city').value = address.city || '';
-  document.getElementById('addr-province').value = address.province || '';
+  document.getElementById('addr-province').value = 'Albay';
   document.getElementById('addr-zip').value = address.zip || '';
 }
 
