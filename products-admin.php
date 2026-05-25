@@ -274,8 +274,8 @@ a.btn-green:focus {
     </div>
     <!-- view toggle -->
     <div class="view-toggle">
-      <button onclick="setView('cards',this)" class="active" id="vbtn-cards" title="Card view">⊞</button>
-      <button onclick="setView('table',this)" id="vbtn-table" title="List view">☰</button>
+      <button onclick="setView('cards',this)"  id="vbtn-cards" title="Card view">⊞</button>
+      <button onclick="setView('table',this)" class="active" id="vbtn-table" title="List view">☰</button>
     </div>
   </div>
 </div>
@@ -305,7 +305,7 @@ a.btn-green:focus {
 <!-- ════════════════════════════════
      CARD VIEW
      ════════════════════════════════ -->
-<div class="bc-grid" id="bc-grid">
+<div class="bc-grid" id="bc-grid" style="display:none">
 
 <?php foreach ($bouquets as $row):
   $cat        = htmlspecialchars($row['category']);
@@ -442,7 +442,7 @@ a.btn-green:focus {
 <!-- ════════════════════════════════
      LIST VIEW
      ════════════════════════════════ -->
-<div class="table-wrap" id="bc-list" style="display:none">
+<div class="table-wrap" id="bc-list" >
   <table class="data-table">
     <thead>
       <tr>

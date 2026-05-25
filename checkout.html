@@ -942,9 +942,6 @@ function preOrderCheck() {
   if (mun === "" || mun.includes("No saved address")) {
     toast('✕ Please select a valid Municipality for shipping calculations.', 'warn'); return;
   }
-  if (!/^09\d{9}$/.test(ph)) {
-    toast('Please enter a valid 11-digit PH mobile number.', 'err'); return;
-  }
   if (!receiptBase64) {
     toast('Please upload your GCash payment receipt.', 'err'); return;
   }

@@ -29,7 +29,8 @@ $sql = "
     SELECT ci.*, 
           b.name AS bouquet_name, 
           b.description AS bouquet_desc, 
-          b.image AS bouquet_img
+          b.image AS bouquet_img,
+          b.bouquet_id
     FROM cart_item ci
     LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
     WHERE ci.cart_id = ?

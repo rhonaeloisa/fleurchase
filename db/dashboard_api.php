@@ -123,36 +123,48 @@ function getRecentOrders(PDO $db): array {
     return $stmt->fetchAll();
 }
 
-/**
- * Top bouquets by stock sold (approximated by (initial - current) or simply by name).
- * Since there's no sales_count column, we rank by (initial arrival stock - current stock)
- * which requires date_arrived. As a practical fallback we rank by descending stock sold
- * using a simple heuristic: lowest remaining stock among active = most popular.
- *
- * Adjust the ORDER BY below to match your real sales logic if you have an order_items table.
- */
 function getTopFlowers(PDO $db): array {
-    // If you have an order_items / bouquet_order table, replace this query.
-    $stmt = $db->query(
-        "SELECT name, stock, category, bouquet_type
-         FROM bouquet
-         WHERE status = 'active'
-         ORDER BY stock ASC
+    $stmt = $db->prepare(
+        "SELECT
+            COALESCE(b.name, oi.snapshot_name, 'Bouquet') AS name,
+            COALESCE(b.stock, 0) AS stock,
+            COALESCE(b.category, '') AS category,
+            COALESCE(b.bouquet_type, '') AS bouquet_type,
+            SUM(COALESCE(oi.quantity, 1)) AS sold_qty,
+            SUM(COALESCE(oi.subtotal, oi.unit_price * COALESCE(oi.quantity, 1), 0)) AS revenue
+         FROM order_item oi
+         INNER JOIN `order` o ON oi.order_id = o.order_id
+         LEFT JOIN bouquet b ON oi.bouquet_id = b.bouquet_id
+         WHERE oi.bouquet_id IS NOT NULL
+           AND o.order_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+           AND o.order_date < DATE_ADD(LAST_DAY(CURDATE()), INTERVAL 1 DAY)
+           AND COALESCE(o.status, '') <> 'Cancelled'
+           AND LOWER(COALESCE(b.category, '')) <> 'addon'
+           AND LOWER(COALESCE(b.bouquet_type, '')) <> 'addon'
+         GROUP BY
+            oi.bouquet_id,
+            COALESCE(b.name, oi.snapshot_name, 'Bouquet'),
+            COALESCE(b.stock, 0),
+            COALESCE(b.category, ''),
+            COALESCE(b.bouquet_type, '')
+         HAVING sold_qty > 0
+         ORDER BY sold_qty DESC, revenue DESC, name ASC
          LIMIT 6"
     );
+    $stmt->execute();
     $rows = $stmt->fetchAll();
 
-    // Normalise for the chart: turn stock into a relative "popularity" value
-    // so the bar with least remaining stock = tallest bar.
-    $max = max(array_column($rows, 'stock') ?: [1]);
-    return array_map(function ($r) use ($max) {
+    return array_map(function ($r) {
+        $soldQty = (int) $r['sold_qty'];
+
         return [
-            'name'     => $r['name'],
-            'stock'    => (int) $r['stock'],
-            'category' => $r['category'],
-            'type'     => $r['bouquet_type'],
-            // Chart value: invert so low-stock (popular) = high bar value
-            'chart_val' => max(5, 100 - (int) round(($r['stock'] / ($max ?: 1)) * 80)),
+            'name'      => $r['name'],
+            'stock'     => (int) $r['stock'],
+            'category'  => $r['category'],
+            'type'      => $r['bouquet_type'],
+            'sold_qty'  => $soldQty,
+            'revenue'   => (float) $r['revenue'],
+            'chart_val' => $soldQty,
         ];
     }, $rows);
 }
