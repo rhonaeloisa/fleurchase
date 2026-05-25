@@ -10,10 +10,11 @@ function normalizeReceiptPath($receipt) {
     }
 
     if (
-        str_starts_with($receipt, 'http') ||
-        str_starts_with($receipt, 'uploads/') ||
-        str_starts_with($receipt, 'images/') ||
-        str_starts_with($receipt, 'data:image')
+    str_starts_with($receipt, 'http://') ||
+    str_starts_with($receipt, 'https://') ||
+    str_starts_with($receipt, 'uploads/') ||
+    str_starts_with($receipt, 'images/') ||
+    str_starts_with($receipt, 'data:image')
     ) {
         return $receipt;
     }
@@ -55,15 +56,43 @@ SELECT
     p.img_receipt,
     p.status AS payment_status,
 
-    a.city,
+        a.city,
 
-    GROUP_CONCAT(oi.snapshot_name SEPARATOR ', ') AS items
+    GROUP_CONCAT(
+        CASE
+            WHEN LOWER(COALESCE(b.category, b.bouquet_type, '')) <> 'addon'
+            THEN CONCAT(
+                oi.snapshot_name,
+                ' x',
+                COALESCE(oi.quantity, 1),
+                ' - PHP ',
+                COALESCE(oi.subtotal, oi.unit_price, 0)
+            )
+        END
+        SEPARATOR '||'
+    ) AS items,
+
+    GROUP_CONCAT(
+        CASE
+            WHEN LOWER(COALESCE(b.category, b.bouquet_type, '')) = 'addon'
+            THEN CONCAT(
+                oi.snapshot_name,
+                ' x',
+                COALESCE(oi.quantity, 1),
+                ' - PHP ',
+                COALESCE(oi.subtotal, oi.unit_price, 0)
+            )
+        END
+        SEPARATOR '||'
+    ) AS addons
+
 FROM `order` o
 LEFT JOIN `user` u ON o.user_id = u.user_id
 LEFT JOIN shipment s ON o.order_id = s.order_id
 LEFT JOIN `address` a ON s.address_id = a.address_id
 LEFT JOIN payment p ON o.order_id = p.order_id
 LEFT JOIN order_item oi ON o.order_id = oi.order_id
+LEFT JOIN bouquet b ON oi.bouquet_id = b.bouquet_id
 GROUP BY o.order_id
 ORDER BY o.order_id DESC
 ";
@@ -80,6 +109,7 @@ while ($row = $result->fetch_assoc()) {
         "phone" => $row["contact"] ?? "—",
         "loc" => $row["delivery_type"] ?? "—",
         "items" => $row["items"] ?? "—",
+        "addons" => $row["addons"] ?? "—",
         "delivDate" => $row["delivery_date"] ?? "—",
         "delivTime" => $row["delivery_time"] ?? "—",
         "payMethod" => $row["payment_type"] ?? "—",

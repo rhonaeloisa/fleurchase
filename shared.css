@@ -200,7 +200,24 @@ h1,h2,h3{font-family:var(--font-d);font-weight:700}
 }
 
 
-
+.material-icons {
+  font-family: 'Material Icons' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
 
 
 /* ── DISCOUNT DISPLAY ── */
@@ -271,5 +288,3 @@ h1,h2,h3{font-family:var(--font-d);font-weight:700}
   .nav-pill-row{display:none}
   .metrics-grid{grid-template-columns:1fr}
 }
-
-

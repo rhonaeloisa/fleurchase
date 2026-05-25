@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username   = "root";       // or your DB user
 $password   = "";           // set if you added one
-$database   = "fleurchase_db";
+$database   = "fleurchase_db1";
 $port       = 3306;         // change to 3307 if you reconfigured XAMPP
 
 $conn = new mysqli($servername, $username, $password, $database, $port);
