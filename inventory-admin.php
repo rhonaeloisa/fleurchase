@@ -234,19 +234,21 @@
 
     while ($row = mysqli_fetch_assoc($result)) {
       $date_arrived = new DateTime($row['date_arrived']);
-      $best_before = new DateTime($row['best_before_date']);
-      $today = new DateTime();
+      $best_before  = new DateTime($row['best_before_date']);
+      $today        = new DateTime('today');
 
-      $total_shelf_life = $date_arrived->diff($best_before)->days;
-      $remaining_days = max(0, $today->diff($best_before)->days - 1);
+      $total_shelf_life = max(1, $date_arrived->diff($best_before)->days);
 
-      if ($total_shelf_life > 0) {
-          $fresh_percent = ($remaining_days / $total_shelf_life) * 100;
+      $remaining_days = (int)$today->diff($best_before)->format('%r%a');
+
+      if ($remaining_days <= 0) {
+        $remaining_days = 0;
+        $fresh_percent = 0;
       } else {
-          $fresh_percent = 0;
+        $fresh_percent = round(($remaining_days / $total_shelf_life) * 100);
       }
 
-      $fresh_percent = max(0, min(100, round($fresh_percent)));
+      $fresh_percent = max(0, min(100, $fresh_percent));
 
       if ($fresh_percent >= 60) {
         $fresh_class = 'fresh-ok';
@@ -256,8 +258,8 @@
         $fresh_class = 'fresh-low';
       }
 
-      $shelf_life_text = $total_shelf_life . ' days';
-  ?>
+      $shelf_life_text = $total_shelf_life . ' ' . ($total_shelf_life == 1 ? 'day' : 'days');
+    ?>
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
