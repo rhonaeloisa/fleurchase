@@ -139,7 +139,7 @@ buildTopNav('orders-admin');
 buildAdminSidebar('orders-admin.html');
 
 const STATUS_CLASS = {Pending:'tag-a',Processing:'tag-b','Out for Delivery':'tag-g',Delivered:'tag-w',Cancelled:'tag-p'};
-const PAY_ICON     = {'GCash 50% Deposit':'💚','Full GCash Payment':'💚','Cash on Delivery':'💵','Maya 50% Deposit':'📱'};
+const PAY_ICON     = {'GCash 50% Deposit':'','Full GCash Payment':'','Cash on Delivery':''};
 
 let DB_ORDERS = [];
 
@@ -174,7 +174,7 @@ function renderOrders() {
   document.getElementById('ord-count').textContent = list.length + ' order' + (list.length !== 1 ? 's' : '');
 
   document.getElementById('ord-tbody').innerHTML = list.map(o => {
-    const payIcon = PAY_ICON[o.payMethod] || '💳';
+    const payIcon = PAY_ICON[o.payMethod];
     const payStatusLabel = o.payStatus === 'verified' ? 'Verified ✓'
       : o.payStatus === 'rejected' ? 'Rejected'
       : o.payStatus === 'cod-pending' ? 'COD'
@@ -192,7 +192,7 @@ function renderOrders() {
       </td>
       <td style="font-size:12px;max-width:150px">
         ${o.items}
-        ${o.giftMsg?`<br><span style="font-size:10px;color:var(--p3)">💌 "${o.giftMsg.slice(0,28)}${o.giftMsg.length>28?'…':''}"</span>`:''}
+        ${o.giftMsg?`<br><span style="font-size:10px;color:var(--p3)">"${o.giftMsg.slice(0,28)}${o.giftMsg.length>28?'…':''}"</span>`:''}
       </td>
       <td style="font-size:12px">${o.delivDate||'—'}<br><span style="font-size:11px;color:var(--muted)">${o.delivTime||''}</span></td>
       <td style="font-size:12px">${payIcon} ${o.payMethod||'—'}<br><span class="tag ${payStatusCls}" style="margin-top:3px;display:inline-block">${payStatusLabel}</span></td>
@@ -200,7 +200,7 @@ function renderOrders() {
       <td style="font-weight:600">${fmtP(o.total)}${o.discount?`<br><span style="font-size:10px;color:var(--p3)">−${fmtP(o.discount)} disc</span>`:''}</td>
       <td>
         <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" style="font-size:11px" onclick="openDetail('${o.id}')">🔍 Details</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px" onclick="openDetail('${o.id}')">Details</button>
           ${getNextStatusButton(o)}
         </div>
       </td>
@@ -235,9 +235,9 @@ function openDetail(id) {
 
   const receiptSrc = o.receiptImg || o.receipt || '';
 
-  const payStatusLabel = o.payStatus === 'verified' ? '✅ Verified'
-    : o.payStatus === 'rejected' ? '❌ Rejected'
-    : o.payStatus === 'uploaded' ? '⏳ Receipt Uploaded — Awaiting Review'
+  const payStatusLabel = o.payStatus === 'verified' ? 'Verified'
+    : o.payStatus === 'rejected' ? 'Rejected'
+    : o.payStatus === 'uploaded' ? 'Receipt Uploaded — Awaiting Review'
     : '⏳ Pending';
 
   const payStatusColor = o.payStatus === 'verified'
@@ -285,7 +285,7 @@ function openDetail(id) {
 
       <!-- CUSTOMER INFO -->
       <div class="dm-section">
-        <div class="dm-section-title">👤 Customer Information</div>
+        <div class="dm-section-title">Customer Information</div>
         <div class="dm-grid2">
           <div class="dm-field"><label>Full Name</label><span>${o.customer||'—'}</span></div>
           <div class="dm-field"><label>Phone Number</label><span>${o.phone?`<a href="tel:${o.phone}" style="color:var(--g3);text-decoration:none;font-weight:600">${o.phone}</a>`:'—'}</span></div>
@@ -295,7 +295,7 @@ function openDetail(id) {
 
       <!-- DELIVERY -->
       <div class="dm-section">
-        <div class="dm-section-title">📍 Delivery Details</div>
+        <div class="dm-section-title">Delivery Details</div>
         <div class="dm-grid3">
           <div class="dm-field"><label>Municipality</label><span>${o.city||'—'}</span></div>
           <div class="dm-field"><label>Delivery Date</label><span>${o.delivDate||'—'}</span></div>
@@ -305,30 +305,30 @@ function openDetail(id) {
 
       <!-- ORDER ITEMS -->
       <div class="dm-section">
-        <div class="dm-section-title">💐 Order Items</div>
+        <div class="dm-section-title">Order Items</div>
         ${itemRows}
       </div>
 
       <!-- ADD-ONS -->
       <div class="dm-section">
-        <div class="dm-section-title">🎁 Add-ons</div>
+        <div class="dm-section-title">Add-ons</div>
         ${addonRows}
       </div>
 
       <!-- GIFT MESSAGE -->
       ${o.giftMsg ? `
       <div class="dm-section">
-        <div class="dm-section-title">💌 Gift Message</div>
+        <div class="dm-section-title">Gift Message</div>
         <div class="dm-gift-msg">"${o.giftMsg}"</div>
       </div>` : ''}
 
       <!-- PAYMENT & PRICING -->
       <div class="dm-section">
-        <div class="dm-section-title">💳 Payment & Pricing</div>
+        <div class="dm-section-title">Payment & Pricing</div>
         <div class="dm-grid2" style="margin-bottom:.8rem">
           <div class="dm-field"><label>Payment Method</label><span>${o.payMethod||'—'}</span></div>
           <div class="dm-field"><label>Payment Status</label><span style="color:${payStatusColor};font-weight:600">${payStatusLabel}</span></div>
-          ${o.promo||o.promoLabel?`<div class="dm-field"><label>Promo Applied</label><span style="color:var(--p3)">🏷️ ${o.promo||o.promoLabel}</span></div>`:''}
+          ${o.promo||o.promoLabel?`<div class="dm-field"><label>Promo Applied</label><span style="color:var(--p3)">${o.promo||o.promoLabel}</span></div>`:''}
           ${o.refNum?`<div class="dm-field"><label>Reference #</label><span style="font-family:monospace">${o.refNum}</span></div>`:''}
         </div>
         <div style="background:var(--soft);border-radius:var(--r);padding:.8rem 1rem">
@@ -343,7 +343,7 @@ function openDetail(id) {
 
       <!-- RECEIPT -->
       <div class="dm-section">
-      <div class="dm-section-title">📷 Payment Receipt</div>
+      <div class="dm-section-title">Payment Receipt</div>
       <div id="detail-receipt-${o.id}">
         ${receiptSrc ? `
           <a href="${receiptSrc}" target="_blank" style="display:inline-block">
@@ -419,7 +419,7 @@ function openValidate(id) {
         <strong style="color:var(--g3)">${fmtP(o.total)}</strong>
         · Deposit: <strong>${fmtP(Math.ceil(o.total / 2))}</strong>
       </div>
-      ${o.giftMsg ? `<div style="font-size:12px;margin-top:6px;background:var(--p9);border-radius:6px;padding:6px 8px;color:var(--p2)">💌 <strong>Gift message:</strong> ${o.giftMsg}</div>` : ''}
+      ${o.giftMsg ? `<div style="font-size:12px;margin-top:6px;background:var(--p9);border-radius:6px;padding:6px 8px;color:var(--p2)"><strong>Gift message:</strong> ${o.giftMsg}</div>` : ''}
     </div>
 
     ${receiptSrc
@@ -439,7 +439,7 @@ function openValidate(id) {
           </div>
         </div>`
       : `<div class="receipt-placeholder">
-          <span style="font-size:28px">📷</span>
+          <span style="font-size:28px"></span>
           <span>No receipt uploaded yet</span>
         </div>`}
 
