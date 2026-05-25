@@ -90,8 +90,8 @@ while ($p = mysqli_fetch_assoc($prod_res)) {
 /* ── Stem progress ── */
 .stem-wrap{background:var(--soft);border-radius:var(--r);padding:10px 14px;margin-bottom:1rem}
 .stem-bar-track{background:var(--line);border-radius:10px;height:7px;overflow:hidden;flex:1}
-.stem-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--g5),var(--g3));transition:width .3s}
-.stem-bar-fill.ready{background:linear-gradient(90deg,var(--p4),var(--p3))}
+.stem-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--p4),var(--p3));transition:width .3s}
+.stem-bar-fill.ready{background:linear-gradient(90deg,var(--g5),var(--g3))}
 .stem-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 
 /* ── Error state ── */
