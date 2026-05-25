@@ -184,6 +184,30 @@
   cursor: pointer;
 }
 
+.inventory-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.inventory-search input {
+  flex: 1;
+  min-width: 240px;
+  border: 1.5px solid var(--line);
+  background: white;
+  border-radius: var(--r);
+  padding: 10px 12px;
+  font-family: var(--font-b);
+  font-size: 13px;
+  outline: none;
+}
+
+.inventory-search input:focus {
+  border-color: var(--g3);
+}
+
 
 </style>
 </head>
@@ -203,6 +227,10 @@
   <!-- METRICS -->
   <div class="metrics-grid" id="inv-metrics"></div>
 
+  <div class="inventory-search">
+      <input id="inventory-search-input" type="search" placeholder="Search product, type, stock, price, date, freshness, status..." oninput="filterInventory()">
+      <button class="btn btn-ghost btn-sm" onclick="clearInventorySearch()">Clear</button>
+    </div>
   <!-- MAIN TABLE -->
   <div class="table-wrap">
     <div class="table-head">
@@ -354,6 +382,41 @@ buildAdminSidebar('inventory-admin.html');
 
 let editingInvId = null;
 let deletingProductId = null;
+let inventorySearchQuery = '';
+
+function filterInventory() {
+  const input = document.getElementById('inventory-search-input');
+  const tbody = document.querySelector('#inv-table tbody');
+  if (!input || !tbody) return;
+
+  inventorySearchQuery = input.value.trim().toLowerCase();
+
+  const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.id !== 'inventory-empty-row');
+  let visibleCount = 0;
+
+  rows.forEach(row => {
+    const matches = !inventorySearchQuery || row.textContent.toLowerCase().includes(inventorySearchQuery);
+    row.style.display = matches ? '' : 'none';
+    if (matches) visibleCount++;
+  });
+
+  let emptyRow = document.getElementById('inventory-empty-row');
+  if (!emptyRow) {
+    emptyRow = document.createElement('tr');
+    emptyRow.id = 'inventory-empty-row';
+    emptyRow.innerHTML = '<td colspan="11" style="text-align:center;padding:2rem;color:var(--muted)">No inventory items match your search.</td>';
+    tbody.appendChild(emptyRow);
+  }
+
+  emptyRow.style.display = visibleCount ? 'none' : '';
+}
+
+function clearInventorySearch() {
+  const input = document.getElementById('inventory-search-input');
+  if (input) input.value = '';
+  inventorySearchQuery = '';
+  filterInventory();
+}
 
 //DELETE PRODUCT
 function openDeleteModal(id, name) {
