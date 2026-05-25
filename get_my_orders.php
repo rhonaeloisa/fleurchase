@@ -10,7 +10,7 @@ try {
         exit;
     }
 
-   $sql = "
+  $sql = "
     SELECT 
         o.order_id,
         o.order_name,
@@ -20,12 +20,10 @@ try {
         o.total_amount,
         o.status,
         o.notes,
-
         o.delivery_date,
         o.delivery_type,
         o.delivery_time,
 
-        -- Full Address (Concatenated)
         CONCAT(
             COALESCE(a.house_no, ''), 
             IF(a.house_no IS NOT NULL AND a.street IS NOT NULL, ', ', ''),
@@ -44,11 +42,16 @@ try {
         oi.unit_price,
         
         r.rating,
-        r.review_text
+        r.review_text,
+
+        p.payment_type,
+        p.status AS payment_status
 
     FROM `order` o
     INNER JOIN `user` u ON o.user_id = u.user_id
-    LEFT JOIN `address` a ON o.user_id = a.user_id    
+    LEFT JOIN shipment s ON o.order_id = s.order_id
+    LEFT JOIN `address` a ON s.address_id = a.address_id
+    LEFT JOIN payment p ON o.order_id = p.order_id
     LEFT JOIN order_item oi ON o.order_id = oi.order_id
     LEFT JOIN reviews r ON oi.order_item_id = r.order_item_id
 
@@ -79,8 +82,8 @@ try {
                 "shippingFee" => (float)$row["shipping_fee"],
                 "total" => (float)$row["total_amount"],
                 "notes" => $row["notes"],
-                "payMethod" => "GCash",
-                "payStatus" => "uploaded",
+                "payMethod" => $row["payment_type"] ?? "—",
+                "payStatus" => strtolower($row["payment_status"] ?? "pending"),
                 "deliveryType" => $row["delivery_type"],
                 'order_item_id' => intval($row['order_item_id']),
                 "full_address" => $row["full_address"] ?? 'No address',

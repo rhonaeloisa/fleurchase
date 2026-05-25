@@ -110,8 +110,15 @@
     </div>
   </div>
  <div class="order-search">
-  <input id="order-search-input" type="search" placeholder="Search order, customer, phone, item, payment..." oninput="searchOrders()">
-  <button class="btn btn-ghost btn-sm" onclick="clearOrderSearch()">Clear</button>
+  <input
+  id="order-search"
+  type="text"
+  placeholder="Search orders by ID, item, status, address..."
+  oninput="searchOrders()"
+/>
+
+<button class="btn btn-green" onclick="searchOrders()">Search</button>
+<button class="btn btn-ghost" onclick="clearOrderSearch()">Clear</button>
 </div>
   <div class="table-wrap">
     <div class="table-head"><h3>All Orders</h3><span id="ord-count" style="font-size:12px;color:var(--muted)"></span></div>
@@ -172,13 +179,14 @@ let DB_ORDERS = [];
 let ORDER_QUERY = '';
 
 function searchOrders() {
-  ORDER_QUERY = document.getElementById('order-search-input').value.trim().toLowerCase();
+  ORDER_QUERY = document.getElementById('order-search')?.value.trim().toLowerCase() || '';
   renderOrders();
 }
 
 function clearOrderSearch() {
-  document.getElementById('order-search-input').value = '';
   ORDER_QUERY = '';
+  const input = document.getElementById('order-search');
+  if (input) input.value = '';
   renderOrders();
 }
 
@@ -187,20 +195,14 @@ function matchesOrderSearch(o) {
 
   const haystack = [
     o.id,
-    o.customer,
-    o.phone,
     o.items,
+    o.status,
+    o.full_address,
     o.delivDate,
     o.delivTime,
     o.payMethod,
-    o.payStatus,
-    o.status,
-    o.full_address,
-    o.city,
-    o.refNum,
-    o.promo,
-    o.promoLabel
-  ].filter(Boolean).join(' ').toLowerCase();
+    ...(o.itemDetails || []).map(it => it.name)
+  ].join(' ').toLowerCase();
 
   return haystack.includes(ORDER_QUERY);
 }
