@@ -30,6 +30,10 @@
 .star-btn.lit{color:#F9A825}
 .review-ta{width:100%;border:1.5px solid var(--line);border-radius:var(--r);padding:8px 10px;font-family:var(--font-b);font-size:12px;resize:none;height:65px;outline:none;transition:border-color .2s;background:var(--soft)}
 .review-ta:focus{border-color:var(--g4);background:white}
+.order-search{display:flex;gap:8px;align-items:center;margin:0 0 1.2rem;max-width:520px}
+.order-search input{flex:1;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:13px;outline:none;background:white}
+.order-search input:focus{border-color:var(--g4)}
+.order-search .btn{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -43,6 +47,11 @@
     <button id="tab-active"  class="btn btn-sm" style="background:white;color:var(--g2);box-shadow:0 1px 5px rgba(0,0,0,.08);border:none;border-radius:8px;padding:7px 18px;font-family:var(--font-b);font-size:13px;font-weight:500;cursor:pointer" onclick="setTab('active',this)">Active Orders</button>
     <button id="tab-history" class="btn btn-sm" style="background:none;color:var(--muted);border:none;border-radius:8px;padding:7px 18px;font-family:var(--font-b);font-size:13px;font-weight:500;cursor:pointer" onclick="setTab('history',this)">Order History</button>
   </div>
+  <div class="order-search">
+  <input id="order-search-input" type="search" placeholder="Search orders by ID, item, status, address..." onkeydown="if(event.key==='Enter')searchOrders()">
+  <button class="btn btn-green btn-sm" onclick="searchOrders()">Search</button>
+  <button class="btn btn-ghost btn-sm" onclick="clearOrderSearch()">Clear</button>
+</div>
   <div id="active-list"></div>
   <div id="history-list" style="display:none"></div>
 </div>
@@ -67,7 +76,33 @@ renderFooter('footer-container', false);
 const STEPS=['Confirmed','Processing','Out for Delivery','Delivered'];
 const SC={Confirmed:'stp-conf',Processing:'stp-proc','Out for Delivery':'stp-deliv',Delivered:'stp-done',Pending:'stp-pend'};
 let DB_ORDERS = [];
+function searchOrders(){
+  ORDER_QUERY = document.getElementById('order-search-input').value.trim().toLowerCase();
+  renderLists();
+}
 
+function clearOrderSearch(){
+  document.getElementById('order-search-input').value = '';
+  ORDER_QUERY = '';
+  renderLists();
+}
+
+function matchesOrderSearch(o){
+  if(!ORDER_QUERY) return true;
+
+  const haystack = [
+    `ORD-${o.id}`,
+    o.items,
+    o.status,
+    o.payMethod,
+    o.full_address,
+    o.promo,
+    o.delivDate,
+    o.delivTime
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return haystack.includes(ORDER_QUERY);
+}
 function getStep(status){const i=STEPS.indexOf(status);return i===-1?0:i;}
 
 function renderOrderCard(o){
@@ -147,7 +182,7 @@ async function loadOrdersFromDB() {
 }
 
 function renderLists(){
-  const all = DB_ORDERS;
+  const all = DB_ORDERS.filter(matchesOrderSearch);
   const active = all.filter(o => o.status !== 'Delivered');
   const history = all.filter(o => o.status === 'Delivered');
 

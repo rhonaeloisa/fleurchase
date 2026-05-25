@@ -64,7 +64,7 @@ function buildTopNav(activePage) {
       { id:'shop',     href:'shop.html',     label:'Shop' },
       { id:'customize',href:'customize.html', label:'Customize' },
       { id:'orders',   href:'orders.html',   label:'Orders' },
-      { id:'promos',   href:'promos.php',    label:'Promos' }, // CHANGED: .html to .php
+      { id:'promos',   href:'promos.php',    label:'Promos' }, 
       { id:'profile',  href:'profile.html',  label:'Profile' },
     ];
     nav.innerHTML = `
