@@ -86,7 +86,7 @@ try {
   if (!$stmt) throw new Exception('Prepare failed: ' . mysqli_error($conn));
 
   mysqli_stmt_bind_param(
-    $stmt, 'issssdissssss' . 's',
+    $stmt, 'issssdisisssss',
     /* i */ $created_by,
     /* s */ $category,
     /* s */ $variation,
