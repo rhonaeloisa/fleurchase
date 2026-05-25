@@ -52,9 +52,8 @@ function buildTopNav(activePage) {
 
   if (user.role === 'admin') {
     nav.innerHTML = `
-      <a class="nav-logo" href="admin.html">FleurChase<em></a>
+      <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Albay</sub></a>
       <div class="nav-spacer"></div>
-      <span class="tag tag-b" style="padding:5px 12px;font-size:11px;font-weight:700">Admin Panel</span>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
         <div class="user-chip"><div class="user-av">${(user.name||'A')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Admin'}</span></div>
         <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -105,10 +104,7 @@ function buildAdminSidebar(activePage) {
     { s:'Insights', items:[
       { href:'seasonal-admin.html',icon:'trending_up',    label:'Seasonal Trends' },
       { href:'reports-admin.html', icon:'assignment',     label:'Reports' },
-    ]},
-    { s:'Users', items:[
-      { href:'customers-admin.html',icon:'groups', label:'Customers' },
-    ]},
+    ]}
   ];
   sb.innerHTML = `
     <div class="sb-brand"><div class="sb-brand-name">FleurChase<em>.</em></div><div class="sb-brand-sub">Admin Panel</div></div>
