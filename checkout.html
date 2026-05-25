@@ -171,18 +171,18 @@
   <div class="co-layout">
     <div>
       <div class="form-sec">
-        <div class="form-sec-title">🛒 Your Order</div>
+        <div class="form-sec-title">Your Order</div>
         <div id="co-items-list"></div>
       </div>
 
       <div class="form-sec">
-        <div class="form-sec-title">🎁 Add-Ons <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(optional — chocolates, teddies, cards &amp; more)</span></div>
+        <div class="form-sec-title">Add-Ons <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(optional — chocolates, teddies, cards &amp; more)</span></div>
         <div class="addon-tabs" id="addon-tabs"></div>
         <div class="addon-grid" id="addon-grid"></div>
       </div>
 
       <div class="form-sec">
-        <div class="form-sec-title">📍 Delivery Details</div>
+        <div class="form-sec-title">Delivery Details</div>
 
         <div id="co-address-cards-grid" class="co-address-wrapper"></div>
 
@@ -208,7 +208,7 @@
       </div>
 
       <div class="form-sec">
-        <div class="form-sec-title">📅 Delivery Schedule</div>
+        <div class="form-sec-title">Delivery Schedule</div>
         <div class="fg2">
           <div class="ff"><label>Preferred date</label><input type="date" id="co-date"/></div>
           <div class="ff"><label>Time slot</label>
@@ -221,32 +221,29 @@
       </div>
 
       <div class="form-sec">
-        <div class="form-sec-title">💌 Personalized Message <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(optional)</span></div>
+        <div class="form-sec-title">Personalized Message <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)">(optional)</span></div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:.8rem;line-height:1.6">Add a heartfelt message to be included with your bouquet. Our florist will attach this with the arrangement.</p>
         <textarea id="co-gift-msg" oninput="updateGiftMsgPreview()" style="width:100%;border:1.5px solid var(--line);border-radius:var(--r);padding:10px 12px;font-family:var(--font-b);font-size:13px;resize:none;height:90px;outline:none;transition:border-color .2s;background:var(--soft);color:var(--ink)" placeholder="e.g. Happy Birthday! Wishing you all the best. With love, Maria 💖"></textarea>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right" id="msg-char-count">0 / 200</div>
       </div>
 
       <div class="form-sec">
-        <div class="form-sec-title">💳 Payment</div>
+        <div class="form-sec-title">Payment</div>
         <div style="background:var(--g9);border:1px solid var(--g7);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--g2);margin-bottom:1rem;line-height:1.6">
-          📋 <strong>Pre-Order Policy:</strong> All orders require a GCash downpayment. Pay 50% now, balance on delivery, or pay in full.
+           <strong>Pre-Order Policy:</strong> All orders require a GCash downpayment. Pay 50% now, balance on delivery, or pay in full.
         </div>
         <div class="pay-grid">
           <div class="pay-opt sel" id="po1" onclick="selPay(1)">
-            <span class="po-badge">Popular</span>
-            <span class="po-icon">💚</span>
             <strong>50% Deposit</strong>
             <p>Pay half via GCash — settle balance on delivery</p>
           </div>
           <div class="pay-opt" id="po2" onclick="selPay(2)">
-            <span class="po-icon">💳</span>
             <strong>Full GCash</strong>
             <p>Pay the full amount now via GCash</p>
           </div>
         </div>
         <div class="pay-notice" id="pn-gcash">
-          💚 Send to: <strong>09XX XXX XXXX — FleurChase</strong><br>
+           Send to: <strong>0966 123 4567 — FleurChase</strong><br>
           Amount to send now: <strong id="pn-amt">₱0</strong>
         </div>
         <div id="receipt-section" style="margin-top:10px">
@@ -286,7 +283,7 @@
         </div>
       </div>
       <div style="background:white;border-radius:var(--rl);border:1px solid var(--line);padding:1.1rem;margin-top:1rem;font-size:12px;color:var(--muted);line-height:1.7">
-        <strong style="color:var(--ink);display:block;margin-bottom:.3rem">📍 Delivery Fees</strong>
+        <strong style="color:var(--ink);display:block;margin-bottom:.3rem">Delivery Fees</strong>
         <strong style="color:var(--g3)">FREE: </strong>Legazpi City & Daraga<br>
         Extra fee: Other Albay areas
       </div>
@@ -782,7 +779,7 @@ function initInlineNewAddressCard() {
   div.id = tempFormId;
   div.innerHTML = `
     <div class="co-inline-form" onclick="event.stopPropagation()">
-      <div style="font-size:11px; font-weight:700; color:var(--g3); margin-bottom:2px;">🏠 ADD NEW ADDRESS</div>
+      <div style="font-size:11px; font-weight:700; color:var(--g3); margin-bottom:2px;">ADD NEW ADDRESS</div>
       <div class="co-inline-row">
         <div class="co-inline-field"><label>House No. (Optional)</label><input type="text" id="new-house"></div>
         <div class="co-inline-field"><label>Street</label><input type="text" id="new-street"></div>
