@@ -156,7 +156,7 @@ function renderFooter(containerId, isAdmin) {
       <div>
         <h4>Contact Us</h4>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">location_on</span></div><div><strong>Address</strong><span>Legazpi City, Albay 4500</span></div></div>
-        <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">phone</span></div><div><strong>Phone / GCash</strong><span>09XX XXX XXXX</span></div></div>
+        <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">phone</span></div><div><strong>Phone / GCash</strong><span>0966 123 4567</span></div></div>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">mail</span></div><div><strong>Email</strong><span>hello@fleurChase.ph</span></div></div>
         <div class="fc-contact"><div class="fc-contact-icon"><span class="material-icons" style="font-size:18px;vertical-align:middle">schedule</span></div><div><strong>Hours</strong><span>Mon–Sat: 8AM–6PM · Sun: 9AM–3PM</span></div></div>
       </div>
