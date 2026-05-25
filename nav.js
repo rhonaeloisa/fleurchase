@@ -58,6 +58,7 @@ function buildTopNav(activePage) {
         <a class="nav-logo" href="admin.html">FleurChase<em>.</em><sub>Albay</sub></a>
         <div class="nav-spacer"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
+          ${notificationButton()}
           <a class="user-chip" href="admin-profile.html" style="text-decoration:none;color:inherit">
             <div class="user-av">${displayName[0].toUpperCase()}</div>
             <span>${displayName.split(' ')[0]}</span>
@@ -80,14 +81,58 @@ function buildTopNav(activePage) {
         ${pages.map(p=>`<a class="nav-pill${activePage===p.id||activePage===p.href?' active':''}" href="${p.href}">${p.label}</a>`).join('')}
       </nav>
       <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
-        <a class="nav-icon-btn" href="cart.php" title="Cart"><span class="material-icons" style="font-size:20px;vertical-align:middle">shopping_cart</span><span class="cart-badge cart-count">0</span></a>
-        <div class="user-chip"><div class="user-av">${(user.name||'U')[0].toUpperCase()}</div><span>${user.name?.split(' ')[0]||'Me'}</span></div>
-        <button class="logout-btn" onclick="doLogout()">Sign Out</button>
-      </div>`;  
+      ${notificationButton()}
+      <a class="nav-icon-btn" href="cart.php" title="Cart">
+        <span class="material-icons" style="font-size:20px;vertical-align:middle">shopping_cart</span>
+        <span class="cart-badge cart-count">0</span>
+      </a>
+      <div class="user-chip">
+        <div class="user-av">${(user.name||'U')[0].toUpperCase()}</div>
+        <span>${user.name?.split(' ')[0]||'Me'}</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>`;
   }
   updateCartBadge();
+  loadNotifications();
 }
 
+function notificationButton() {
+  return `
+    <div style="position:relative;display:inline-flex;align-items:center">
+      <button class="nav-icon-btn" onclick="toggleNotifications()" title="Notifications" type="button">
+        <span class="material-icons" style="font-size:20px;vertical-align:middle">notifications</span>
+        <span class="cart-badge" id="notif-count">0</span>
+      </button>
+
+      <div
+        id="notif-panel"
+        style="
+          display:none;
+          position:absolute;
+          top:46px;
+          right:0;
+          width:340px;
+          max-height:380px;
+          overflow-y:auto;
+          background:white;
+          border:1px solid var(--line);
+          border-radius:14px;
+          box-shadow:0 18px 45px rgba(0,0,0,.16);
+          z-index:99999;
+          padding:6px 0;
+        ">
+      </div>
+    </div>
+  `;
+}
+
+function toggleNotifications() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
 
 // Customer sidebar is REMOVED — kept as no-op for backward compat
 function buildCustomerSidebar() {}
@@ -269,4 +314,56 @@ function getBestPromo(subtotal, cartItems) {
     if(r.ok && r.discount > bestAmt){ bestAmt=r.discount; best=r.promo; }
   });
   return best ? {promo:best,discount:bestAmt} : {promo:null,discount:0};
+}
+
+async function loadNotifications() {
+  const user = FC.getUser();
+  if (!user) return;
+
+  const userId = user.user_id || user.id || '';
+  const email = user.email || user.user_email || '';
+
+  const query = userId
+    ? `user_id=${encodeURIComponent(userId)}`
+    : `email=${encodeURIComponent(email)}`;
+
+  if (!userId && !email) {
+    console.warn('No user id/email found for notifications:', user);
+    return;
+  }
+
+  try {
+    const res = await fetch(`get_notifications.php?${query}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      console.warn(data.message || 'Notifications unavailable');
+      return;
+    }
+
+    const unread = data.notifications.filter(n => Number(n.is_read) === 0).length;
+    const countEl = document.getElementById('notif-count');
+    const panel = document.getElementById('notif-panel');
+
+    if (countEl) countEl.textContent = unread;
+    if (!panel) return;
+
+   panel.innerHTML = data.notifications.length
+  ? data.notifications.map(n => `
+      <div style="
+        padding:12px 14px;
+        border-bottom:1px solid var(--line);
+        font-size:13px;
+        line-height:1.35;
+        background:${Number(n.is_read) === 0 ? '#f1fbf4' : 'white'};
+      ">
+        <div style="font-weight:700;color:var(--ink);margin-bottom:3px">${n.title}</div>
+        <div style="color:var(--muted)">${n.body}</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:5px">${n.created_at}</div>
+      </div>
+    `).join('')
+  : `<div style="padding:12px 14px;font-size:13px;color:var(--muted)">No notifications yet.</div>`;
+  } catch (error) {
+    console.error('Notification load failed:', error);
+  }
 }
