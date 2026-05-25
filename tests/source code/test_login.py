@@ -62,7 +62,7 @@ def test_successful_admin_login():
         page.wait_for_url("**/admin.html", timeout=5000)
 
         page.screenshot(
-            path=f"{SCREENSHOT_DIR}/passed_valid_login.png", full_page=True)
+            path=f"{SCREENSHOT_DIR}/passed_valid_admin_login.png", full_page=True)
 
         assert "admin.html" in page.url.lower()
         assert not has_php_error(page.content())
@@ -106,7 +106,7 @@ def test_successful_customer_login():
         page.wait_for_url("**/shop.html", timeout=5000)
 
         page.screenshot(
-            path=f"{SCREENSHOT_DIR}/passed_valid_login.png", full_page=True)
+            path=f"{SCREENSHOT_DIR}/passed_valid_customer_login.png", full_page=True)
 
         assert "shop.html" in page.url.lower()
         assert not has_php_error(page.content())
