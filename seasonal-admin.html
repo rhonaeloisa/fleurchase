@@ -202,18 +202,23 @@ function renderContent() {
   document.getElementById('restock-season').textContent = ' for ' + s.label;
 
   // Bar chart
-  const maxV = Math.max(...s.flowers.map(f=>f.v));
-  document.getElementById('flower-chart').innerHTML = s.flowers.map(f=>`
-    <div class="bc-col">
-      <div class="bc-val" style="color:${f.c}">${f.v}</div>
-      <div class="bc-plot">
-        <div class="bc-bar" style="height:${Math.max(10,Math.round((f.v/maxV)*190))}px;background:${f.c}" title="${f.n}: ${f.v}% demand score"></div>
-      </div>
-      <div class="bc-lbl"><span class="bc-rank">${f.i}</span>${f.n}</div>
-    </div>`).join('');
+  if (!s.flowers.length) {
+    document.getElementById('flower-chart').innerHTML =
+      '<div style="grid-column:1/-1;align-self:center;justify-self:center;color:var(--muted);font-size:13px">No delivered sales recorded for this season.</div>';
+  } else {
+    const maxV = Math.max(...s.flowers.map(f=>f.v), 1);
+    document.getElementById('flower-chart').innerHTML = s.flowers.map(f=>`
+      <div class="bc-col">
+        <div class="bc-val" style="color:${f.c}">${f.v}</div>
+        <div class="bc-plot">
+          <div class="bc-bar" style="height:${Math.max(10,Math.round((f.v/maxV)*190))}px;background:${f.c}" title="${f.n}: ${f.raw || 0} delivered sale(s)"></div>
+        </div>
+        <div class="bc-lbl"><span class="bc-rank">${f.i}</span>${f.n}</div>
+      </div>`).join('');
+  }
 
   // Demand list
-  document.getElementById('demand-list').innerHTML = s.flowers.map((f,i)=>`
+  document.getElementById('demand-list').innerHTML = s.flowers.length ? s.flowers.map((f,i)=>`
     <div class="demand-row">
       <div class="dr-icon">${f.i}</div>
       <div style="flex:1">
@@ -224,7 +229,7 @@ function renderContent() {
         <div class="dr-bar-bg"><div class="dr-bar-fill" style="width:${f.v}%;background:${f.c}"></div></div>
         <div style="font-size:10px;color:var(--muted);margin-top:3px">${i===0?'🔥 Most popular this season':'Rank #'+(i+1)}</div>
       </div>
-    </div>`).join('');
+    </div>`).join('') : '<div style="color:var(--muted);font-size:13px">No delivered sales recorded for this season.</div>';
 
   // Restock table
   document.getElementById('restock-tbody').innerHTML = s.restock.map(r=>`
