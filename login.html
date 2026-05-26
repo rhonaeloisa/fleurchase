@@ -165,14 +165,19 @@ async function doLogin(event) {
 
     toast('Login successful!', 'success');
 
-    const normalizedRole = String(data.role || '').trim().toLowerCase();
+    const loginUser = data.user;
+    const normalizedRole = String(loginUser.role || '').trim().toLowerCase();
 
-    // Constructing standard state footprint parameters to match nav validation queries
     const user = {
-      email: data.email,
+      user_id: loginUser.user_id,
+      id: loginUser.id,
+      email: loginUser.email,
+      user_email: loginUser.user_email,
       role: normalizedRole,
-      name: normalizedRole === 'admin' ? 'Admin' : 'Customer',
-      initial: data.email[0].toUpperCase()
+      name: loginUser.name,
+      first_name: loginUser.first_name,
+      last_name: loginUser.last_name,
+      initial: loginUser.initial
     };
 
     // FIXED: Committing user object variables into structural storage context
@@ -188,7 +193,7 @@ async function doLogin(event) {
 
   } catch (error) {
     console.error('Login error:', error);
-    toast('Cannot reach login.php. Check file path/server.', 'err');
+    toast('Login failed. Check console for details.', 'err');
   }
 }
 
@@ -241,11 +246,17 @@ async function doSignup() {
 
     toast('Account created successfully!', 'success');
 
+    const signupUser = data.user;
     const user = {
-      email: data.email,
-      role: String(data.role || 'customer').trim().toLowerCase(),
-      name: fn + ' ' + ln,
-      initial: fn[0].toUpperCase()
+      user_id: signupUser.user_id,
+      id: signupUser.id,
+      email: signupUser.email,
+      user_email: signupUser.user_email,
+      role: String(signupUser.role || 'customer').trim().toLowerCase(),
+      name: signupUser.name,
+      first_name: signupUser.first_name,
+      last_name: signupUser.last_name,
+      initial: signupUser.initial
     };
 
     FC.setUser(user);

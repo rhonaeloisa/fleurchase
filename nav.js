@@ -316,6 +316,30 @@ function getBestPromo(subtotal, cartItems) {
   return best ? {promo:best,discount:bestAmt} : {promo:null,discount:0};
 }
 
+async function openNotification(notificationId, targetPage) {
+  try {
+    const res = await fetch('mark_notification_read.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `notification_id=${encodeURIComponent(notificationId)}`
+    });
+
+    const data = await res.json();
+    console.log('mark read:', data);
+
+    if (!data.success) {
+      toast(data.message || 'Could not mark notification as read', 'err');
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+  }
+
+  window.location.href = targetPage;
+}
+
 async function loadNotifications() {
   const user = FC.getUser();
   if (!user) return;
@@ -349,20 +373,37 @@ async function loadNotifications() {
     if (!panel) return;
 
    panel.innerHTML = data.notifications.length
-  ? data.notifications.map(n => `
-      <div style="
-        padding:12px 14px;
-        border-bottom:1px solid var(--line);
-        font-size:13px;
-        line-height:1.35;
-        background:${Number(n.is_read) === 0 ? '#f1fbf4' : 'white'};
-      ">
-        <div style="font-weight:700;color:var(--ink);margin-bottom:3px">${n.title}</div>
-        <div style="color:var(--muted)">${n.body}</div>
-        <div style="color:var(--muted);font-size:11px;margin-top:5px">${n.created_at}</div>
-      </div>
-    `).join('')
+  ? data.notifications.map(n => {
+      const isUnread = Number(n.is_read) === 0;
+      const targetPage = user.role === 'admin' ? 'orders-admin.html' : 'orders.html';
+
+      return `
+        <div
+          class="notif-click-item"
+          data-id="${n.notification_id}"
+          data-target="${targetPage}"
+          style="
+            padding:12px 14px;
+            border-bottom:1px solid var(--line);
+            font-size:13px;
+            line-height:1.35;
+            cursor:pointer;
+            pointer-events:auto;
+            background:${isUnread ? '#f1fbf4' : 'white'};
+          ">
+          <div style="font-weight:700;color:var(--ink);margin-bottom:3px;pointer-events:none">${n.title}</div>
+          <div style="color:var(--muted);pointer-events:none">${n.body}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:5px;pointer-events:none">${n.created_at}</div>
+        </div>
+      `;
+    }).join('')
   : `<div style="padding:12px 14px;font-size:13px;color:var(--muted)">No notifications yet.</div>`;
+
+panel.querySelectorAll('.notif-click-item').forEach(item => {
+  item.addEventListener('click', async () => {
+    await openNotification(item.dataset.id, item.dataset.target);
+  });
+});
   } catch (error) {
     console.error('Notification load failed:', error);
   }
