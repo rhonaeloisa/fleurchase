@@ -313,62 +313,125 @@ async function loadProductsFromDB() {
   }
 }
 
-function renderProducts(cat){
-  const prods = DB_PRODUCTS;
-  const list = (cat === 'all' ? prods : prods.filter(p => p.category === cat))
-  .slice()
-  .sort((a, b) => {
+function renderProducts(cat) {
+  let list = DB_PRODUCTS.filter(p => {
+    const type = String(p.type || '').toLowerCase();
+    const category = String(p.category || '').toLowerCase();
+    const badge = String(p.badge || '').toLowerCase();
+
+    if (cat === 'all') return true;
+
+    if (cat === 'individual') {
+      return type === 'flower' || category === 'individual';
+    }
+
+    if (cat === 'ready-made') {
+      return type === 'bouquet' && category === 'ready-made';
+    }
+
+    if (cat === 'seasonal') {
+      return category === 'seasonal' || badge === 'seasonal';
+    }
+
+    if (cat === 'gift-set') {
+      return category === 'gift-set';
+    }
+
+    if (cat === 'promo') {
+      return category === 'promo' || badge === 'promo';
+    }
+
+    if (cat === 'sale') {
+      return category === 'sale' || badge === 'sale' || badge === 'on sale';
+    }
+
+    return category === cat;
+  });
+
+  list = list.slice().sort((a, b) => {
     const aOut = Number(a.stock || 0) <= 0 ? 1 : 0;
     const bOut = Number(b.stock || 0) <= 0 ? 1 : 0;
     return aOut - bOut;
   });
-  document.getElementById('count-lbl').textContent=list.length+' product'+(list.length!==1?'s':'');
-  const g=document.getElementById('shop-grid');
-  if(!list.length){g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="ei">🌱</div><h3>No products found</h3><p>Check back soon!</p></div>`;return;}
-    g.innerHTML = list.map(p => {
-    const isFlower = p.type === 'flower';
+
+  document.getElementById('count-lbl').textContent =
+    list.length + ' product' + (list.length !== 1 ? 's' : '');
+
+  const g = document.getElementById('shop-grid');
+
+  if (!list.length) {
+    g.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="ei">🌱</div>
+        <h3>No products found</h3>
+        <p>Check back soon!</p>
+      </div>`;
+    return;
+  }
+
+  g.innerHTML = list.map(p => {
+    const type = String(p.type || '').toLowerCase();
+    const isFlower = type === 'flower';
     const bdgCls = BADGE_CLS[p.badge] || 'tag-w';
     const outOfStock = Number(p.stock || 0) <= 0;
 
-    // FIXED: Formatted raw markup string enclosures cleanly using template literals
     const imgContent = p.img
       ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
       : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${imgPlaceholder(72)}</div>`;
 
-    return `<div class="prod-card ${outOfStock ? 'out-stock' : ''}">
-      <div class="pc-img" style="background:${p.bg || 'var(--soft)'}">
-        ${imgContent}
-        ${outOfStock
-          ? `<span class="pc-bdg tag-w">Out of Stock</span>`
-          : p.badge ? `<span class="pc-bdg ${bdgCls}">${p.badge}</span>` : ''}
-      </div>
+    const cartId = p.real_id || p.id;
 
-      <div class="pc-body">
-        <div class="pc-name">${p.name}${isFlower ? `<span class="stem-badge">per stem</span>` : ''}</div>
-        <div class="pc-sub">${p.desc}</div>
-        <div class="pc-stars">${'★'.repeat(Math.floor(p.rating))}${p.rating % 1 >= .5 ? '⭐' : ''} <span style="color:var(--muted);font-size:10px">(${p.reviews})</span></div>
+    return `
+      <div class="prod-card ${outOfStock ? 'out-stock' : ''}">
+        <div class="pc-img" style="background:${p.bg || 'var(--soft)'}">
+          ${imgContent}
 
-        <div class="pc-foot">
-          <div>
-            <span class="pc-price">${fmtP(p.price)}</span>
-            ${p.oldPrice ? `<span class="pc-old">${fmtP(p.oldPrice)}</span>` : ''}
-          </div>
-
-          <button
-            class="add-btn"
-            ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart(${p.id}, ${p.price})"`}
-            title="${outOfStock ? 'Out of stock' : 'Add to cart'}">
-            ${outOfStock ? '×' : '+'}
-          </button>
+          ${outOfStock
+            ? `<span class="pc-bdg tag-w">Out of Stock</span>`
+            : p.badge
+              ? `<span class="pc-bdg ${bdgCls}">${p.badge}</span>`
+              : ''
+          }
         </div>
 
-        ${outOfStock
-          ? `<div class="stock-msg">Currently unavailable</div>`
-          : isFlower ? `<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem · Select quantity →</div>` : ''}
-      </div>
-    </div>`;
+        <div class="pc-body">
+          <div class="pc-name">
+            ${p.name}
+            ${isFlower ? `<span class="stem-badge">per stem</span>` : ''}
+          </div>
+
+          <div class="pc-sub">${p.desc || ''}</div>
+
+          <div class="pc-stars">
+            ${'★'.repeat(Math.floor(p.rating || 5))}
+            <span style="color:var(--muted);font-size:10px">(${p.reviews || 0})</span>
+          </div>
+
+          <div class="pc-foot">
+            <div>
+              <span class="pc-price">${fmtP(p.price)}</span>
+              ${p.oldPrice ? `<span class="pc-old">${fmtP(p.oldPrice)}</span>` : ''}
+            </div>
+
+            <button
+              class="add-btn"
+              ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart('${cartId}', ${p.price})"`}
+              title="${outOfStock ? 'Out of stock' : 'Add to cart'}">
+              ${outOfStock ? '×' : '+'}
+            </button>
+          </div>
+
+          ${outOfStock
+            ? `<div class="stock-msg">Currently unavailable</div>`
+            : isFlower
+              ? `<div style="font-size:10px;color:var(--g3);font-weight:500;margin-top:4px">Per stem available</div>`
+              : ''
+          }
+        </div>
+      </div>`;
   }).join('');
 }
+  
 
 function filterCat(cat,btn){
   _cat=cat;
