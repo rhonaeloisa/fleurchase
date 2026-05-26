@@ -14,7 +14,7 @@ $SEASONS = [
         'banner' => [
             'bg' => 'var(--soft)',
             'border' => 'var(--line)',
-            'text' => '<strong>All-year demand</strong> is calculated from every non-cancelled order in the database.'
+            'text' => '<strong>All-year demand</strong> is calculated from delivered orders in the database.'
         ],
     ],
     'valentines' => [
@@ -99,14 +99,14 @@ function runTopFlowers(mysqli $conn, array $months): array {
 
     $sql = "
         SELECT
+            oi.bouquet_id,
             COALESCE(b.name, oi.snapshot_name, 'Bouquet') AS name,
             COALESCE(b.stock, 0) AS stock,
             COALESCE(SUM(COALESCE(oi.quantity, 1)), 0) AS sold_qty
         FROM order_item oi
         INNER JOIN `order` o ON oi.order_id = o.order_id
         LEFT JOIN bouquet b ON oi.bouquet_id = b.bouquet_id
-        WHERE oi.bouquet_id IS NOT NULL
-          AND COALESCE(o.status, '') <> 'Cancelled'
+        WHERE o.status = 'Delivered'
           AND LOWER(COALESCE(b.category, '')) <> 'addon'
           AND LOWER(COALESCE(b.bouquet_type, '')) <> 'addon'
           $whereMonths
@@ -124,36 +124,15 @@ function runTopFlowers(mysqli $conn, array $months): array {
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
-function runStockFallback(mysqli $conn, array $months): array {
-    $keywordSql = '';
-
-    if (in_array(2, $months, true)) {
-        $keywordSql = "AND (LOWER(name) LIKE '%rose%' OR LOWER(name) LIKE '%tulip%' OR category = 'seasonal')";
-    } elseif (in_array(5, $months, true)) {
-        $keywordSql = "AND (LOWER(name) LIKE '%lil%' OR LOWER(name) LIKE '%rose%' OR category IN ('seasonal','gift-set'))";
-    } elseif (in_array(3, $months, true) || in_array(4, $months, true)) {
-        $keywordSql = "AND (LOWER(name) LIKE '%sunflower%' OR LOWER(name) LIKE '%tulip%' OR category = 'seasonal')";
-    } elseif (in_array(12, $months, true)) {
-        $keywordSql = "AND (category IN ('gift-set','seasonal','ready-made') OR LOWER(name) LIKE '%rose%')";
-    }
-
-    $sql = "
-        SELECT name, stock, stock AS sold_qty
-        FROM bouquet
-        WHERE LOWER(status) = 'active'
-          $keywordSql
-        ORDER BY stock DESC, name ASC
-        LIMIT 6
-    ";
-
-    return $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
-}
-
 function buildRestock(mysqli $conn, array $topRows): array {
     $names = array_column($topRows, 'name');
     $restock = [];
 
     foreach ($topRows as $row) {
+        if (empty($row['bouquet_id'])) {
+            continue;
+        }
+
         $stock = (int) $row['stock'];
         $sold = (int) $row['sold_qty'];
         $target = max(20, (int) ceil($sold * 1.5));
@@ -208,20 +187,11 @@ $data = [];
 
 foreach ($SEASONS as $key => $season) {
     $rows = runTopFlowers($conn, $season['months']);
-    $usesFallback = false;
-
-    if (!$rows) {
-        $rows = runStockFallback($conn, $season['months']);
-        $usesFallback = true;
-    }
-
     $max = max(array_map(fn($row) => (int) $row['sold_qty'], $rows) ?: [1]);
     $flowers = [];
 
     foreach ($rows as $index => $row) {
-        $value = $usesFallback
-            ? min(100, max(10, (int) round(((int) $row['sold_qty'] / max(1, $max)) * 100)))
-            : min(100, max(8, (int) round(((int) $row['sold_qty'] / max(1, $max)) * 100)));
+        $value = min(100, max(8, (int) round(((int) $row['sold_qty'] / max(1, $max)) * 100)));
 
         $flowers[] = [
             'n' => $row['name'],
@@ -233,8 +203,8 @@ foreach ($SEASONS as $key => $season) {
         ];
     }
 
-    if ($usesFallback) {
-        $season['banner']['text'] .= ' No matching sales yet, so the chart is using active bouquet stock as a planning fallback.';
+    if (!$rows) {
+        $season['banner']['text'] .= ' No delivered sales are recorded for this season yet.';
     }
 
     $data[$key] = [
