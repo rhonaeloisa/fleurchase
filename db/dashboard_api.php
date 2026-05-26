@@ -84,8 +84,8 @@ function getMetrics(PDO $db): array {
     // Total orders
     $totalOrders = (int) $db->query('SELECT COUNT(*) FROM `order`')->fetchColumn();
 
-    // Revenue: sum of total_amount across all orders
-    $revenue = (float) $db->query('SELECT COALESCE(SUM(total_amount), 0) FROM `order`')->fetchColumn();
+    // Revenue is recognized only from delivered orders.
+    $revenue = (float) $db->query("SELECT COALESCE(SUM(total_amount), 0) FROM `order` WHERE status = 'Delivered'")->fetchColumn();
 
     // Pending orders (status = 'Pending')
     $pending = (int) $db->query(
@@ -135,10 +135,9 @@ function getTopFlowers(PDO $db): array {
          FROM order_item oi
          INNER JOIN `order` o ON oi.order_id = o.order_id
          LEFT JOIN bouquet b ON oi.bouquet_id = b.bouquet_id
-         WHERE oi.bouquet_id IS NOT NULL
-           AND o.order_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+         WHERE o.order_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
            AND o.order_date < DATE_ADD(LAST_DAY(CURDATE()), INTERVAL 1 DAY)
-           AND COALESCE(o.status, '') <> 'Cancelled'
+           AND o.status = 'Delivered'
            AND LOWER(COALESCE(b.category, '')) <> 'addon'
            AND LOWER(COALESCE(b.bouquet_type, '')) <> 'addon'
          GROUP BY

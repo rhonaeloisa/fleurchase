@@ -165,7 +165,7 @@ function getPaymentBreakdown(PDO $db, array $bounds): array {
          LEFT JOIN payment p ON o.order_id = p.order_id
          WHERE o.order_date >= ?
            AND o.order_date < ?
-           AND COALESCE(o.status, '') <> 'Cancelled'
+           AND o.status = 'Delivered'
          GROUP BY method
          ORDER BY orders DESC, method ASC"
     );
@@ -183,7 +183,7 @@ function getDeliveryBreakdown(PDO $db, array $bounds): array {
          LEFT JOIN address a ON s.address_id = a.address_id
          WHERE o.order_date >= ?
            AND o.order_date < ?
-           AND COALESCE(o.status, '') <> 'Cancelled'
+           AND o.status = 'Delivered'
          GROUP BY area
          ORDER BY orders DESC, area ASC
          LIMIT 8"
