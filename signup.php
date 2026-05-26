@@ -23,27 +23,40 @@ try {
         exit;
     }
 
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
     $sql = "INSERT INTO `user` (first_name, last_name, user_email, contact, user_pass, user_role)
             VALUES (?, ?, ?, ?, ?, 'customer')";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssss", $firstName, $lastName, $email, $contact, $password);
+    $stmt->bind_param("sssss", $firstName, $lastName, $email, $contact, $hashedPassword);
     $stmt->execute();
 
-    $_SESSION["user_id"] = $conn->insert_id;
+    $userId = $conn->insert_id;
+
+    $_SESSION["user_id"] = $userId;
     $_SESSION["user_email"] = $email;
     $_SESSION["user_role"] = "customer";
 
     echo json_encode([
         "success" => true,
         "message" => "Account created successfully",
-        "role" => "customer",
-        "email" => $email
+        "user" => [
+            "user_id" => $userId,
+            "id" => $userId,
+            "email" => $email,
+            "user_email" => $email,
+            "role" => "customer",
+            "name" => trim($firstName . " " . $lastName),
+            "first_name" => $firstName,
+            "last_name" => $lastName,
+            "initial" => strtoupper(substr($firstName, 0, 1))
+        ]
     ]);
 } catch (mysqli_sql_exception $e) {
     http_response_code(500);
 
-    if ($conn->errno === 1062) {
+    if (isset($conn) && $conn->errno === 1062) {
         echo json_encode([
             "success" => false,
             "message" => "Email already exists."

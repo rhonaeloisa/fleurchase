@@ -220,6 +220,39 @@ try {
         $ship_stmt->close();
     }
 
+    // 7. NOTIFY ADMIN ABOUT NEW ORDER
+    $admin_id = 1;
+
+    $name_stmt = $conn->prepare("
+        SELECT first_name, last_name
+        FROM `user`
+        WHERE user_id = ?
+        LIMIT 1
+    ");
+    $name_stmt->bind_param("i", $user_id);
+    $name_stmt->execute();
+
+    $name_result = $name_stmt->get_result();
+    $name_row = $name_result->fetch_assoc();
+
+    $customer_name = trim(($name_row["first_name"] ?? "") . " " . ($name_row["last_name"] ?? ""));
+    if ($customer_name === "") {
+        $customer_name = "A customer";
+    }
+
+    $name_stmt->close();
+
+    $title = "New Order Received";
+    $body = "$customer_name placed order ORD-$order_id.";
+
+    $notif_stmt = $conn->prepare("
+        INSERT INTO notification (user_id, type, title, body, is_read, created_at)
+        VALUES (?, 'order', ?, ?, 0, NOW())
+    ");
+
+    $notif_stmt->bind_param("iss", $admin_id, $title, $body);
+    $notif_stmt->execute();
+    $notif_stmt->close();
     // Safely commit all operational data across all target relational tables together
     $conn->commit();
 
