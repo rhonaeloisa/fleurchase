@@ -1,5 +1,3 @@
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link
 <?php
 session_start();
 include 'db/connection_db.php';
@@ -218,12 +216,7 @@ foreach ($wrappers as $w) {
           &nbsp;·&nbsp; ID #<?php echo $b['bouquet_id']; ?>
         </div>
       </div>
-      <div class="ab-header-actions">
-        <a href="products-admin.php" class="btn btn-ghost btn-sm" style="text-decoration:none;">Discard</a>
-        <button type="button" class="btn btn-green btn-sm" onclick="submitEdit()">
-          <i class="ti ti-device-floppy" aria-hidden="true"></i> Save Changes
-        </button>
-      </div>
+
     </div>
 
     <!-- SECTION 1: Basic Info -->
@@ -512,9 +505,6 @@ foreach ($wrappers as $w) {
     <!-- Bottom bar -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding-top:1rem;flex-wrap:wrap;gap:10px">
       <a href="products-admin.php" class="btn btn-ghost btn-sm" style="text-decoration:none;">Back to Products</a>
-      <button type="button" class="btn btn-green" onclick="submitEdit()">
-        <i class="ti ti-device-floppy" aria-hidden="true"></i> Save Changes
-      </button>
     </div>
   </div><!-- /ab-main -->
 
@@ -782,8 +772,8 @@ function submitEdit(){
   document.getElementById('hf-price').value     =(flwC+filC+addC).toFixed(2);
   document.getElementById('hf-stock').value     =document.getElementById('f-stock').value;
   document.getElementById('hf-status').value    =document.getElementById('f-status').value;
-  document.getElementById('hf-btype').value     =document.getElementById('f-btype').value;
-  document.getElementById('hf-iscustom').value  =document.getElementById('f-iscustom').value;
+  document.getElementById('hf-btype').value = 'bouquet';
+  document.getElementById('hf-iscustom').value = '0';
   document.getElementById('hf-arrived').value   =document.getElementById('f-arrived').value;
   document.getElementById('hf-bestbefore').value=document.getElementById('f-bestbefore').value;
   document.getElementById('hf-wrapper').value   =selWrapper||'';
