@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header("Content-Type: application/json");
 require "db_connection.php";
 
@@ -33,6 +37,10 @@ if (!password_verify($password, $user["user_pass"])) {
     echo json_encode(["success" => false, "message" => "Invalid email or password"]);
     exit;
 }
+
+$_SESSION["user_id"] = $user["user_id"];
+$_SESSION["user_email"] = $user["user_email"];
+$_SESSION["user_role"] = $user["user_role"];
 
 echo json_encode([
     "success" => true,
