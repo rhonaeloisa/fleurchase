@@ -8,8 +8,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 require_once 'db_connection.php'; 
 
-// Resolve dynamic user context (defaults to 14 if a fresh session needs a fallback)
-$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14; 
+// Resolve the logged-in user from the PHP session created during login/add-to-cart.
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0; 
 
 // LOOK UP THE CORRECT CART ID GENERATED FOR THIS LOGGED-IN ACCOUNT PROFILE
 $current_cart_id = 0;
@@ -30,9 +30,13 @@ $sql = "
           b.name AS bouquet_name, 
           b.description AS bouquet_desc, 
           b.image AS bouquet_img,
-          b.bouquet_id
+          b.bouquet_id,
+          p.product_name,
+          p.product_type,
+          p.product_image
     FROM cart_item ci
     LEFT JOIN bouquet b ON ci.bouquet_id = b.bouquet_id
+    LEFT JOIN product p ON ci.product_id = p.product_id
     WHERE ci.cart_id = ?
     ORDER BY ci.cart_item_id DESC
 ";
@@ -63,6 +67,13 @@ while($row = $result->fetch_assoc()) {
         $price = floatval($row['unit_price']);
         $imagePath = "images/default.jpg"; 
     } 
+    elseif (!empty($row['product_id'])) {
+        // ====================== FLOWER / PRODUCT ITEM ======================
+        $name = $row['product_name'] ?? 'Fresh Flower Stem';
+        $sub  = 'Fresh ' . ($row['product_type'] ?? 'flower') . ' item.';
+        $price = floatval($row['unit_price']);
+        $imagePath = $row['product_image'] ?? '';
+    }
     else {
         // ====================== NORMAL BOUQUET ======================
         $name = $row['bouquet_name'] ?? 'Premium Flower Arrangement';
@@ -80,6 +91,8 @@ while($row = $result->fetch_assoc()) {
         'cart_item_id' => intval($row['cart_item_id']),
         'cart_id'      => intval($row['cart_id']),
         'bouquet_id'   => intval($row['bouquet_id'] ?? 0),
+        'product_id'   => intval($row['product_id'] ?? 0),
+        'item_type'    => !empty($row['product_id']) ? 'flower' : 'bouquet',
         'qty'          => intval($row['quantity']),
         'price'        => $price,           
         'name'         => $name,
@@ -234,6 +247,25 @@ let availablePromos = <?php echo json_encode($db_active_promos); ?>;
 let appliedPromo = null;
 let manualPromoUsed = false;
 
+function toLocalCartItem(item) {
+  const isFlower = Number(item.product_id || 0) > 0;
+  const sourceId = isFlower ? item.product_id : item.bouquet_id;
+
+  return {
+    cart_item_id: item.cart_item_id,
+    cartId: (isFlower ? 'product_' : 'bouquet_') + String(sourceId),
+    productId: sourceId,
+    bouquet_id: isFlower ? null : item.bouquet_id,
+    product_id: isFlower ? item.product_id : null,
+    item_type: isFlower ? 'flower' : 'bouquet',
+    name: item.name,
+    img: item.img || null,
+    price: Number(item.price),
+    qty: item.qty,
+    checked: item.checked
+  };
+}
+
 // ── RENDER CART ─────────────────────────────────────────────
 function renderCart() {
   const el = document.getElementById('cart-items');
@@ -299,16 +331,7 @@ async function changeQty(i, delta) {
       document.getElementById('qty-' + i).textContent = targetItem.qty;
       document.getElementById('price-' + i).textContent = fmtP(targetItem.price * targetItem.qty);
       
-      const updatedLocal = cartItemsArray.map(item => ({
-        cart_item_id: item.cart_item_id,
-        cartId: String(item.bouquet_id),
-        productId: item.bouquet_id,
-        name: item.name,
-        img: item.img || null,
-        price: Number(item.price),
-        qty: item.qty,
-        checked: item.checked
-      }));
+      const updatedLocal = cartItemsArray.map(toLocalCartItem);
       FC.saveCart(updatedLocal); 
 
       updateSummary();
@@ -356,16 +379,7 @@ async function removeItem(i) {
     if(res.success) {
       cartItemsArray.splice(i, 1); 
       
-      const updatedLocal = cartItemsArray.map(item => ({
-        cart_item_id: item.cart_item_id,
-        cartId: String(item.bouquet_id),
-        productId: item.bouquet_id,
-        name: item.name,
-        img: item.img || null,
-        price: Number(item.price),
-        qty: item.qty,
-        checked: item.checked
-      }));
+      const updatedLocal = cartItemsArray.map(toLocalCartItem);
       FC.saveCart(updatedLocal); 
 
       renderCart(); 
@@ -526,15 +540,7 @@ function proceedCheckout() {
   location.href = 'checkout.html';
 }
 
-const syncedLocalItems = cartItemsArray.map(item => ({
-  cartId: String(item.bouquet_id),
-  productId: item.bouquet_id,
-  name: item.name,
-  img: item.img || null,
-  price: Number(item.price),
-  qty: item.qty,
-  checked: item.checked
-}));
+const syncedLocalItems = cartItemsArray.map(toLocalCartItem);
 
 FC.saveCart(syncedLocalItems); 
 renderCart();

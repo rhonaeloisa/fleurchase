@@ -13,6 +13,43 @@
         margin-top: 1.2rem;
       }
 
+      .shop-section {
+        margin-top: 1.4rem;
+      }
+
+      .shop-section + .shop-section {
+        margin-top: 2rem;
+      }
+
+      .shop-section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: .7rem;
+      }
+
+      .shop-section-head h3 {
+        font-family: var(--font-d);
+        font-size: 24px;
+        color: var(--g1);
+        margin: 0;
+      }
+
+      .shop-section-head p {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 3px 0 0;
+      }
+
+      .shop-section-head span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
       /* PRODUCT CARD */
       .prod-card {
         background: white;
@@ -249,7 +286,27 @@
       <div class="cat-pill" onclick="filterCat('promo',this)"> Promos</div>
       <div class="cat-pill" onclick="filterCat('sale',this)"> On Sale</div>
     </div>
-    <div class="shop-grid" id="shop-grid"></div>
+    <section class="shop-section" id="bouquet-section">
+      <div class="shop-section-head">
+        <div>
+          <h3>Bouquets</h3>
+          <p>Ready-made and seasonal flower arrangements</p>
+        </div>
+        <span id="bouquet-count">0 items</span>
+      </div>
+      <div class="shop-grid" id="bouquet-grid"></div>
+    </section>
+
+    <section class="shop-section" id="flower-section">
+      <div class="shop-section-head">
+        <div>
+          <h3>Single Stem Flowers</h3>
+          <p>Fresh individual stems sold per piece</p>
+        </div>
+        <span id="flower-count">0 items</span>
+      </div>
+      <div class="shop-grid" id="flower-grid"></div>
+    </section>
   </div>
 
   <div id="footer-wrap"></div>
@@ -357,10 +414,25 @@ function renderProducts(cat) {
   document.getElementById('count-lbl').textContent =
     list.length + ' product' + (list.length !== 1 ? 's' : '');
 
-  const g = document.getElementById('shop-grid');
+  const bouquets = list.filter(p => String(p.type || '').toLowerCase() !== 'flower');
+  const flowers = list.filter(p => String(p.type || '').toLowerCase() === 'flower');
 
-  if (!list.length) {
-    g.innerHTML = `
+  renderProductSection('bouquet-section', 'bouquet-grid', 'bouquet-count', bouquets);
+  renderProductSection('flower-section', 'flower-grid', 'flower-count', flowers);
+}
+
+function renderProductSection(sectionId, gridId, countId, products) {
+  const section = document.getElementById(sectionId);
+  const grid = document.getElementById(gridId);
+  const count = document.getElementById(countId);
+
+  if (!section || !grid || !count) return;
+
+  count.textContent = products.length + ' item' + (products.length !== 1 ? 's' : '');
+  section.style.display = 'block';
+
+  if (!products.length) {
+    grid.innerHTML = `
       <div class="empty-state" style="grid-column:1/-1">
         <div class="ei">🌱</div>
         <h3>No products found</h3>
@@ -369,11 +441,15 @@ function renderProducts(cat) {
     return;
   }
 
-  g.innerHTML = list.map(p => {
+  grid.innerHTML = products.map(p => {
     const type = String(p.type || '').toLowerCase();
     const isFlower = type === 'flower';
     const bdgCls = BADGE_CLS[p.badge] || 'tag-w';
     const outOfStock = Number(p.stock || 0) <= 0;
+    const rating = Number(p.rating || 0);
+    const reviewCount = Number(p.reviews || 0);
+    const fullStars = Math.max(0, Math.min(5, Math.round(rating)));
+    const starsText = reviewCount > 0 ? '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars) : '☆☆☆☆☆';
 
     const imgContent = p.img
       ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>`
@@ -382,7 +458,7 @@ function renderProducts(cat) {
     const cartId = p.real_id || p.id;
 
     return `
-      <div class="prod-card ${outOfStock ? 'out-stock' : ''}">
+      <div class="prod-card ${outOfStock ? 'out-stock' : ''}" onclick="openProductDetails('${cartId}', '${type}')">
         <div class="pc-img" style="background:${p.bg || 'var(--soft)'}">
           ${imgContent}
 
@@ -403,8 +479,10 @@ function renderProducts(cat) {
           <div class="pc-sub">${p.desc || ''}</div>
 
           <div class="pc-stars">
-            ${'★'.repeat(Math.floor(p.rating || 5))}
-            <span style="color:var(--muted);font-size:10px">(${p.reviews || 0})</span>
+            ${starsText}
+            <span style="color:var(--muted);font-size:10px">
+              ${reviewCount > 0 ? `${rating.toFixed(1)} (${reviewCount})` : '(No reviews)'}
+            </span>
           </div>
 
           <div class="pc-foot">
@@ -412,13 +490,6 @@ function renderProducts(cat) {
               <span class="pc-price">${fmtP(p.price)}</span>
               ${p.oldPrice ? `<span class="pc-old">${fmtP(p.oldPrice)}</span>` : ''}
             </div>
-
-            <button
-              class="add-btn"
-              ${outOfStock ? 'disabled' : `onclick="addProductToDatabaseCart('${cartId}', ${p.price})"`}
-              title="${outOfStock ? 'Out of stock' : 'Add to cart'}">
-              ${outOfStock ? '×' : '+'}
-            </button>
           </div>
 
           ${outOfStock
@@ -443,6 +514,15 @@ function resetFilter(){
   _cat='all';
   document.querySelectorAll('.cat-pill').forEach((c,i)=>{c.classList.toggle('active',i===0);});
   renderProducts('all');
+}
+
+function openProductDetails(productId, type) {
+  if (type === 'flower') {
+    window.location.href = `product_detail.php?type=flower&id=${encodeURIComponent(productId)}`;
+    return;
+  }
+
+  window.location.href = `product_detail.php?id=${encodeURIComponent(productId)}`;
 }
 
 function addToCart(productId, qty = 1, stems = 0) {
@@ -528,13 +608,24 @@ function confirmStem(){
 
 // Global Handler to route "Add to Cart" directly to MySQL
 // FIXED: Isolated script variables to stop loose system flags from throwing false connection errors
-async function addProductToDatabaseCart(bouquetId, unitPrice) {
+async function addProductToDatabaseCart(productId, unitPrice, type = 'bouquet') {
   try {
+    const user = FC.getUser();
+    const userId = user?.user_id || user?.id;
+
+    if (!userId) {
+      toast('Please sign in before adding items to your cart.', 'err');
+      return;
+    }
+
     const response = await fetch('add_to_cart.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        bouquet_id: bouquetId,
+        user_id: userId,
+        item_type: type === 'flower' ? 'flower' : 'bouquet',
+        bouquet_id: type === 'flower' ? null : productId,
+        product_id: type === 'flower' ? productId : null,
         unit_price: unitPrice,
         quantity: 1 
       })
@@ -546,17 +637,21 @@ async function addProductToDatabaseCart(bouquetId, unitPrice) {
       toast('Added to your cart!');
       
       // FIX: Also save it to local memory so your original navbar badge reads it!
-      const p = DB_PRODUCTS.find(x => String(x.id) === String(bouquetId));
+      const p = DB_PRODUCTS.find(x => String(x.id) === String(productId) || String(x.real_id || '') === String(productId));
       if (p) {
         const cart = FC.getCart();
-        const existingItem = cart.find(i => String(i.productId) === String(bouquetId));
+        const cartId = (type === 'flower' ? 'product_' : 'bouquet_') + String(productId);
+        const existingItem = cart.find(i => String(i.cartId) === cartId);
         
         if (existingItem) {
           existingItem.qty += 1;
         } else {
           cart.push({
-            cartId: String(bouquetId),
-            productId: p.id,
+            cartId: cartId,
+            productId: productId,
+            bouquet_id: type === 'flower' ? null : productId,
+            product_id: type === 'flower' ? productId : null,
+            item_type: type === 'flower' ? 'flower' : 'bouquet',
             name: p.name,
             img: p.img || null,
             price: Number(p.price),

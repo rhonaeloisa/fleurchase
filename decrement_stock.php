@@ -63,8 +63,40 @@ try {
                 $update->execute();
             }
         } else {
-            $bouquetId = (int)($item["productId"] ?? $item["bouquet_id"] ?? 0);
+            $itemType = strtolower(trim($item["item_type"] ?? ""));
+            $productId = (int)($item["product_id"] ?? 0);
+            $bouquetId = (int)($item["bouquet_id"] ?? 0);
             $qty = (int)($item["qty"] ?? 0);
+
+            if (($itemType === "flower" || $itemType === "product") && $productId > 0) {
+                if ($qty <= 0) {
+                    throw new Exception("Invalid flower item in checkout.");
+                }
+
+                $stmt = $conn->prepare("SELECT stock, product_name FROM product WHERE product_id = ? FOR UPDATE");
+                $stmt->bind_param("i", $productId);
+                $stmt->execute();
+
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+
+                if (!$product) {
+                    throw new Exception("Flower product not found.");
+                }
+
+                if ((int)$product["stock"] < $qty) {
+                    throw new Exception("Not enough stock for " . $product["product_name"]);
+                }
+
+                $update = $conn->prepare("UPDATE product SET stock = stock - ? WHERE product_id = ?");
+                $update->bind_param("ii", $qty, $productId);
+                $update->execute();
+                continue;
+            }
+
+            if ($bouquetId <= 0 && !empty($item["productId"]) && empty($item["product_id"])) {
+                $bouquetId = (int)$item["productId"];
+            }
 
             if ($bouquetId <= 0 || $qty <= 0) {
                 throw new Exception("Invalid bouquet item in checkout.");

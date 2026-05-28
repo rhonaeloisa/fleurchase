@@ -21,7 +21,7 @@ $action = isset($data['action']) ? trim($data['action']) : '';
 $response = ['success' => false];
 
 // Read active user verification context safely from active sessions
-$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14;
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
 switch ($action) {
     

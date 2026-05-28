@@ -9,7 +9,7 @@ ini_set('display_errors', 0);
 
 require_once 'db_connection.php';
 
-$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 14;
+$current_user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
 $cart_count = 0;
 
