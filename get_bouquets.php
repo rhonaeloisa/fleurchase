@@ -10,23 +10,35 @@ try {
     // FETCH BOUQUETS
     // =========================
     $sql = "SELECT 
-                bouquet_id,
-                created_by_user_id,
-                variation,
-                name,
-                description,
-                price,
-                is_custom,
-                image,
-                status,
-                category, 
-                stock
-            FROM bouquet
-            WHERE status = 'Available' 
-               OR status = 'Active' 
-               OR status = 'active' 
-               OR status IS NULL
-            ORDER BY bouquet_id DESC";
+                b.bouquet_id,
+                b.created_by_user_id,
+                b.variation,
+                b.name,
+                b.description,
+                b.price,
+                b.is_custom,
+                b.image,
+                b.status,
+                b.category, 
+                b.stock,
+                COALESCE(br.avg_rating, 0) AS avg_rating,
+                COALESCE(br.review_count, 0) AS review_count
+            FROM bouquet b
+            LEFT JOIN (
+                SELECT
+                    oi.bouquet_id,
+                    AVG(r.rating) AS avg_rating,
+                    COUNT(r.review_id) AS review_count
+                FROM order_item oi
+                INNER JOIN reviews r ON oi.order_item_id = r.order_item_id
+                WHERE oi.bouquet_id IS NOT NULL
+                GROUP BY oi.bouquet_id
+            ) br ON b.bouquet_id = br.bouquet_id
+            WHERE b.status = 'Available' 
+               OR b.status = 'Active' 
+               OR b.status = 'active' 
+               OR b.status IS NULL
+            ORDER BY b.bouquet_id DESC";
 
     $result = $conn->query($sql);
 
@@ -52,8 +64,8 @@ try {
             "variation" => $row["variation"],
             "status" => $row["status"],
             "type" => "bouquet",
-            "rating" => 5,
-            "reviews" => 0,
+            "rating" => round((float)$row["avg_rating"], 1),
+            "reviews" => (int)$row["review_count"],
             "stock" => (int)$row["stock"],
             "badge" => $row["is_custom"] ? "Custom" : "Ready"
         ];
@@ -64,17 +76,29 @@ try {
     // from product table
     // =========================
     $stemSql = "SELECT
-                    product_id,
-                    product_name,
-                    product_type,
-                    product_image,
-                    stock,
-                    price,
-                    status
-                FROM product
-                WHERE product_type = 'flower'
-                  AND status = 'Active'
-                ORDER BY product_name ASC";
+                    p.product_id,
+                    p.product_name,
+                    p.product_type,
+                    p.product_image,
+                    p.stock,
+                    p.price,
+                    p.status,
+                    COALESCE(pr.avg_rating, 0) AS avg_rating,
+                    COALESCE(pr.review_count, 0) AS review_count
+                FROM product p
+                LEFT JOIN (
+                    SELECT
+                        oi.product_id,
+                        AVG(r.rating) AS avg_rating,
+                        COUNT(r.review_id) AS review_count
+                    FROM order_item oi
+                    INNER JOIN reviews r ON oi.order_item_id = r.order_item_id
+                    WHERE oi.product_id IS NOT NULL
+                    GROUP BY oi.product_id
+                ) pr ON p.product_id = pr.product_id
+                WHERE p.product_type = 'flower'
+                  AND p.status = 'Active'
+                ORDER BY p.product_name ASC";
 
     $stemResult = $conn->query($stemSql);
 
@@ -101,8 +125,8 @@ try {
             "variation" => "stem",
             "status" => $row["status"],
             "type" => "flower",
-            "rating" => 5,
-            "reviews" => 0,
+            "rating" => round((float)$row["avg_rating"], 1),
+            "reviews" => (int)$row["review_count"],
             "stock" => (int)$row["stock"],
             "badge" => "Fresh"
         ];
