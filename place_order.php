@@ -130,18 +130,23 @@ try {
         $subtotal = $quantity * $unit_price;
         $snapshot_name = $item['name'] ?? 'Item';
 
-        $bouquet_id = null;
-        if (!empty($item['bouquet_id'])) {
-            $bouquet_id = intval($item['bouquet_id']);
-        } elseif (!empty($item['productId']) && is_numeric($item['productId'])) {
-            $bouquet_id = intval($item['productId']);
-        }
+        $item_type = strtolower(trim($item['item_type'] ?? ''));
+        $product_id = !empty($item['product_id']) ? intval($item['product_id']) : 0;
+        $bouquet_id = !empty($item['bouquet_id']) ? intval($item['bouquet_id']) : 0;
 
-        if ($bouquet_id === null || $bouquet_id <= 0) {
+        if (($item_type === 'flower' || $item_type === 'product') && $product_id > 0) {
             $item_stmt = $conn->prepare("
                 INSERT INTO order_item
-                (order_id, bouquet_id, quantity, unit_price, subtotal, snapshot_name)
-                VALUES (?, NULL, ?, ?, ?, ?)
+                (order_id, bouquet_id, product_id, quantity, unit_price, subtotal, snapshot_name)
+                VALUES (?, NULL, ?, ?, ?, ?, ?)
+            ");
+            if (!$item_stmt) throw new Exception($conn->error);
+            $item_stmt->bind_param("iiidds", $order_id, $product_id, $quantity, $unit_price, $subtotal, $snapshot_name);
+        } elseif ($bouquet_id <= 0) {
+            $item_stmt = $conn->prepare("
+                INSERT INTO order_item
+                (order_id, bouquet_id, product_id, quantity, unit_price, subtotal, snapshot_name)
+                VALUES (?, NULL, NULL, ?, ?, ?, ?)
             ");
             if (!$item_stmt) throw new Exception($conn->error);
             $item_stmt->bind_param("iidds", $order_id, $quantity, $unit_price, $subtotal, $snapshot_name);
