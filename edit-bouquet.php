@@ -112,8 +112,8 @@ foreach ($wrappers as $w) {
 @media(max-width:600px){.ab-cols-2,.ab-cols-3{grid-template-columns:1fr}}
 .ab-stem-bar{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding:12px 1.25rem;background:white}
 .ab-stem-track{flex:1;height:6px;border-radius:10px;background:var(--line);overflow:hidden}
-.ab-stem-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--g5),var(--g3));transition:width .35s;width:0%}
-.ab-stem-fill.ready{background:linear-gradient(90deg,var(--p5),var(--p3))}
+.ab-stem-fill{height:100%;border-radius:10px;background:linear-gradient(90deg, var(--p5),var(--p3));transition:width .35s;width:0%}
+.ab-stem-fill.ready{background:linear-gradient(90deg,  var(--g5),var(--g3))}
 .ab-stem-count{font-size:13px;font-weight:700;color:var(--g2);white-space:nowrap;min-width:60px;text-align:right}
 .ab-stem-hint{font-size:11px;color:var(--muted);padding:6px 1.25rem 10px}
 .picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
