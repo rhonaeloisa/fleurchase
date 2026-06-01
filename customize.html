@@ -1030,10 +1030,10 @@ function updateSummary(){
     if(p?.img){
       previewEl.innerHTML=`<img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rl)"/>`;
     } else {
-      previewEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">${imgPlaceholder(80)}</div>`;
+    previewEl.innerHTML=`<img src="images/default.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rl)"/>`;
     }
-  } else {
-    previewEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">${imgPlaceholder(80)}</div>`;
+ } else {
+    previewEl.innerHTML=`<img src="images/default.jpg" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rl)"/>`;
   }
 }
 
@@ -1119,6 +1119,7 @@ async function addCustomToCart(buyNow = false) {
         if (result.success) {
         if (!buyNow) {
             toast('Custom bouquet added successfully!', 'success');
+            location.href = 'shop.html';
         }  
 
         const checkoutItem = {

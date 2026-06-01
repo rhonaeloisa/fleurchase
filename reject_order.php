@@ -1,5 +1,3 @@
-
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <?php
 header("Content-Type: application/json");
 require "db_connection.php";
@@ -100,5 +98,35 @@ try {
         "success" => false,
         "message" => $e->getMessage()
     ]);
+}
+
+if ($stmt->affected_rows >= 0) {
+    $userStmt = $conn->prepare("
+        SELECT user_id
+        FROM `order`
+        WHERE order_id = ?
+    ");
+    $userStmt->bind_param("i", $order_id);
+    $userStmt->execute();
+    $userResult = $userStmt->get_result();
+
+    if ($userResult && $userResult->num_rows > 0) {
+        $order = $userResult->fetch_assoc();
+        $user_id = $order["user_id"];
+
+        $title = "Order Status Rejected";
+        $body = "Your order ORD-$order_id is now Cancelled. Please make a valid payment to place the order again.";
+
+        $notifStmt = $conn->prepare("
+            INSERT INTO notification (user_id, type, title, body, is_read, created_at)
+            VALUES (?, 'order', ?, ?, 0, NOW())
+        ");
+        $notifStmt->bind_param("iss", $user_id, $title, $body);
+        $notifStmt->execute();
+    }
+
+    echo json_encode(["success" => true]);
+} else {
+    echo json_encode(["success" => false, "message" => "Status update failed"]);
 }
 ?>

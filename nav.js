@@ -42,7 +42,8 @@ document.addEventListener('click', e=>{ if(e.target.classList.contains('modal-ov
 
 function updateCartBadge() {
   const count = FC.getCart().reduce((s,i)=>s+i.qty,0);
-  document.querySelectorAll('.cart-count').forEach(el=>el.textContent=count);
+  const badge = document.getElementById('cart-count');
+  if (badge) badge.textContent = count;
 }
 
 function buildTopNav(activePage) {
@@ -84,7 +85,7 @@ function buildTopNav(activePage) {
       ${notificationButton()}
       <a class="nav-icon-btn" href="cart.php" title="Cart">
         <span class="material-icons" style="font-size:20px;vertical-align:middle">shopping_cart</span>
-        <span class="cart-badge cart-count">0</span>
+        <span class="cart-badge" id="cart-count">0</span>
       </a>
       <div class="user-chip">
         <div class="user-av">${(user.name||'U')[0].toUpperCase()}</div>
@@ -147,10 +148,10 @@ function buildAdminSidebar(activePage) {
   const nav = [
     { s:'Overview', items:[
       { href:'admin.html', icon:'dashboard', label:'Dashboard' },
-      { href:'orders-admin.html', icon:'inventory_2', label:'Orders', badge: pending || '' },
+      { href:'orders-admin.html', icon:'inventory_2', label:'Orders'},
     ]},
     { s:'Catalog', items:[
-      { href:'products-admin.php', icon:'local_florist', label:'Bouquets' },
+      { href:'products-admin.php', icon:'local_florist', label:'Bouquets'},
       { href:'promos-admin.html', icon:'sell', label:'Promos & Sales' },
     ]},
     { s:'Stock', items:[

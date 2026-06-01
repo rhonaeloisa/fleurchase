@@ -105,6 +105,8 @@
           <button class="status-tab" onclick="setOrderView('Processing', this)">Processing</button>
           <button class="status-tab" onclick="setOrderView('Out for Delivery', this)">Out for Delivery</button>
           <button class="status-tab" onclick="setOrderView('Delivered', this)">Delivered</button>
+          <button class="status-tab" onclick="setOrderView('Completed', this)">Completed</button>
+          <button class="status-tab" onclick="setOrderView('Cancelled', this)">Cancelled</button>
       </div>
       </select>
     </div>
@@ -287,6 +289,10 @@ function getNextStatusButton(o) {
 
   if (o.status === 'Out for Delivery') {
     return `<button class="btn btn-green" onclick="updateStatus('${o.id}', 'Delivered')">Mark Delivered</button>`;
+  }
+
+  if (o.status === 'Delivered') {
+    return `<button class="btn btn-green" onclick="updateStatus('${o.id}', 'Completed')">Completed</button>`;
   }
 
   return '';

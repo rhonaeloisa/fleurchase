@@ -129,7 +129,7 @@
         <h3>Recent Orders</h3>
         <div id="recent-orders"></div>
         <div style="text-align:right;margin-top:10px">
-          <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders →</a>
+          <a class="btn btn-ghost btn-sm" href="orders.html" style="text-decoration:none">View All Orders</a>
         </div>
       </div>
     </div>
@@ -260,7 +260,12 @@ function hideAddressForm() {
 function init() {
   if (!user) return;
   const parts = (user.name || '').split(' ');
-  document.getElementById('prof-av-initial').textContent = (user.name||'U')[0].toUpperCase();
+  const avatar = document.getElementById('prof-av-initial');
+  const savedPhoto = localStorage.getItem('fc_profile_photo');
+
+  if (!savedPhoto) {
+    avatar.textContent = (user.name || 'U')[0].toUpperCase();
+  }
   document.getElementById('prof-disp-name').textContent  = user.name || '—';
   document.getElementById('prof-disp-email').textContent = user.email || '—';
   document.getElementById('v-name').textContent  = user.name || '—';
@@ -402,6 +407,7 @@ function uploadProfilePhoto(event) {
     const imageUrl = e.target.result;
     const avatar = document.getElementById('prof-av-initial');
 
+    avatar.innerHTML = '';
     avatar.textContent = '';
     avatar.style.backgroundImage = `url('${imageUrl}')`;
     avatar.style.backgroundSize = 'cover';

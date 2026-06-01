@@ -391,13 +391,6 @@ a.btn-green:focus {
       <div class="bc-div"></div>
 
       <div class="bc-actions">
-        <button class="bc-act view"
-                type="button"
-                title="View inventory"
-                aria-label="View inventory"
-                onclick="openInventoryProd('<?php echo $id; ?>')">
-          <i class="ti ti-box" aria-hidden="true"></i>
-        </button>
 
         <button class="bc-act sale"
                 type="button"
@@ -421,7 +414,7 @@ a.btn-green:focus {
                 type="button"
                 title="Delete"
                 aria-label="Delete"
-                onclick="openDeleteProd('<?php echo $id; ?>', '<?php echo $nameEsc; ?>')">
+                onclick="openDeleteProd('<?php echo $id; ?>', '<?php echo $nameEsc; ?>')"> 
           <i class="ti ti-trash" aria-hidden="true"></i>
         </button>
       </div> 
@@ -546,9 +539,6 @@ a.btn-green:focus {
 
         <td>
           <div class="tbl-acts">
-            <button class="tbl-act view" aria-label="View inventory" onclick="openInventoryProd('<?php echo $id; ?>')">
-              <i class="ti ti-box" aria-hidden="true"></i> Inventory
-            </button>
             <button class="tbl-act sale" aria-label="Mark as sale" onclick="openSaleModal('<?php echo $id; ?>')">
               <i class="ti ti-tag" aria-hidden="true"></i> Sale
             </button>

@@ -217,7 +217,7 @@
 <div class="main-area">
 <div class="p-page">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
-    <div><div class="page-title">Inventory</div><div class="page-sub" style="margin-bottom:0">Track flower stock, freshness, and base price per stem</div></div>
+    <div><div class="page-title">Products</div><div class="page-sub" style="margin-bottom:0">Track flower stock, freshness, and base price per stem</div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost btn-sm" onclick="location.reload()">↻ Refresh</button>
       <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Add Product</button>

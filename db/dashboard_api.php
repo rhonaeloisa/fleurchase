@@ -135,9 +135,8 @@ function getTopFlowers(PDO $db): array {
          FROM order_item oi
          INNER JOIN `order` o ON oi.order_id = o.order_id
          LEFT JOIN bouquet b ON oi.bouquet_id = b.bouquet_id
-         WHERE o.order_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-           AND o.order_date < DATE_ADD(LAST_DAY(CURDATE()), INTERVAL 1 DAY)
-           AND o.status = 'Delivered'
+         WHERE o.status = 'Delivered'
+           AND oi.bouquet_id IS NOT NULL
            AND LOWER(COALESCE(b.category, '')) <> 'addon'
            AND LOWER(COALESCE(b.bouquet_type, '')) <> 'addon'
          GROUP BY

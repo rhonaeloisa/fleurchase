@@ -1,4 +1,3 @@
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 <!DOCTYPE html>
 <html lang="en">
@@ -137,7 +136,7 @@ function renderSaleProducts() {
   const prods = FC.getProducts().filter(p => p.oldPrice);
   document.getElementById('sale-tbody').innerHTML = prods.length ? prods.map(p => `
     <tr>
-      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">${p.icon}</span><span style="font-size:13px;font-weight:600">${p.name}</span></div></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600">${p.name}</span></div></td>
       <td><span style="text-decoration:line-through;color:var(--muted)">${fmtP(p.oldPrice)}</span></td>
       <td style="font-weight:700;color:var(--p3)">${fmtP(p.price)}</td>
       <td style="color:var(--g3);font-weight:600">Save ${fmtP(p.oldPrice - p.price)} (${Math.round((1 - p.price/p.oldPrice)*100)}%)</td>

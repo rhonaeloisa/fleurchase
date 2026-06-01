@@ -44,7 +44,7 @@
 
   <div class="two-col" style="margin-bottom:1.5rem">
     <div class="table-wrap" style="margin-bottom:0">
-      <div class="table-head"><h3>Top Selling Products</h3><span id="top-period" style="font-size:12px;color:var(--muted)"></span></div>
+      <div class="table-head"><h3>Top Selling Products</h3><span id="top-period" style="font-size:12px;color:var(--muted)">Delivered orders only</span></div>
       <table class="data-table">
         <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Trend</th></tr></thead>
         <tbody id="top-products-tbody"></tbody>
@@ -59,12 +59,12 @@
 
   <div class="two-col" style="margin-bottom:1.5rem">
     <div class="table-wrap" style="margin-bottom:0">
-      <div class="table-head"><h3>Payment Method Breakdown</h3></div>
+      <div class="table-head"><h3>Payment Method Breakdown</h3><span style="font-size:12px;color:var(--muted)">Delivered orders only</span></div>
       <div style="padding:1rem" id="payment-breakdown"></div>
     </div>
 
     <div class="table-wrap" style="margin-bottom:0">
-      <div class="table-head"><h3>Top Delivery Areas</h3></div>
+      <div class="table-head"><h3>Top Delivery Areas</h3><span style="font-size:12px;color:var(--muted)">Delivered orders only</span></div>
       <div style="padding:1rem" id="delivery-breakdown"></div>
     </div>
   </div>
@@ -161,7 +161,7 @@ function renderAll(data) {
   const revChange = pct(md.revenue, prev.revenue);
   const ordChange = pct(md.completed_orders, prev.completed_orders);
 
-  document.getElementById('top-period').textContent = data.period.label;
+  document.getElementById('top-period').textContent = data.period.label + ' · Delivered orders only';
 
   document.getElementById('metrics-grid').innerHTML = [
     { label:'Gross Revenue', val:money(md.revenue), sub:revChange + ' vs prev month', cls:revChange.startsWith('+') ? 'ms-up' : 'ms-dn' },

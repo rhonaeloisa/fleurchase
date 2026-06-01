@@ -271,7 +271,7 @@ function renderCart() {
   const el = document.getElementById('cart-items');
 
   if (!cartItemsArray.length) {
-    el.innerHTML = `<div class="empty-state"><div class="ei">🌸</div><h3>Your cart is empty</h3><p>Browse our shop and add some beautiful flowers!</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now →</a></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="ei">🌸</div><h3>Your cart is empty</h3><p>Browse our shop and add some beautiful flowers!</p><a class="btn btn-green" href="shop.html" style="margin-top:1rem;text-decoration:none">Shop Now</a></div>`;
     updateSummary();
     return;
   }
