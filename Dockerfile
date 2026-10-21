@@ -1,5 +1,6 @@
 FROM php:8.2-apache
-RUN usermod -a -G 1000 www-data
+RUN groupadd --gid 1000 render-secrets \
+    && usermod -a -G render-secrets www-data
 
 RUN docker-php-ext-install mysqli pdo_mysql
 
