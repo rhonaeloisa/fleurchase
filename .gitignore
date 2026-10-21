@@ -1,0 +1,6 @@
+.env
+database/*.sql
+
+uploads/receipts/
+test_password.php
+ca-fleurchase.pem

@@ -13,11 +13,12 @@
  */
 
 // ── Database config ──────────────────────────────────────────────────────────
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'fleurchase_db');   // ← change this
-define('DB_USER', 'root');         // ← change this
-define('DB_PASS', '');     // ← change this
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'fleurchase_db1');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASSWORD') ?: '');
 define('DB_CHARSET', 'utf8mb4');
+define('DB_SSL_CA', getenv('DB_SSL_CA') ?: '');
 
 // ── CORS / headers (adjust origin in production) ─────────────────────────────
 header('Content-Type: application/json');
@@ -38,11 +39,18 @@ function getDB(): PDO {
             'mysql:host=%s;dbname=%s;charset=%s',
             DB_HOST, DB_NAME, DB_CHARSET
         );
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+        $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
-        ]);
+        ];
+
+        if (DB_SSL_CA !== '') {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = DB_SSL_CA;
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+        }
+
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     }
     return $pdo;
 }
