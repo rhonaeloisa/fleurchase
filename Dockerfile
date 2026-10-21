@@ -1,4 +1,5 @@
 FROM php:8.2-apache
+RUN usermod -a -G 1000 www-data
 
 RUN docker-php-ext-install mysqli pdo_mysql
 
